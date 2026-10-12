@@ -72,8 +72,6 @@
     const blink = 0.55 + 0.45 * Math.sin(t * 3);
     DC.UI.centerText(ctx, 'CLICK OR PRESS ENTER TO DESCEND', W / 2, H * 0.86,
       '700 15px ' + FONT, 'rgba(255,255,255,' + blink + ')');
-    DC.UI.centerText(ctx, 'WASD move \u00b7 mouse aim \u00b7 click attack \u00b7 SPACE ability \u00b7 E interact \u00b7 1/2 potions \u00b7 M mute',
-      W / 2, H * 0.9, '500 11px ' + FONT, 'rgba(255,255,255,0.45)');
   };
 
   /* ---------------- career select ---------------- */
@@ -116,7 +114,11 @@
       y += 20;
       ctx.font = '600 11px ' + FONT;
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.fillText(cls.role, px, y);
+      const roleLines = DC.UI.wrap(ctx, cls.role, card.w - 98);
+      for (let k = 0; k < roleLines.length; k++) {
+        ctx.fillText(roleLines[k], px, y);
+        if (k < roleLines.length - 1) y += 13;
+      }
 
       // portrait
       ctx.save();
