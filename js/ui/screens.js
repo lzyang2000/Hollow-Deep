@@ -1,5 +1,7 @@
 /* Title, career select, lore interstitials, pause and death screens. All drawn
-   on the game canvas so the whole thing stays one file:// page with no DOM UI. */
+   on the game canvas so the whole thing stays one file:// page with no DOM UI.
+   Every screen is laid out from the viewport, and every menu is a set of
+   hit-testable buttons: a list of key names is not usable on a phone. */
 (function (global) {
   'use strict';
   const DC = global.DC;
@@ -41,42 +43,105 @@
     ctx.textAlign = 'left';
   };
 
+  DC.UI.hit = function (r, mx, my) {
+    return !!r && mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+  };
+
+  /* A menu button. Same shape for the pause list, the title screen and the
+     career picker, so a fingertip learns one gesture instead of three. */
+  DC.UI.drawButton = function (ctx, b, hot, game) {
+    const L = DC.Layout;
+    const accent = b.accent || (b.primary ? '#8ef0c0' : 'rgba(255,255,255,0.5)');
+    ctx.fillStyle = hot ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.045)';
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = hot ? accent : 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = hot ? 2 : 1;
+    ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1);
+    ctx.fillStyle = hot ? accent : 'rgba(255,255,255,0.16)';
+    ctx.fillRect(b.x, b.y, 3, b.h);
+    ctx.font = '700 ' + L.font(13, 12) + 'px ' + FONT;
+    ctx.fillStyle = hot ? '#fff' : 'rgba(232,238,248,0.85)';
+    ctx.fillText(b.label, b.x + 14, b.y + b.h / 2 + L.font(5, 4));
+    if (b.key) {
+      ctx.font = '600 ' + L.font(11, 10) + 'px ' + FONT;
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.textAlign = 'right';
+      ctx.fillText(b.key, b.x + b.w - 12, b.y + b.h / 2 + L.font(4, 3));
+      ctx.textAlign = 'left';
+    }
+    if (b.note) {
+      ctx.font = '500 ' + L.font(10, 9) + 'px ' + FONT;
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.textAlign = 'right';
+      ctx.fillText(b.note, b.x + b.w - 12, b.y + b.h - 6);
+      ctx.textAlign = 'left';
+    }
+  };
+
   /* ---------------- title ---------------- */
+  DC.UI.titleButtons = function (game) {
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    const bh = L.touch ? 46 : 34;
+    const gap = 12;
+    const bw = Math.min(L.narrow ? 158 : 214, (W - 30 - gap) / 2);
+    const x0 = (W - (bw * 2 + gap)) / 2;
+    const y = H * 0.84;
+    return [
+      { id: 'descend', label: 'DESCEND', primary: true, x: x0, y: y, w: bw, h: bh },
+      { id: 'load', label: 'LOAD A SAVE', accent: '#ffd166', x: x0 + bw + gap, y: y, w: bw, h: bh },
+    ];
+  };
+
   DC.UI.drawTitle = function (ctx, game) {
-    const W = game.cam.w, H = game.cam.h;
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
     ctx.fillStyle = 'rgba(3,4,7,0.86)';
     ctx.fillRect(0, 0, W, H);
 
     const t = game.time;
-    DC.UI.centerText(ctx, DC.LORE.title, W / 2, H * 0.2, '700 46px ' + FONT, '#e8eef8');
-    DC.UI.centerText(ctx, DC.LORE.subtitle, W / 2, H * 0.2 + 30, '600 14px ' + FONT, 'rgba(255,209,102,0.85)');
+    DC.UI.centerText(ctx, DC.LORE.title, W / 2, H * 0.16, '700 ' + L.font(46, 24) + 'px ' + FONT, '#e8eef8');
+    DC.UI.centerText(ctx, DC.LORE.subtitle, W / 2, H * 0.16 + L.font(30, 20), '600 ' + L.font(14, 11) + 'px ' + FONT, 'rgba(255,209,102,0.85)');
 
-    ctx.font = '500 14px ' + FONT;
+    ctx.font = '500 ' + L.font(14, 11) + 'px ' + FONT;
     ctx.textAlign = 'center';
     const lines = DC.LORE.crawl;
+    const lineH = L.font(22, 16);
+    const crawlTop = Math.max(H * 0.26, H * 0.34 - (lines.length * lineH - H * 0.4) / 2);
     for (let i = 0; i < lines.length; i++) {
       const appear = M.clamp((t - 0.6 - i * 0.45) * 1.6, 0, 1);
       if (appear <= 0) continue;
       ctx.globalAlpha = appear;
       ctx.fillStyle = lines[i] ? 'rgba(210,220,235,0.85)' : ' ';
-      ctx.fillText(lines[i], W / 2, H * 0.34 + i * 22);
+      ctx.fillText(lines[i], W / 2, crawlTop + i * lineH);
     }
     ctx.globalAlpha = 1;
     ctx.textAlign = 'left';
 
     if (game.best && game.best.depth) {
       DC.UI.centerText(ctx, 'DEEPEST DESCENT: DEPTH ' + game.best.depth + '  \u00b7  ' + game.best.cls,
-        W / 2, H * 0.34 + lines.length * 22 + 26, '600 12px ' + FONT, 'rgba(142,240,192,0.8)');
+        W / 2, Math.min(H * 0.78, crawlTop + lines.length * lineH + 26), '600 ' + L.font(12, 10) + 'px ' + FONT, 'rgba(142,240,192,0.8)');
     }
 
-    const blink = 0.55 + 0.45 * Math.sin(t * 3);
-    DC.UI.centerText(ctx, 'CLICK OR PRESS ENTER TO DESCEND', W / 2, H * 0.86,
-      '700 15px ' + FONT, 'rgba(255,255,255,' + blink + ')');
+    const btns = DC.UI.titleButtons(game);
+    for (let i = 0; i < btns.length; i++) DC.UI.drawButton(ctx, btns[i], game.titleHover === btns[i].id, game);
+
+    const blink = 0.4 + 0.4 * Math.sin(t * 3);
+    DC.UI.centerText(ctx, L.touch ? 'tap to begin' : 'or press ENTER', W / 2, btns[0].y + btns[0].h + L.font(26, 18),
+      '600 ' + L.font(12, 10) + 'px ' + FONT, 'rgba(255,255,255,' + blink + ')');
   };
 
-  /* ---------------- career select ---------------- */
+  /* ---------------- career select ----------------
+     Three cards side by side is the desktop layout. On a phone three cards is
+     three unreadable slivers, so the narrow layout shows one career at a time
+     with arrows -- same information, one thumb. */
   DC.UI.classCards = function (game) {
-    const W = game.cam.w, H = game.cam.h;
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    if (L.narrow) {
+      const sel = game.hoverClass || DC.CLASS_ORDER[0];
+      const cw = Math.min(340, W - 24);
+      const y = 84;
+      const ch = Math.min(400, H - y - 72);
+      return [{ id: sel, x: (W - cw) / 2, y: y, w: cw, h: ch, single: true }];
+    }
     const n = DC.CLASS_ORDER.length;
     const gap = 22;
     const cw = Math.min(320, (W - gap * (n + 1)) / n);
@@ -89,12 +154,42 @@
     return out;
   };
 
+  DC.UI.classNav = function (game) {
+    const L = DC.Layout;
+    if (!L.narrow) return null;
+    const c = DC.UI.classCards(game)[0];
+    const s = 48;
+    const bh = L.touch ? 46 : 34;
+    return {
+      prev: { x: 6, y: c.y + c.h / 2 - s / 2, w: s, h: s },
+      next: { x: game.cam.w - 6 - s, y: c.y + c.h / 2 - s / 2, w: s, h: s },
+      choose: { x: c.x, y: c.y + c.h + 10, w: c.w, h: bh, label: 'DESCEND AS THE ' + DC.CLASSES[game.hoverClass || 'mage'].name.toUpperCase(), primary: true },
+    };
+  };
+
+  function drawPortrait(ctx, cls, x, y) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = cls.robe;
+    ctx.beginPath();
+    ctx.moveTo(-16, 22); ctx.quadraticCurveTo(-14, -16, 0, -20);
+    ctx.quadraticCurveTo(14, -16, 16, 22); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = cls.accent;
+    ctx.beginPath(); ctx.arc(0, -18, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = cls.color;
+    ctx.beginPath(); ctx.arc(0, -18, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
   DC.UI.drawClassSelect = function (ctx, game) {
-    const W = game.cam.w, H = game.cam.h;
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    const narrow = L.narrow;
     ctx.fillStyle = 'rgba(3,4,7,0.9)';
     ctx.fillRect(0, 0, W, H);
-    DC.UI.centerText(ctx, 'CHOOSE YOUR CAREER', W / 2, H * 0.14, '700 30px ' + FONT, '#e8eef8');
-    DC.UI.centerText(ctx, 'Each one goes down the same hole differently.', W / 2, H * 0.14 + 24, '500 12px ' + FONT, 'rgba(255,255,255,0.5)');
+    DC.UI.centerText(ctx, 'CHOOSE YOUR CAREER', W / 2, narrow ? 34 : H * 0.14, '700 ' + L.font(30, 20) + 'px ' + FONT, '#e8eef8');
+    if (!narrow) {
+      DC.UI.centerText(ctx, 'Each one goes down the same hole differently.', W / 2, H * 0.14 + 24, '500 12px ' + FONT, 'rgba(255,255,255,0.5)');
+    }
 
     const cards = DC.UI.classCards(game);
     for (let i = 0; i < cards.length; i++) {
@@ -108,30 +203,19 @@
       }
       const px = card.x + 18;
       let y = card.y + 34;
-      ctx.font = '700 20px ' + FONT;
+      ctx.font = '700 ' + L.font(20, 16) + 'px ' + FONT;
       ctx.fillStyle = cls.color;
       ctx.fillText(cls.name, px, y);
       y += 20;
-      ctx.font = '600 11px ' + FONT;
+      ctx.font = '600 ' + L.font(11, 10) + 'px ' + FONT;
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      const roleLines = DC.UI.wrap(ctx, cls.role, card.w - 98);
+      const roleLines = DC.UI.wrap(ctx, cls.role, card.w - (narrow ? 36 : 98));
       for (let k = 0; k < roleLines.length; k++) {
         ctx.fillText(roleLines[k], px, y);
         if (k < roleLines.length - 1) y += 13;
       }
 
-      // portrait
-      ctx.save();
-      ctx.translate(card.x + card.w - 44, card.y + 40);
-      ctx.fillStyle = cls.robe;
-      ctx.beginPath();
-      ctx.moveTo(-16, 22); ctx.quadraticCurveTo(-14, -16, 0, -20);
-      ctx.quadraticCurveTo(14, -16, 16, 22); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = cls.accent;
-      ctx.beginPath(); ctx.arc(0, -18, 9, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = cls.color;
-      ctx.beginPath(); ctx.arc(0, -18, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
+      if (!narrow) drawPortrait(ctx, cls, card.x + card.w - 44, card.y + 40);
 
       y += 26;
       const rows = [
@@ -139,7 +223,7 @@
         ['ATTACK', cls.atk + (cls.attackKind === 'melee' ? ' (arc)' : ' (bolt)')],
         ['DEFENCE', cls.def],
       ];
-      ctx.font = '600 12px ' + FONT;
+      ctx.font = '600 ' + L.font(12, 11) + 'px ' + FONT;
       for (let r = 0; r < rows.length; r++) {
         ctx.fillStyle = 'rgba(255,255,255,0.45)';
         ctx.fillText(rows[r][0], px, y);
@@ -151,67 +235,122 @@
       }
 
       y += 10;
-      ctx.font = '700 12px ' + FONT;
+      ctx.font = '700 ' + L.font(12, 11) + 'px ' + FONT;
       ctx.fillStyle = cls.color;
-      ctx.fillText('SPACE \u00b7 ' + cls.ability.name, px, y);
+      ctx.fillText((narrow ? '' : 'SPACE \u00b7 ') + cls.ability.name, px, y);
       y += 17;
-      ctx.font = '500 11px ' + FONT;
+      ctx.font = '500 ' + L.font(11, 10) + 'px ' + FONT;
       ctx.fillStyle = 'rgba(210,220,235,0.7)';
       const dl = DC.UI.wrap(ctx, cls.ability.desc, card.w - 36);
-      for (let k = 0; k < dl.length; k++) { ctx.fillText(dl[k], px, y); y += 15; }
+      const maxDesc = narrow ? 4 : dl.length;
+      for (let k = 0; k < Math.min(maxDesc, dl.length); k++) { ctx.fillText(dl[k], px, y); y += 15; }
 
-      y += 8;
-      ctx.font = '500 11px ' + FONT;
-      ctx.fillStyle = 'rgba(255,255,255,0.42)';
-      const bl = DC.UI.wrap(ctx, cls.blurb, card.w - 36);
-      for (let k = 0; k < bl.length; k++) { ctx.fillText(bl[k], px, y); y += 15; }
+      if (!narrow) {
+        y += 8;
+        ctx.font = '500 11px ' + FONT;
+        ctx.fillStyle = 'rgba(255,255,255,0.42)';
+        const bl = DC.UI.wrap(ctx, cls.blurb, card.w - 36);
+        for (let k = 0; k < bl.length; k++) { ctx.fillText(bl[k], px, y); y += 15; }
+      }
     }
 
-    const sel = DC.CLASSES[game.hoverClass || 'mage'];
-    const introY = cards.length ? cards[0].y + cards[0].h + 34 : H * 0.8;
-    ctx.font = '500 12px ' + FONT;
-    ctx.textAlign = 'center';
-    const intro = DC.UI.wrap(ctx, DC.LORE.classIntros[sel.id], Math.min(760, W - 120));
-    for (let i = 0; i < intro.length; i++) {
-      ctx.fillStyle = 'rgba(210,220,235,0.62)';
-      ctx.fillText(intro[i], W / 2, introY + i * 17);
+    const nav = DC.UI.classNav(game);
+    if (nav) {
+      const sel = DC.CLASSES[game.hoverClass || 'mage'];
+      ctx.font = '700 ' + L.font(16, 13) + 'px ' + FONT;
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.fillText('\u25c0', nav.prev.x + 14, nav.prev.y + nav.prev.h / 2 + 6);
+      ctx.textAlign = 'right';
+      ctx.fillText('\u25b6', nav.next.x + nav.next.w - 14, nav.next.y + nav.next.h / 2 + 6);
+      ctx.textAlign = 'left';
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(nav.prev.x + 0.5, nav.prev.y + 0.5, nav.prev.w - 1, nav.prev.h - 1);
+      ctx.strokeRect(nav.next.x + 0.5, nav.next.y + 0.5, nav.next.w - 1, nav.next.h - 1);
+      const dots = DC.CLASS_ORDER.length;
+      for (let i = 0; i < dots; i++) {
+        const on = DC.CLASS_ORDER[i] === sel.id;
+        ctx.beginPath();
+        ctx.arc(W / 2 + (i - (dots - 1) / 2) * 16, nav.prev.y - 14, on ? 4 : 3, 0, Math.PI * 2);
+        ctx.fillStyle = on ? sel.color : 'rgba(255,255,255,0.25)';
+        ctx.fill();
+      }
+      DC.UI.drawButton(ctx, nav.choose, game.classHover === 'choose', game);
+    } else {
+      const sel = DC.CLASSES[game.hoverClass || 'mage'];
+      const introY = cards.length ? cards[0].y + cards[0].h + 34 : H * 0.8;
+      ctx.font = '500 12px ' + FONT;
+      ctx.textAlign = 'center';
+      const intro = DC.UI.wrap(ctx, DC.LORE.classIntros[sel.id], Math.min(760, W - 120));
+      for (let i = 0; i < intro.length; i++) {
+        ctx.fillStyle = 'rgba(210,220,235,0.62)';
+        ctx.fillText(intro[i], W / 2, introY + i * 17);
+      }
+      ctx.textAlign = 'left';
+      DC.UI.centerText(ctx, 'CLICK A CAREER OR PRESS ENTER', W / 2, H - 26, '700 13px ' + FONT, 'rgba(255,255,255,0.7)');
     }
-    ctx.textAlign = 'left';
-    DC.UI.centerText(ctx, 'CLICK A CAREER OR PRESS ENTER', W / 2, H - 26, '700 13px ' + FONT, 'rgba(255,255,255,0.7)');
   };
 
   /* ---------------- lore interstitial ---------------- */
   DC.UI.drawLore = function (ctx, game) {
-    const W = game.cam.w, H = game.cam.h;
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
     ctx.fillStyle = 'rgba(3,4,7,0.92)';
     ctx.fillRect(0, 0, W, H);
     const l = game.loreCard;
-    DC.UI.centerText(ctx, 'DEPTH ' + l.depth, W / 2, H * 0.34, '700 22px ' + FONT, 'rgba(255,209,102,0.9)');
-    ctx.font = '500 15px ' + FONT;
+    DC.UI.centerText(ctx, 'DEPTH ' + l.depth, W / 2, H * 0.3, '700 ' + L.font(22, 17) + 'px ' + FONT, 'rgba(255,209,102,0.9)');
+    ctx.font = '500 ' + L.font(15, 12) + 'px ' + FONT;
     ctx.textAlign = 'center';
-    const lines = DC.UI.wrap(ctx, l.text, Math.min(720, W - 140));
+    const lines = DC.UI.wrap(ctx, l.text, Math.min(720, W - 60));
     for (let i = 0; i < lines.length; i++) {
       ctx.fillStyle = 'rgba(222,230,242,0.86)';
-      ctx.fillText(lines[i], W / 2, H * 0.42 + i * 24);
+      ctx.fillText(lines[i], W / 2, H * 0.38 + i * L.font(24, 18));
     }
     ctx.textAlign = 'left';
     const blink = 0.5 + 0.5 * Math.sin(game.time * 3);
-    DC.UI.centerText(ctx, 'PRESS ANY KEY TO CONTINUE', W / 2, H * 0.78, '700 12px ' + FONT, 'rgba(255,255,255,' + blink + ')');
+    DC.UI.centerText(ctx, L.touch ? 'TAP TO CONTINUE' : 'PRESS ANY KEY TO CONTINUE', W / 2, H * 0.8,
+      '700 ' + L.font(12, 11) + 'px ' + FONT, 'rgba(255,255,255,' + blink + ')');
   };
 
-  /* ---------------- pause ---------------- */
+  /* ---------------- pause ----------------
+     The pause screen is where a run is carried out of the deep and back in, so
+     it is a menu rather than a list of key names. */
+  DC.UI.pauseMenu = function (game) {
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    const items = [
+      { id: 'resume', label: 'Back to the dark', key: 'ESC', primary: true },
+      { id: 'pack', label: 'Open the pack', key: 'I', note: game.player.inv.length + '/' + game.player.invSize },
+      { id: 'save', label: 'Carry this run out (save file)', key: 'S' },
+      { id: 'load', label: 'Take up a saved run (load file)', key: 'L' },
+      { id: 'mute', label: DC.Audio.muted ? 'Sound on' : 'Sound off', key: 'M' },
+      { id: 'abandon', label: 'Abandon this run', key: 'R', accent: '#ff5c5c' },
+    ];
+    const bw = Math.min(L.narrow ? 330 : 420, W - 28);
+    const gap = 7;
+    const bh = M.clamp((H - 124) / items.length - gap, 26, L.touch ? 46 : 34);
+    const blockH = items.length * (bh + gap) - gap;
+    const top = M.clamp((H - blockH) / 2 + 20, 104, Math.max(104, H - blockH - 14));
+    const x = (W - bw) / 2;
+    const rows = [];
+    for (let i = 0; i < items.length; i++) {
+      rows.push({ id: items[i].id, label: items[i].label, key: items[i].key, note: items[i].note, accent: items[i].accent, primary: items[i].primary, x: x, y: top + i * (bh + gap), w: bw, h: bh });
+    }
+    return rows;
+  };
+
   DC.UI.drawPause = function (ctx, game) {
-    const W = game.cam.w, H = game.cam.h;
-    ctx.fillStyle = 'rgba(3,4,7,0.72)';
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    ctx.fillStyle = 'rgba(3,4,7,0.78)';
     ctx.fillRect(0, 0, W, H);
-    DC.UI.centerText(ctx, 'PAUSED', W / 2, H * 0.42, '700 34px ' + FONT, '#e8eef8');
-    DC.UI.centerText(ctx, 'ESC resume \u00b7 M mute ' + (DC.Audio.muted ? '(muted)' : '(audible)') + ' \u00b7 V zoom \u00b7 R abandon run',
-      W / 2, H * 0.42 + 28, '500 12px ' + FONT, 'rgba(255,255,255,0.6)');
+    const rows = DC.UI.pauseMenu(game);
+    const top = rows[0].y;
+    DC.UI.centerText(ctx, 'PAUSED', W / 2, top - L.font(58, 40), '700 ' + L.font(34, 24) + 'px ' + FONT, '#e8eef8');
     const p = game.player;
     DC.UI.centerText(ctx, 'Depth ' + game.world.depth + ' \u00b7 ' + game.stats.kills + ' demons \u00b7 ' + p.gold + ' coin',
-      W / 2, H * 0.42 + 56, '600 12px ' + FONT, 'rgba(255,209,102,0.8)');
-    DC.UI.centerText(ctx, 'PACK ' + p.inv.length + '/' + p.invSize + '  \u00b7  I opens it \u00b7 the deep waits while you choose',
-      W / 2, H * 0.42 + 78, '600 12px ' + FONT, 'rgba(199,155,255,0.7)');
+      W / 2, top - L.font(34, 24), '600 ' + L.font(12, 11) + 'px ' + FONT, 'rgba(255,209,102,0.8)');
+    DC.UI.centerText(ctx, 'The deep waits while you choose.', W / 2, top - L.font(16, 12),
+      '500 ' + L.font(11, 10) + 'px ' + FONT, 'rgba(210,220,235,0.5)');
+
+    for (let i = 0; i < rows.length; i++) DC.UI.drawButton(ctx, rows[i], game.pauseHover === rows[i].id, game);
   };
 
   /* ---------------- death ---------------- */
@@ -224,19 +363,19 @@
   };
 
   DC.UI.drawDeath = function (ctx, game) {
-    const W = game.cam.w, H = game.cam.h;
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
     ctx.fillStyle = 'rgba(8,2,4,0.9)';
     ctx.fillRect(0, 0, W, H);
-    DC.UI.centerText(ctx, 'YOU DIED', W / 2, H * 0.26, '700 44px ' + FONT, '#ff5c5c');
+    DC.UI.centerText(ctx, 'YOU DIED', W / 2, H * 0.18, '700 ' + L.font(44, 28) + 'px ' + FONT, '#ff5c5c');
     DC.UI.centerText(ctx, game.deathCause + ' found you on depth ' + game.world.depth + '.',
-      W / 2, H * 0.26 + 30, '600 14px ' + FONT, 'rgba(255,255,255,0.75)');
+      W / 2, H * 0.18 + L.font(30, 22), '600 ' + L.font(14, 11) + 'px ' + FONT, 'rgba(255,255,255,0.75)');
 
-    const epi = DC.UI.wrap(ctx, DC.UI.epitaph(game.world.depth), Math.min(680, W - 140));
-    ctx.font = '500 14px ' + FONT;
+    const epi = DC.UI.wrap(ctx, DC.UI.epitaph(game.world.depth), Math.min(680, W - 60));
+    ctx.font = '500 ' + L.font(14, 11) + 'px ' + FONT;
     ctx.textAlign = 'center';
     for (let i = 0; i < epi.length; i++) {
       ctx.fillStyle = 'rgba(222,230,242,0.8)';
-      ctx.fillText(epi[i], W / 2, H * 0.38 + i * 22);
+      ctx.fillText(epi[i], W / 2, H * 0.28 + i * L.font(22, 16));
     }
     ctx.textAlign = 'left';
 
@@ -248,21 +387,22 @@
       ['DEEPEST EVER', String(game.best && game.best.depth ? game.best.depth : game.world.depth)],
       ['TIME UNDER', Math.floor(s.time / 60) + 'm ' + (Math.floor(s.time) % 60) + 's'],
     ];
-    const bw = 340, bx = W / 2 - bw / 2, by = H * 0.52;
-    DC.UI.panel(ctx, bx, by, bw, rows.length * 24 + 18, 'rgba(255,92,92,0.35)');
-    ctx.font = '600 12px ' + FONT;
+    const bw = Math.min(340, W - 40), bx = W / 2 - bw / 2, by = H * 0.46;
+    const rowH = L.font(24, 19);
+    DC.UI.panel(ctx, bx, by, bw, rows.length * rowH + 18, 'rgba(255,92,92,0.35)');
+    ctx.font = '600 ' + L.font(12, 11) + 'px ' + FONT;
     for (let i = 0; i < rows.length; i++) {
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.fillText(rows[i][0], bx + 16, by + 26 + i * 24);
+      ctx.fillText(rows[i][0], bx + 16, by + 26 + i * rowH);
       ctx.fillStyle = '#e8eef8';
       ctx.textAlign = 'right';
-      ctx.fillText(rows[i][1], bx + bw - 16, by + 26 + i * 24);
+      ctx.fillText(rows[i][1], bx + bw - 16, by + 26 + i * rowH);
       ctx.textAlign = 'left';
     }
 
     const blink = 0.5 + 0.5 * Math.sin(game.time * 3);
-    DC.UI.centerText(ctx, 'CLICK OR PRESS ENTER TO DESCEND AGAIN', W / 2, H * 0.88,
-      '700 14px ' + FONT, 'rgba(255,255,255,' + blink + ')');
+    DC.UI.centerText(ctx, L.touch ? 'TAP TO DESCEND AGAIN' : 'CLICK OR PRESS ENTER TO DESCEND AGAIN', W / 2, H * 0.88,
+      '700 ' + L.font(14, 12) + 'px ' + FONT, 'rgba(255,255,255,' + blink + ')');
   };
 
   DC.UI.toast = function (text, color) { if (DC.Game && DC.Game.log) DC.Game.log(text, color); };

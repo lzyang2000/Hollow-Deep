@@ -17,6 +17,18 @@ folder instead:
 Audio starts on your first click or keypress — browsers will not let a page
 make noise before you touch it.
 
+### On an iPhone (one-handed)
+
+The game re-lays itself out for a phone: the frame zooms to about 30 m so the
+torch still covers the screen, the minimap shrinks, and the run is driven by a
+thumb cluster in the bottom-right corner. Serve the folder from your Mac and
+open it on the phone's browser (same Wi-Fi):
+
+    python3 -m http.server 8080    # then visit http://<mac-ip>:8080
+
+Add it to the home screen for a fullscreen, no-chrome run. Drag anywhere with a
+thumb to walk, aim and swing at once; the buttons handle the rest.
+
 ## Controls
 
 | Input | Action |
@@ -31,8 +43,27 @@ make noise before you touch it.
 | `Esc` | Pause (or leave the shop / the pack) |
 | `V` | Toggle zoom |
 | `M` | Mute audio |
+| `S` / `L` (while paused) | Save the run to a file / load one back |
+| `R` (while paused) | Abandon the run |
 
 In the merchant: click a row or press `1–7` to buy, `E`/`Esc` to leave.
+
+### One-handed on a phone
+
+There is no second thumb, so the drag does all three jobs at once:
+
+| Gesture | Action |
+| --- | --- |
+| Drag anywhere | Walk, aim **and** attack (the finger is the reticle and stays put) |
+| Tap | Interact — merchant, portal, urn; one swing if there is nothing to talk to |
+| **WHIRL / BLINK / SHIELD** | Class ability |
+| **HEAL / MANA** | Drink a draught or wick oil |
+| **PACK** | Open the pack (bottom row: HEAL, MANA, SELL, CLOSE) |
+| **PAUSE** | Pause menu — resume, pack, save, load, mute, abandon |
+
+A touch that barely moves is a rest, not a walk, so a thumb resting on the glass
+will not wander you into a demon.
+
 
 In the pack: `1–9`/`0` or the arrows pick a row, `E` wears it, `X` (or right
 click) sells it, `R` sorts it, `Q`/`F` drink, and clicking a worn piece takes it
@@ -88,7 +119,15 @@ off. `I` or `Esc` closes it.
   sleeps until you strike it; the portal opens when it dies.
 - Enemy stats grow with your power, but on a **30 % shallower slope**, so a
   well-played run outpaces the dungeon.
+- **Save files.** Pausing offers *Carry this run out*, which downloads the run
+  as a small JSON file, and *Take up a saved run*, which reads one back (or you
+  can drop the file onto the window). A save stores the level's seed and only
+  what you changed since — dead demons, opened chests, broken urns, the fog you
+  burned away — so a file is a few kilobytes and cannot hand you a floor you
+  never walked. Numbers and indices from a file are clamped or dropped, and a
+  boss portal cannot be skipped by editing one.
 - Music and every sound effect are synthesised at runtime — no audio files.
+
 
 ## Development
 
@@ -97,6 +136,9 @@ off. `I` or `Esc` closes it.
     node tmp/balance.js      # no-cheat difficulty bot across the three careers
     node tmp/duel.js         # worst-case stand-and-trade fights, career vs demon
     node tmp/perf.js         # cost of a full 180-demon floor, and level generation
+    sh tmp/dump.sh           # every screen, desktop + iPhone portrait + landscape,
+                             # through headless Chrome; reports any window.onerror hit
+    sh tmp/shots3.sh         # writes the screenshot set into tmp/shots/
 
 `tmp/` is scratch and is git-ignored. `docs/SPEC.md` holds the full
 specification and acceptance criteria; `docs/ARCHITECTURE.md` explains the

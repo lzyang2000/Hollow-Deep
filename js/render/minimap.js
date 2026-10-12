@@ -11,8 +11,12 @@
 
   DC.Render.minimap = function (ctx, game, cam) {
     const world = game.world, p = game.player;
-    const size = C.MINIMAP_PX;
-    const margin = 16;
+    const L = DC.Layout;
+    // A 300 px map is a quarter of a desktop and the whole width of a phone,
+    // so the panel is sized from the viewport and the marks scale with it.
+    const size = (L && L.minimapPx) || C.MINIMAP_PX;
+    const margin = (L && L.pad) || 16;
+    const u = Math.max(0.6, size / C.MINIMAP_PX);
     const x0 = cam.w - size - margin;
     const y0 = margin;
     const span = C.MINIMAP_M;
@@ -79,7 +83,8 @@
       if (!DC.Fog.visible(world, p, c.x, c.y, 0.5)) continue;
       const m = toMini(c.x, c.y);
       ctx.fillStyle = c.opened ? 'rgba(255,209,102,0.35)' : '#ffd166';
-      ctx.fillRect(m.x - 3, m.y - 3, 6, 6);
+      const cs = 6 * u;
+      ctx.fillRect(m.x - cs / 2, m.y - cs / 2, cs, cs);
     }
     for (let i = 0; i < world.demons.length; i++) {
       const d = world.demons[i];
@@ -87,20 +92,21 @@
       if (!DC.Fog.visible(world, p, d.x, d.y, 0.5)) continue;
       const m = toMini(d.x, d.y);
       ctx.fillStyle = d.hasSeen ? '#ff5c5c' : 'rgba(255,120,110,0.6)';
-      ctx.beginPath(); ctx.arc(m.x, m.y, 2.6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(m.x, m.y, 2.6 * u, 0, Math.PI * 2); ctx.fill();
     }
     if (world.boss && !world.boss.dead) {
       const b = world.boss;
       const m = toMini(b.x, b.y);
       ctx.fillStyle = b.awake ? '#ff2f2f' : 'rgba(255,120,120,0.45)';
+      const br = 6 * u;
       ctx.beginPath();
-      ctx.moveTo(m.x, m.y - 6); ctx.lineTo(m.x + 6, m.y); ctx.lineTo(m.x, m.y + 6); ctx.lineTo(m.x - 6, m.y);
+      ctx.moveTo(m.x, m.y - br); ctx.lineTo(m.x + br, m.y); ctx.lineTo(m.x, m.y + br); ctx.lineTo(m.x - br, m.y);
       ctx.closePath(); ctx.fill();
     }
     if (world.merchant) {
       const m = toMini(world.merchant.x, world.merchant.y);
       ctx.fillStyle = '#8ef0c0';
-      ctx.beginPath(); ctx.arc(m.x, m.y, 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(m.x, m.y, 3.2 * u, 0, Math.PI * 2); ctx.fill();
     }
 
     // portal marker
@@ -113,8 +119,9 @@
         const pulse = 0.6 + 0.4 * Math.sin(game.time * 4);
         ctx.strokeStyle = pt.active ? 'rgba(142,240,192,' + pulse + ')' : 'rgba(142,240,192,0.35)';
         ctx.lineWidth = 2;
+        const pr = 7 * u;
         ctx.beginPath();
-        ctx.moveTo(m.x, m.y - 7); ctx.lineTo(m.x + 7, m.y); ctx.lineTo(m.x, m.y + 7); ctx.lineTo(m.x - 7, m.y);
+        ctx.moveTo(m.x, m.y - pr); ctx.lineTo(m.x + pr, m.y); ctx.lineTo(m.x, m.y + pr); ctx.lineTo(m.x - pr, m.y);
         ctx.closePath(); ctx.stroke();
         ctx.fillStyle = pt.active ? 'rgba(142,240,192,0.5)' : 'rgba(142,240,192,0.2)';
         ctx.fill();
@@ -129,7 +136,7 @@
       const cxm = x0 + size / 2, cym = y0 + size / 2;
       const dx = arrow.x - cxm, dy = arrow.y - cym;
       const a = Math.atan2(dy, dx);
-      const inset = 14;
+      const inset = Math.round(14 * u);
       const hx = size / 2 - inset, hy = size / 2 - inset;
       const scale = Math.min(hx / Math.abs(Math.cos(a) || 1e-6), hy / Math.abs(Math.sin(a) || 1e-6));
       const px = cxm + Math.cos(a) * scale, py = cym + Math.sin(a) * scale;
@@ -137,8 +144,9 @@
       ctx.translate(px, py);
       ctx.rotate(a);
       ctx.fillStyle = 'rgba(142,240,192,0.95)';
+      const ar = 9 * u;
       ctx.beginPath();
-      ctx.moveTo(9, 0); ctx.lineTo(-6, -6); ctx.lineTo(-3, 0); ctx.lineTo(-6, 6);
+      ctx.moveTo(ar, 0); ctx.lineTo(-ar * 0.67, -ar * 0.67); ctx.lineTo(-ar * 0.33, 0); ctx.lineTo(-ar * 0.67, ar * 0.67);
       ctx.closePath(); ctx.fill();
       ctx.restore();
     }
@@ -150,7 +158,7 @@
     ctx.rotate(p.aim);
     ctx.fillStyle = p.cls.color;
     ctx.beginPath();
-    ctx.moveTo(6, 0); ctx.lineTo(-4, -4.5); ctx.lineTo(-2, 0); ctx.lineTo(-4, 4.5);
+    ctx.moveTo(6 * u, 0); ctx.lineTo(-4 * u, -4.5 * u); ctx.lineTo(-2 * u, 0); ctx.lineTo(-4 * u, 4.5 * u);
     ctx.closePath(); ctx.fill();
     ctx.restore();
 
@@ -158,7 +166,7 @@
     ctx.strokeStyle = 'rgba(255,255,255,0.28)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(x0 + 0.5, y0 + 0.5, size - 1, size - 1);
-    ctx.font = '600 10px ui-monospace, Menlo, monospace';
+    ctx.font = '600 ' + ((L && L.font(10, 9)) || 10) + 'px ui-monospace, Menlo, monospace';
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.fillText(span + ' m', x0 + 6, y0 + size - 6);
     ctx.textAlign = 'right';

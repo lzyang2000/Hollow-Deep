@@ -16,6 +16,10 @@
     moveX: 0, moveY: 0,
     aim: 0, firing: false, dragging: false,
     mx: 0, my: 0, hasMouse: false,
+    // Touch writes a movement vector and an aim here; see core/touch.js.
+    // aimHold means "the aim was set by something other than the cursor", so
+    // the frame does not overwrite it with a stale mouse position.
+    touchX: 0, touchY: 0, aimHold: false, tapFrames: 0,
     justPressed: Object.create(null),
     taps: Object.create(null), // consumed by UI
 
@@ -34,6 +38,7 @@
       global.addEventListener('blur', function () {
         self.keys = Object.create(null);
         self.firing = false; self.dragging = false;
+        self.touchX = 0; self.touchY = 0; self.aimHold = false; self.tapFrames = 0;
       });
 
       canvas.addEventListener('mousemove', function (e) {
@@ -67,11 +72,23 @@
         const v = MOVE_KEYS[code];
         if (v) { x += v[0]; y += v[1]; }
       }
+      // A finger on the glass outranks a key on the keyboard: on a phone
+      // there is no keyboard, and on a hybrid machine the last thing you
+      // touched is the thing you mean.
+      if (this.touchX || this.touchY) { x = this.touchX; y = this.touchY; }
       this.moveX = x; this.moveY = y;
     },
 
     /* Called once per rendered frame after the frame's consumers ran. */
-    endFrame: function () { this.justPressed = Object.create(null); },
+    endFrame: function () {
+      this.justPressed = Object.create(null);
+      // A tap is a held attack that lets itself go after a few frames, so a
+      // single flick of the thumb is one swing rather than a permanent one.
+      if (this.tapFrames > 0) {
+        this.tapFrames--;
+        if (this.tapFrames === 0 && !this.dragging) this.firing = false;
+      }
+    },
 
     pressed: function (code) { return !!this.justPressed[code]; },
   };
