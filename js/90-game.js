@@ -12,6 +12,7 @@
     logs: [], banner: null, stats: null, best: null,
     shop: null, loreCard: null, hoverClass: null, interactTarget: null,
     transition: null, deathCause: '', heartT: 0, hoverShop: -1,
+    invSel: 0, invHover: null,
 
     /* ---------------- boot ---------------- */
     init: function () {
@@ -29,6 +30,12 @@
       G.canvas.addEventListener('mousemove', function (e) {
         const r = G.canvas.getBoundingClientRect();
         G.onMove(e.clientX - r.left, e.clientY - r.top);
+      });
+      // Right button is the pack's "get rid of this" gesture. The browser menu
+      // is already suppressed in input.js.
+      G.canvas.addEventListener('contextmenu', function (e) {
+        const r = G.canvas.getBoundingClientRect();
+        G.onRightClick(e.clientX - r.left, e.clientY - r.top);
       });
       global.addEventListener('keydown', function (e) { G.onKey(e.code, e); });
       document.addEventListener('visibilitychange', function () {
@@ -100,6 +107,8 @@
       G.player = DC.Player.create(classId);
       G.stats = { kills: 0, goldEarned: 0, time: 0, meleeHits: 0, chests: 0, urns: 0, potions: 0 };
       G.logs = [];
+      G.invSel = 0;
+      G.invHover = null;
       G.addItem(DC.makePotion('heal'));
       G.startLevel(G.depth, true);
       G.setState('playing');
@@ -168,45 +177,25 @@
       return G.applyItem(item);
     },
 
+    /* A find either goes straight onto your back or into the pack. The one
+       exception is the first thing you ever find for an empty slot: nobody
+       should start a run unarmed because they did not know to press a key. */
     applyItem: function (item) {
       const p = G.player;
-      if (item.type === 'weapon') {
-        if (!p.weapon || item.atk > p.weapon.atk) {
-          let msg = 'Equipped ' + item.name + ' (+' + item.atk + ' ATK)';
-          if (p.weapon) {
-            const melt = Math.round(p.weapon.value * 0.5);
-            p.gold += melt; G.stats.goldEarned += melt;
-            msg += ' \u00b7 sold old for ' + melt;
-          }
-          p.weapon = item;
-          p.bonusAtk = item.atk;
-          DC.Player.recalc(p);
-          DC.Audio.play('levelUp');
-          return { text: msg, color: item.color };
-        }
-        p.gold += item.value; G.stats.goldEarned += item.value;
-        DC.Audio.play('coin');
-        return { text: 'Melted ' + item.name + ' for ' + item.value + ' coin', color: 'rgba(255,255,255,0.55)' };
+      const slot = DC.Inv.slotOf(item);
+      if (!slot) return { text: 'Found ' + item.name, color: item.color };
+      if (!p[slot]) {
+        p[slot] = item;
+        DC.Inv.applyStats(p);
+        DC.Audio.play('levelUp');
+        return { text: 'Equipped ' + item.name + ' (' + DC.Inv.statLine(item) + ')', color: item.color };
       }
-      if (item.type === 'armor') {
-        if (!p.armor || item.def > p.armor.def) {
-          let msg = 'Equipped ' + item.name + ' (+' + item.def + ' DEF)';
-          if (p.armor) {
-            const melt = Math.round(p.armor.value * 0.5);
-            p.gold += melt; G.stats.goldEarned += melt;
-            msg += ' \u00b7 sold old for ' + melt;
-          }
-          p.armor = item;
-          p.bonusDef = item.def;
-          DC.Player.recalc(p);
-          DC.Audio.play('levelUp');
-          return { text: msg, color: item.color };
-        }
-        p.gold += item.value; G.stats.goldEarned += item.value;
-        DC.Audio.play('coin');
-        return { text: 'Melted ' + item.name + ' for ' + item.value + ' coin', color: 'rgba(255,255,255,0.55)' };
+      const res = DC.Inv.add(p, item, G);
+      if (res.packed) {
+        DC.Audio.play('uiMove');
+        return { text: res.text + '  ' + DC.Inv.compare(p, item) + ' vs worn  [I]', color: res.color };
       }
-      return { text: 'Found ' + item.name, color: item.color };
+      return res;
     },
 
     applyUpgrade: function (up) {
@@ -299,6 +288,14 @@
         if (hit >= 0) G.buy(hit);
         return;
       }
+      if (G.state === 'inventory') {
+        const hit = DC.UI.Inv.hover(G, mx, my);
+        if (!hit) return;
+        if (hit.kind === 'bag') { G.invSel = hit.i; G.equipFromPack(hit.i); }
+        else if (hit.kind === 'equip') G.stowSlot(hit.slot);
+        else if (hit.kind === 'potion') DC.Player.drink(G.world, G.player, hit.key, G);
+        return;
+      }
     },
 
     onMove: function (mx, my) {
@@ -314,6 +311,10 @@
         const hit = DC.Shop.hover(G, mx, my);
         if (hit >= 0 && hit !== G.shop.hover) DC.Audio.play('uiMove');
         G.shop.hover = hit;
+      } else if (G.state === 'inventory') {
+        const hit = DC.UI.Inv.hover(G, mx, my);
+        if (hit && hit.kind === 'bag' && (!G.invHover || G.invHover.kind !== 'bag' || G.invHover.i !== hit.i)) DC.Audio.play('uiMove');
+        G.invHover = hit;
       }
     },
 
@@ -352,8 +353,25 @@
         if (!isNaN(n) && n >= 1 && n <= G.shop.stock.length) G.buy(n - 1);
         return;
       }
+      if (G.state === 'inventory') {
+        if (code === 'Escape' || code === 'KeyI' || code === 'Tab') { G.closePack(); return; }
+        const n = parseInt(code.replace('Digit', ''), 10);
+        if (!isNaN(n)) {
+          const idx = code === 'Digit0' ? 9 : n - 1;
+          if (idx >= 0 && idx < G.player.inv.length) { G.invSel = idx; DC.Audio.play('uiMove'); return; }
+        }
+        if (code === 'ArrowUp' || code === 'KeyW') { G.moveSel(-1); return; }
+        if (code === 'ArrowDown' || code === 'KeyS') { G.moveSel(1); return; }
+        if (code === 'KeyE' || code === 'Enter' || code === 'NumpadEnter' || code === 'Space') { G.equipFromPack(G.invSel); return; }
+        if (code === 'KeyX' || code === 'Backspace') { G.sellFromPack(G.invSel); return; }
+        if (code === 'KeyR') { G.sortPack(); return; }
+        if (code === 'KeyQ') { DC.Player.drink(G.world, G.player, 'heal', G); return; }
+        if (code === 'KeyF') { DC.Player.drink(G.world, G.player, 'mana', G); return; }
+        return;
+      }
       if (G.state === 'playing') {
         if (code === 'Escape') { G.setState('pause'); return; }
+        if (code === 'KeyI' || code === 'Tab') { G.openPack(); return; }
         if (code === 'KeyV') { DC.Camera.zoomCycle(); G.log('Zoom ' + DC.Camera.pxPerM + ' px/m', 'rgba(255,255,255,0.45)'); return; }
         if (code === 'Space') { DC.Player.ability(G.world, G.player, G); return; }
         if (code === 'KeyE') { G.tryInteract(); return; }
@@ -380,6 +398,61 @@
       } else if (t.kind === 'portal') {
         G.descend();
       }
+    },
+
+    /* ---------------- the pack ---------------- */
+    openPack: function () {
+      G.invSel = Math.min(G.invSel, Math.max(0, G.player.inv.length - 1));
+      G.invHover = null;
+      G.setState('inventory');
+      DC.Audio.play('uiSelect');
+    },
+    closePack: function () { G.setState('playing'); DC.Audio.play('uiSelect'); },
+
+    moveSel: function (dir) {
+      const n = G.player.inv.length;
+      if (!n) { G.invSel = 0; return; }
+      G.invSel = ((G.invSel + dir) % n + n) % n;
+      DC.Audio.play('uiMove');
+    },
+
+    equipFromPack: function (i) {
+      const res = DC.Inv.equip(G.player, i, G);
+      if (!res) { DC.Audio.play('empty'); return; }
+      G.invSel = Math.min(i, Math.max(0, G.player.inv.length - 1));
+      G.log(res.text, res.color);
+      return res;
+    },
+
+    stowSlot: function (slot) {
+      const res = DC.Inv.stow(G.player, slot, G);
+      if (!res) { DC.Audio.play('empty'); return; }
+      if (!res.full) G.invSel = Math.min(G.invSel, Math.max(0, G.player.inv.length - 1));
+      G.log(res.text, res.color);
+      return res;
+    },
+
+    sellFromPack: function (i) {
+      const res = DC.Inv.sell(G.player, i, G, 1);
+      if (!res) { DC.Audio.play('empty'); return; }
+      G.invSel = Math.min(i, Math.max(0, G.player.inv.length - 1));
+      G.log(res.text, res.color);
+      return res;
+    },
+
+    sortPack: function () {
+      if (G.player.inv.length < 2) { DC.Audio.play('empty'); return; }
+      DC.Inv.sort(G.player);
+      G.invSel = 0;
+      DC.Audio.play('uiSelect');
+      G.log('You straighten the pack on the bench.', 'rgba(199,155,255,0.7)');
+    },
+
+    onRightClick: function (mx, my) {
+      DC.Audio.resume();
+      if (G.state !== 'inventory') return;
+      const hit = DC.UI.Inv.hover(G, mx, my);
+      if (hit && hit.kind === 'bag' && G.player.inv[hit.i]) G.sellFromPack(hit.i);
     },
 
     buy: function (i) {
@@ -563,6 +636,7 @@
       else if (G.state === 'lore') DC.UI.drawLore(ctx, G);
       else if (G.state === 'pause') DC.UI.drawPause(ctx, G);
       else if (G.state === 'shop') DC.Shop.draw(ctx, G);
+      else if (G.state === 'inventory') DC.UI.Inv.draw(ctx, G);
       else if (G.state === 'dead') DC.UI.drawDeath(ctx, G);
 
       if (G.transition) {

@@ -11,6 +11,10 @@ browser with no build step. The run ends on death; the score is depth reached.
 - Left click — attack. Holding repeats at the current attack rate.
 - `Space` — class ability (MP cost). `E` — interact. `Esc` — pause.
   `V` — zoom. `M` — mute.
+- `I` / `Tab` — open or close **the pack**. While it is open the simulation does
+  not advance: `1–9`/`0` or `W`/`S`/arrows pick a row, `E`/`Enter` wears it,
+  `X`/`Backspace` sells it, `R` sorts it, `Q`/`F` drink, right-click sells the row
+  under the cursor, and clicking a worn piece stows it.
 
 ## 3. Classes (career choices)
 | Class | Style | HP | MP | Move | Attack | Ability |
@@ -28,6 +32,11 @@ browser with no build step. The run ends on death; the score is depth reached.
   the corridors. This is deliberately not a lattice maze: the level reads as
   built space, and the harness asserts it holds a lot of open 2x2 floor.
 - **Every open tile must be reachable** — verified by flood fill at generation.
+- Population, and it is deliberately thick from the first floor:
+  `ENEMY_BASE 42` (+4.5/depth, cap 180), `CHEST_BASE 18` (+1.5, cap 48),
+  `URN_BASE 27` (+2.1, cap 66). Nothing spawns closer than `MIN_SPAWN_DIST`
+  (40 m of **walking** distance, measured on the flow field) off the stair, and
+  nothing within 20 m in a straight line either.
 - Boss level (every 10th): open arena, no maze, a handful of pillars.
 - Portal: a reachable tile about **half the level's own farthest walk** from
   the stair (never closer than 30 tiles), chosen with random tie-breaking. It
@@ -51,12 +60,26 @@ Demons mirror the three player careers, one tier weaker:
 | Hellblade | Swordsman | Fast rusher, quick slashes |
 | Gorewarden | Knight | Slow, tanky, heavy overhead slam |
 
+- **All three mirrors walk every floor**, whatever career you picked. The mix
+  drifts with depth: imps start at the plurality (`1.05 + 0.02d` weight) and the
+  heavier Hellblade (`0.70 + 0.035d`) and Gorewarden (`0.45 + 0.04d) catch up, so
+  by depth 24 the three are near even. A floor is one ecosystem, not a gauntlet
+  of one enemy type.
 - A demon **never attacks until it has seen the player** (line of sight within
   its sight radius). Once seen it hunts using a shared BFS flow field.
+- Every sight radius sits **just inside the 15 m torch** (Imp 12, Hellblade 11,
+  Gorewarden 10). On a floor this crowded that gap is what makes it walkable
+  rather than a minefield: you always see them first, and the harness asserts it.
+- Line-of-sight tests are only paid for inside `SIGHT_CULL` (44 m).
 - **Aggro budget**: only `AGGRO_BASE + AGGRO_PER_DEPTH * depth` demons (capped
   at `AGGRO_MAX`) may hunt at once, so a crowded floor never becomes a swarm.
   Being hit always wakes a demon regardless of the budget, and a kill frees
   the slot.
+- **Out-of-combat recovery**: `REGEN_DELAY` (5 s) after nothing on the floor can
+  see you and you have not been hit, HP starts creeping back at `REGEN_FRAC`
+  (1.4 % of max per second). The calm clock is a property of the *floor*, owned
+  by `Game.step`, not a timer on the player — otherwise a second pack across the
+  room would let you heal in the middle of a fight.
 - **Leash**: a hunter that has lost line of sight and is beyond `LEASH_DIST`
   for `LEASH_TIME` seconds gives up and drifts again, handing its slot back.
 - Population scales with depth: demons, chests and urns all grow, and every
@@ -68,8 +91,28 @@ Demons mirror the three player careers, one tier weaker:
 Every kill, chest and **smashed urn** drops exactly one of: equipment (attack
 or defence), an upgrade (movement speed, attack speed, max HP, max MP), money,
 or (chests and urns) a potion. Urns mostly hold coin and sometimes hold nothing
-but the satisfaction. Equipment that is worse than what you wear is melted into
-coin.
+but the satisfaction.
+
+### 7.1 The pack
+
+Equipment does not auto-equip. It lands in a bag of `INV_SIZE` (10) rows and the
+player decides what to wear.
+
+- The one exception: the first find for an **empty** worn slot goes on without
+  asking, so a run never starts unarmed by accident.
+- Worn gear is the only source of equipment bonuses. Stowing a piece really does
+  lower ATK or DEF, and stowing needs a free row.
+- Wearing from the bag puts the displaced piece into the row the new one just
+  left, so the bag never reshuffles under the cursor.
+- A full bag gives up the item with the lowest **urgency**, defined as
+  `power(item) - power(worn in that slot)`. Comparing raw ATK against DEF would
+  let a good coat be melted by a mediocre blade, which is the whole reason this
+  rule is written down. A piece worse than what you already wear therefore has
+  negative urgency and is the first thing to go.
+- Carried casualties pay half value; a find that never arrives pays full value.
+- Selling pays full value anywhere, which is what makes the merchant's prices the
+  interesting half of the economy rather than a toll.
+- Potions are a separate count, not bag rows.
 
 ## 8. Scaling
 Player power index: `P(d) = 1 + 0.10*d + 0.5*equipIndex`, where `equipIndex` is
@@ -105,3 +148,11 @@ title screen, class selection, depth milestones, boss antechambers and death.
 8. The aggro budget holds — a ring of demons around the player wakes only up to
    the cap, a kill frees a slot, a wound wakes regardless, and leashing calms.
 9. Urns break from a melee sweep and from an impact, and never pay out twice.
+10. The pack never exceeds `INV_SIZE` rows no matter how many finds arrive, the
+    two worn slots are the only equipment bonus, and equipping / stowing / selling
+    each move exactly one item and recalculate the derived stats.
+11. A full pack never melts a piece of one slot to make room for a piece of
+    another slot when the incoming item is the worse trade against what is worn.
+12. Every harness loads the same script list as `index.html`, in the same order —
+    a screen that works in the browser and silently fails in the test rig (or the
+    reverse) is the cheapest possible bug to prevent.

@@ -210,6 +210,8 @@
     const p = game.player;
     DC.UI.centerText(ctx, 'Depth ' + game.world.depth + ' \u00b7 ' + game.stats.kills + ' demons \u00b7 ' + p.gold + ' coin',
       W / 2, H * 0.42 + 56, '600 12px ' + FONT, 'rgba(255,209,102,0.8)');
+    DC.UI.centerText(ctx, 'PACK ' + p.inv.length + '/' + p.invSize + '  \u00b7  I opens it \u00b7 the deep waits while you choose',
+      W / 2, H * 0.42 + 78, '600 12px ' + FONT, 'rgba(199,155,255,0.7)');
   };
 
   /* ---------------- death ---------------- */

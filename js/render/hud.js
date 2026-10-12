@@ -67,7 +67,7 @@
     const bx = 16, by = H - 74;
     const cdFrac = M.clamp(1 - p.abilityCd / ab.cd, 0, 1);
     ctx.fillStyle = 'rgba(6,8,12,0.55)';
-    ctx.fillRect(bx - 6, by - 22, 250, 84);
+    ctx.fillRect(bx - 6, by - 22, 300, 84);
     ctx.fillStyle = 'rgba(255,255,255,0.08)';
     ctx.fillRect(bx, by, 46, 46);
     ctx.fillStyle = cdFrac >= 1 ? p.cls.color : 'rgba(255,255,255,0.35)';
@@ -94,6 +94,9 @@
     ctx.fillText('[1] HEAL x' + p.potions.heal, bx, py + 10);
     ctx.fillStyle = p.potions.mana > 0 ? '#6bb6ff' : 'rgba(255,255,255,0.25)';
     ctx.fillText('[2] MANA x' + p.potions.mana, bx + 110, py + 10);
+    const packFull = DC.Inv.isFull(p);
+    ctx.fillStyle = packFull ? '#ffd166' : 'rgba(255,255,255,0.4)';
+    ctx.fillText('[I] PACK ' + p.inv.length + '/' + p.invSize, bx + 214, py + 10);
 
     /* ---- log, bottom centre ---- */
     const logs = game.logs;
