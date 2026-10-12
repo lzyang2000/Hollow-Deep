@@ -5,15 +5,88 @@
   const C = DC.C;
   const M = DC.M;
 
+  // Regions, one per ten depths: the country a floor sits in. The floor itself
+  // gets its own name (below), so a band is the subtitle, not the address.
   DC.DEPTH_BANDS = [
     'The Spill', 'Ash Stair', 'Lantern Warrens', 'The Weeping Gate', 'Choir Hollow',
     'Bone Tidal', 'The Long Swallow', 'Sevric\u2019s Foothold', 'The Unmade Seal',
   ];
-
-  DC.levelName = function (depth) {
-    const band = DC.DEPTH_BANDS[Math.min(Math.floor((depth - 1) / 10), DC.DEPTH_BANDS.length - 1)];
-    return 'Depth ' + depth + ' \u2014 ' + band;
+  DC.depthBand = function (depth) {
+    return DC.DEPTH_BANDS[Math.min(Math.floor((depth - 1) / 10), DC.DEPTH_BANDS.length - 1)];
   };
+
+  /* Every floor is a place with a name of its own, not "Depth 14". The words
+     are drawn from the seed that drew the corridors, so a save file rebuilds
+     the same floor under the same name, and no two runs read the same way.
+     Boss floors draw from a heavier place-word pool: a throne room is not a
+     Warren. */
+  DC.FLOOR_WORDS = {
+    adj: ['Ash', 'Weeping', 'Taper', 'Hollow', 'Drowned', 'Ember', 'Whispering', 'Bone',
+      'Unquiet', 'Inverted', 'Salt', 'Cinder', 'Glass', 'Thorn', 'Pale', 'Rusted',
+      'Mourning', 'Nine-Voice', 'Gatehouse', 'Choir', 'Lantern', 'Wounded', 'Wicking', 'Gravesong'],
+    noun: ['Stair', 'Warren', 'Hollow', 'Gate', 'Choir', 'Swallow', 'Vault', 'Cistern',
+      'Undercroft', 'Landing', 'Shaft', 'Cloister', 'Ossuary', 'Antechamber', 'Refectory',
+      'Scriptorium', 'Belfry', 'Colonnade', 'Foundry', 'Reliquary'],
+    bossNoun: ['Throne', 'Crown Hall', 'Judgement Hall', 'Seal Chamber', 'Assay Yard',
+      'Throat', 'Nave', 'Barrow', 'Vessel', 'Marrow Hall'],
+    of: ['the Drowned Choir', 'the Gate That Walks', 'Nine Doors', 'the Long Swallow',
+      'the Taper\u2019s End', 'the Ninth Seal', 'the Archon', 'a City With Roots',
+      'the Emberdeep', 'the Last Lantern', 'the Unmade', 'Nine Hundred Years'],
+  };
+
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+
+  function composeFloorName(rng, isBoss) {
+    const W = DC.FLOOR_WORDS;
+    const roll = rng.next();
+    const noun = rng.pick(isBoss ? W.bossNoun : W.noun);
+    if (roll < 0.38) return 'The ' + rng.pick(W.adj) + ' ' + noun;
+    if (roll < 0.60) return rng.pick(W.adj) + ' ' + noun;
+    if (roll < 0.84) return 'The ' + noun + ' of ' + rng.pick(W.of);
+    return 'The ' + noun;
+  }
+
+  // run seed -> { depth: name, used: { name: true } }
+  const nameBook = new Map();
+
+  DC.floorName = function (depth, levelSeed) {
+    depth = Math.max(1, Math.floor(depth) || 1);
+    /* A floor's seed is the run seed XOR a depth constant, and XOR undoes
+       itself, so any one floor's seed names every floor above it. That is what
+       lets a name be checked against the floors already named in this run. */
+    const runSeed = (levelSeed ^ (depth * 0x9e3779b9)) >>> 0;
+    let book = nameBook.get(runSeed);
+    if (!book) {
+      if (nameBook.size > 64) nameBook.clear();
+      book = { used: Object.create(null) };
+      nameBook.set(runSeed, book);
+    }
+    for (let d = 1; d <= depth; d++) {
+      if (book[d]) continue;
+      const sd = (runSeed ^ (d * 0x9e3779b9)) >>> 0;
+      const rng = new DC.RNG((sd ^ 0x51ed2701) >>> 0);
+      let name = composeFloorName(rng, d % C.BOSS_EVERY === 0);
+      /* Two floors with the same name stop being two places. A numeral keeps
+         the answer independent of which floors happen to have been visited
+         already -- a reroll would not be. */
+      if (book.used[name]) {
+        let k = 2;
+        while (book.used[name + ' ' + (ROMAN[k] || k)]) k++;
+        name = name + ' ' + (ROMAN[k] || k);
+      }
+      book.used[name] = true;
+      book[d] = name;
+    }
+    return book[depth];
+  };
+
+  DC.levelName = function (depth, levelSeed) {
+    return 'Depth ' + depth + ' \u2014 ' +
+      (levelSeed == null ? DC.depthBand(depth) : DC.floorName(depth, levelSeed));
+  };
+
+  // Which boss in the roster this depth gets.
+  DC.bossTier = function (depth) { return Math.max(1, Math.round(depth / C.BOSS_EVERY)); };
 
   function tileCenter(t) { return (t + 0.5) * C.TILE; }
 
@@ -69,7 +142,8 @@
   DC.levels = {};
 
   DC.levels.build = function (depth, rng, player) {
-    const isBoss = depth % 10 === 0;
+    const levelSeed = rng.s >>> 0;   // before any geometry has eaten the stream
+    const isBoss = depth % C.BOSS_EVERY === 0;
     const G = C.GRID;
     let world = null;
 
@@ -80,7 +154,7 @@
         { x: C.WORLD_M / 2, y: C.WORLD_M / 2, r: 40 },
       ];
       const grid = DC.Maze.arena(rng, keepOut);
-      world = makeWorld(depth, grid, rng, isBoss);
+      world = makeWorld(depth, grid, rng, isBoss, levelSeed);
       const s = openTileNear(grid, startTx, startTy, 6);
       world.start = { tx: s[0], ty: s[1], x: tileCenter(s[0]), y: tileCenter(s[1]) };
       // The arena needs a real distance field too: spacedTiles filters by walk
@@ -90,7 +164,7 @@
       const m = openTileNear(grid, startTx + rng.int(-4, 4), startTy - rng.int(2, 4), 6);
       world.merchant = DC.Props.merchant(tileCenter(m[0]), tileCenter(m[1]), rng, depth);
       const b = openTileNear(grid, G >> 1, G >> 1, 6);
-      const tier = Math.max(1, Math.round(depth / 10));
+      const tier = DC.bossTier(depth);
       const entry = DC.LORE.bosses[(tier - 1) % DC.LORE.bosses.length];
       world.boss = DC.Boss.create(entry.kind, tileCenter(b[0]), tileCenter(b[1]), depth, rng, player, entry);
       world.portal = {
@@ -116,7 +190,7 @@
         s = gen.start;
         tries++;
       } while (!DC.Maze.allReachable(grid, s[0], s[1]) && tries < 12);
-      world = makeWorld(depth, grid, rng, isBoss);
+      world = makeWorld(depth, grid, rng, isBoss, levelSeed);
       world.rooms = gen.rooms;
       world.start = { tx: s[0], ty: s[1], x: tileCenter(s[0]), y: tileCenter(s[1]) };
       world.dist = DC.Maze.bfs(grid, s[0], s[1]).dist;
@@ -229,13 +303,15 @@
     }
 
     world.decor = buildDecor(world, rng);
-    world.banner = DC.levelName(depth);
+    world.banner = world.name;
     return world;
   };
 
-  function makeWorld(depth, grid, rng, isBoss) {
+  function makeWorld(depth, grid, rng, isBoss, levelSeed) {
     const world = {
       depth, isBoss, grid,
+      name: DC.floorName(depth, levelSeed),
+      band: DC.depthBand(depth),
       discovered: new Uint8Array(C.GRID * C.GRID),
       open: DC.Maze.openTiles(grid),
       dist: null,

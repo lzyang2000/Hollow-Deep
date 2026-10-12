@@ -97,7 +97,20 @@ a thumb is resting on the glass.
   walkable tile against 0.0467). Nothing spawns closer than `MIN_SPAWN_DIST`
   (26 m of **walking** distance, measured on the flow field) off the stair, and
   nothing within 20 m in a straight line either.
-- Boss level (every 10th): open arena, no maze, a handful of pillars.
+- **Every floor is named.** `DC.floorName(depth, levelSeed)` composes one out of
+  `DC.FLOOR_WORDS` and remembers it for the rest of the run. The run seed is
+  recovered from the level seed (an XOR with the depth, which is invertible), so
+  the same run always calls depth 7 the same thing, a different run renames the
+  floor, and two floors in one run never share a name — a repeat takes a roman
+  numeral. Boss floors draw from a separate register (Throne, Vessel, Marrow
+  Hall, Assay Yard...) that ordinary floors never use. Longest name over 80
+  floors: 37 characters, and every place that prints one shrinks to fit.
+- Boss level (every **5th** — `C.BOSS_EVERY`): open arena, no maze, a handful of
+  pillars. `DC.bossTier(depth) = max(1, round(depth / C.BOSS_EVERY))` drives the
+  demon roster, the counter's stock and the soundtrack change. The sovereign's
+  own strength stays anchored to its depth (`0.65 + 0.175 * tier`), so a boss at
+  depth 20 is exactly as dangerous as a boss at depth 20 ever was — there are
+  simply twice as many of them on the way down.
 - Portal: a reachable tile about **half the level's own farthest walk** from
   the stair (never closer than 20 tiles), chosen with random tie-breaking. It
   measures 20-65 tiles of corridor in the harness (p10/p50/p90 = 110/145/200 m
@@ -226,15 +239,19 @@ Enemy multiplier: `E(d) = 1 + 0.70*(P(d) - 1)` — a 30 % shallower slope.
 ## 9. Merchant
 Sits in every boss arena. Sells potions, weapons, armour and repeatable stat
 upgrades (`DC.shopStock`), and the shelf lengthens with depth: always weapon,
-armour and two upgrades, a third upgrade from the second boss floor, and a finer
-pair of the same kind (item level +3, priced for it) from the fourth — ten rows
-at the deepest.
+armour and two upgrades, a third upgrade from depth 20, and a finer pair of the
+same kind (item level +3, priced for it) from depth 40 — ten rows at the deepest.
+Those gates are written in depths, not in boss visits: the arenas came twice as
+often, and the shelf was left growing with the purse rather than with the count
+of counters.
 
 Two curves have to hold. **The wares must beat the floor:** chests roll
 `depth+1..3` at a random quality, so the counter rolls `depth+4+t`
-(`t = round(depth/10)`) and floors the quality at Fine, Runed from the second
-boss floor and Seal-forged from the fourth. **The prices must keep up with the
-purse:** income per floor grows with depth, so gear is priced off depth squared
+(`t = DC.bossTier(depth) = round(depth/5)`) and floors the quality at Fine,
+Runed from the fourth boss floor (depth 20) and Seal-forged from the eighth
+(depth 40). The quality divisor doubled when the cadence halved, or every
+counter would have been selling Seal-forged by depth 30. **The prices must keep
+up with the purse:** income per floor grows with depth, so gear is priced off depth squared
 (`13d^2 - 58d + 150`, floor 180) with potions and upgrades as fractions of it.
 Measured against a careful bot's savings that lands near a tenth of the purse at
 every depth, which is roughly two to three purchases per boss visit.
@@ -252,7 +269,9 @@ title screen, class selection, depth milestones, boss antechambers and death.
 ## 12. Save and load (files)
 
 - The pause menu offers **save** (downloads a JSON file) and **load** (a file
-  picker, or drop the file onto the window). Format `hollowdeep-save` v1.
+  picker, or drop the file onto the window). Format `hollowdeep-save` v4 — a v3
+  file is refused rather than misread, because depth 15 is a throne room now
+  where it used to be a maze.
 - A save stores the run (career, depth, seed, gold, gear, pack, stats, potions,
   position) plus **deltas** for the current level, which is rebuilt from its
   seed: dead demons, wounded demon positions/HP, opened chests, broken urns,
@@ -330,8 +349,8 @@ title screen, class selection, depth milestones, boss antechambers and death.
     swings *and* walks at once, and lifting either finger stops only its own
     job. A second field finger is refused.
 22. The counter's best gear improves at every boss tier, always outscores the
-    best chest on the same floor (`depth+3`), never sells below Fine at depth 10
-    and never below Seal-forged at depth 40, and its cheapest piece of gear costs
+    best chest on the same floor (`depth+3`), never sells below Fine at depth 10,
+    Runed at depth 20 or Seal-forged at depth 40, and its cheapest piece of gear costs
     more than three times as much ten depths later. A full ten-row counter fits a
     portrait phone, a landscape phone and a desktop panel, LEAVE button included.
 23. With the pad held, pushing it points the weapon and a field finger pulling
@@ -357,6 +376,12 @@ title screen, class selection, depth milestones, boss antechambers and death.
 20. A compatibility mouse event fired within 900 ms of a touch is ignored, and a
     real mouse is not: `Input.mouseBlocked` is true right after a tap and false
     once the touch has aged out.
+27. Every floor carries a name and a region band. Over 80 depths no two floors in
+    one run share a name, a rebuild from the same seed names them identically, a
+    different seed renames them, no boss word ever appears on an ordinary floor,
+    and every name fits its banner, lore card and map title. A sovereign stands
+    on every fifth depth (`depth % C.BOSS_EVERY === 0`) and is no stronger at its
+    own depth than it was before.
 18. A desktop viewport is not `touch`: it keeps the keyboard panels, three
     career cards, one-column pack and the original zoom levels, and the mouse
     still aims and drags-attacks exactly as before.

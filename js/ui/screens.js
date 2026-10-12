@@ -344,7 +344,13 @@
     ctx.fillStyle = 'rgba(3,4,7,0.92)';
     ctx.fillRect(0, 0, W, H);
     const l = game.loreCard;
-    DC.UI.centerText(ctx, 'DEPTH ' + l.depth, W / 2, H * 0.3, '700 ' + L.font(22, 17) + 'px ' + FONT, 'rgba(255,209,102,0.9)');
+    let lf = L.font(22, 17);
+    const lname = l.name || ('DEPTH ' + l.depth);
+    ctx.font = '700 ' + lf + 'px ' + FONT;
+    while (lf > 12 && ctx.measureText(lname).width > W - 40) { lf -= 1; ctx.font = '700 ' + lf + 'px ' + FONT; }
+    DC.UI.centerText(ctx, lname, W / 2, H * 0.3, '700 ' + lf + 'px ' + FONT, 'rgba(255,209,102,0.9)');
+    DC.UI.centerText(ctx, 'DEPTH ' + l.depth + (l.band ? '  \u00b7  ' + l.band : ''), W / 2, H * 0.3 + L.font(22, 17),
+      '600 ' + L.font(11, 10) + 'px ' + FONT, 'rgba(210,220,235,0.5)');
     ctx.font = '500 ' + L.font(15, 12) + 'px ' + FONT;
     ctx.textAlign = 'center';
     const lines = DC.UI.wrap(ctx, l.text, Math.min(720, W - 60));
@@ -392,10 +398,14 @@
     const top = rows[0].y;
     DC.UI.centerText(ctx, 'PAUSED', W / 2, top - L.font(58, 40), '700 ' + L.font(34, 24) + 'px ' + FONT, '#e8eef8');
     const p = game.player;
-    DC.UI.centerText(ctx, 'Depth ' + game.world.depth + ' \u00b7 ' + game.stats.kills + ' demons \u00b7 ' + p.gold + ' coin',
-      W / 2, top - L.font(34, 24), '600 ' + L.font(12, 11) + 'px ' + FONT, 'rgba(255,209,102,0.8)');
-    DC.UI.centerText(ctx, 'The deep waits while you choose.', W / 2, top - L.font(16, 12),
-      '500 ' + L.font(11, 10) + 'px ' + FONT, 'rgba(210,220,235,0.5)');
+    const pf = L.font(12, 11);
+    const where = (game.world.name || 'Depth ' + game.world.depth) + '  \u00b7  DEPTH ' + game.world.depth;
+    ctx.font = '600 ' + pf + 'px ' + FONT;
+    let pw = pf;
+    while (pw > 9 && ctx.measureText(where).width > W - 40) { pw -= 1; ctx.font = '600 ' + pw + 'px ' + FONT; }
+    DC.UI.centerText(ctx, where, W / 2, top - L.font(34, 24), '600 ' + pw + 'px ' + FONT, 'rgba(255,209,102,0.8)');
+    DC.UI.centerText(ctx, game.stats.kills + ' demons  \u00b7  ' + p.gold + ' coin  \u00b7  the deep waits',
+      W / 2, top - L.font(16, 12), '500 ' + L.font(11, 10) + 'px ' + FONT, 'rgba(210,220,235,0.5)');
 
     for (let i = 0; i < rows.length; i++) DC.UI.drawButton(ctx, rows[i], game.pauseHover === rows[i].id, game);
   };
@@ -429,6 +439,7 @@
     const s = game.stats;
     const rows = [
       ['DEPTH REACHED', String(game.world.depth)],
+      ['LAST FLOOR', String(game.world.name || '\u2014')],
       ['DEMONS SLAIN', String(s.kills)],
       ['COIN EARNED', String(s.goldEarned)],
       ['DEEPEST EVER', String(game.best && game.best.depth ? game.best.depth : game.world.depth)],

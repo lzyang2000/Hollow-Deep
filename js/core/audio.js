@@ -83,7 +83,7 @@
     setDepth: function (d) {
       A.depth = d;
       A.root = 45 + ((Math.floor((d - 1) / 5) * 2) % 12);
-      A.progression = Math.floor((d - 1) / 10) % 4;
+      A.progression = Math.floor((d - 1) / DC.C.BOSS_EVERY) % 4;
     },
 
     setScene: function (name) {

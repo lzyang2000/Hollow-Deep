@@ -210,16 +210,24 @@
     DC.Render.fullMapRect = { x: bx, y: by, size: avail, scale: sc };
 
     ctx.textAlign = 'center';
-    ctx.font = '700 ' + f(21, 15);
+    const title = ((world.name || ('DEPTH ' + world.depth)) + '  \u00b7  DEPTH ' + world.depth).toUpperCase();
+    // A long floor name has to fit a phone held in portrait, so the title
+    // shrinks instead of running off the edge of the screen.
+    let tf = Math.max(11, (L && L.font(21, 15)) || 21);
+    ctx.font = '700 ' + tf + 'px ui-monospace, Menlo, monospace';
+    while (tf > 10 && ctx.measureText(title).width > cam.w - 2 * ((L && L.pad) || 16)) {
+      tf -= 1; ctx.font = '700 ' + tf + 'px ui-monospace, Menlo, monospace';
+    }
     ctx.fillStyle = '#e8eef8';
-    ctx.fillText('DEPTH ' + world.depth + ' \u2014 THE MAP', cam.w / 2, by - 22);
+    ctx.fillText(title, cam.w / 2, by - 22);
 
     // how much of this floor the torch has already taken back
     let seen = 0;
     for (let i = 0; i < world.open.length; i++) if (world.discovered[world.open[i]]) seen++;
     ctx.font = '400 ' + f(12, 10);
     ctx.fillStyle = 'rgba(210,220,235,0.62)';
-    ctx.fillText(Math.round(100 * seen / Math.max(1, world.open.length)) + '% of this floor explored',
+    ctx.fillText((world.band ? world.band + '  \u00b7  ' : '') +
+      Math.round(100 * seen / Math.max(1, world.open.length)) + '% of this floor explored',
       cam.w / 2, by - 6);
 
     // the unlit square, then the explored floor on top of it
