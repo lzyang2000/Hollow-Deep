@@ -110,21 +110,37 @@
         if (p.noManaT <= 0) { p.noManaT = 1.0; DC.Audio.play('empty'); game.log('Not enough MP for ' + ab.name, '#6bb6ff'); }
         return false;
       }
-      p.mp -= ab.mp;
-      p.abilityCd = ab.cd;
       if (ab.id === 'blink') {
+        /* Blink folds through stone -- that is the whole point of the spell --
+           but it has to arrive somewhere you can stand. Walk the aim line from
+           the farthest step back toward the caster and take the first landing
+           that clears the rock by the body radius. If the aim is buried in a
+           corner the spell simply fails, and costs nothing. */
         const a = p.aim;
-        let tx = p.x, ty = p.y;
-        for (let s = 0.5; s <= 9; s += 0.5) {
+        const reach = ab.reach || 9;
+        const clear = p.r + 0.12;
+        let tx = p.x, ty = p.y, landed = false;
+        for (let s = reach; s >= 0.5; s -= 0.5) {
           const nx = p.x + Math.cos(a) * s, ny = p.y + Math.sin(a) * s;
-          if (DC.isSolidAt(world, nx, ny)) break;
-          tx = nx; ty = ny;
+          if (DC.fitsAt(world, nx, ny, clear)) { tx = nx; ty = ny; landed = true; break; }
         }
+        if (!landed) {
+          if (p.noManaT <= 0) { p.noManaT = 0.7; DC.Audio.play('empty'); }
+          DC.Props.floater(world, p.x, p.y - p.r - 0.6, 'no room to fold', p.cls.color, { life: 0.9, size: 12 });
+          game.log('The blink folds against the stone and gives nothing back.', 'rgba(210,220,235,0.55)');
+          return false;
+        }
+        p.mp -= ab.mp;
+        p.abilityCd = ab.cd;
         DC.Props.burst(world, p.x, p.y, 14, { color: [p.cls.color, '#ffffff'], spMin: 2, spMax: 6, lifeMin: 0.2, lifeMax: 0.5 });
         p.x = tx; p.y = ty;
         DC.Props.ring(world, p.x, p.y, 2.2, { color: p.cls.color, life: 0.35, width: 3 });
         DC.Audio.play('blink');
-      } else if (ab.id === 'whirlwind') {
+      } else {
+        p.mp -= ab.mp;
+        p.abilityCd = ab.cd;
+      }
+      if (ab.id === 'whirlwind') {
         p.swing = { t: 0.3, arc: 360, reach: p.cls.reach + 0.7, dir: p.aim, kind: 'whirl' };
         DC.Combat.sweep(world, { side: 'player', x: p.x, y: p.y, aim: p.aim },
           { arc: 360, reach: p.cls.reach + 0.7, dmg: p.atk * 1.5, knock: 2.6 }, game);
