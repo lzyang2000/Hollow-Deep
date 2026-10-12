@@ -188,12 +188,13 @@
       ctx.moveTo(rx, ry + 9); ctx.lineTo(rx, ry + 12);
       ctx.stroke();
     } else if (DC.Touch && (DC.Touch.active || DC.Touch.attack)) {
-      /* On a phone the fingertip IS the cursor, so the drawing has to say so in
-         three parts: a crosshair under the thumb, the aim ray leaving the body
-         along the aim the swing will use, and -- only while the joystick is
-         actually pulling -- the stick from where the finger landed to where it
-         is now. The ray and the crosshair can never disagree, because the aim
-         is measured from the body to exactly that point on the glass. */
+      /* On a phone the fingertip IS the cursor, so the drawing says so twice:
+         a crosshair under the thumb, and the aim ray leaving the body along the
+         aim the swing will use. They can never disagree, because the aim is
+         measured from the body to exactly that point on the glass. There is no
+         ghost of the drag itself -- a circle where the finger landed and a line
+         to where it went only clutters the dark you are trying to read, and the
+         walk it represents is already obvious from the body moving. */
       const px = cam.worldToScreenX(p.x), py = cam.worldToScreenY(p.y);
       const fx = DC.Touch.cx, fy = DC.Touch.cy;
       const stick = DC.Touch.stick;
@@ -201,14 +202,6 @@
       // finger is the one aiming. With the aim stick out there, the point that
       // matters is the tip of the aim ray, and that is what gets a crosshair.
       const aiming = DC.Touch.active && !stick.active;
-
-      if (DC.Input.touchX || DC.Input.touchY) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(DC.Touch.ox, DC.Touch.oy); ctx.lineTo(fx, fy); ctx.stroke();
-        ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(DC.Touch.ox, DC.Touch.oy, 20, 0, Math.PI * 2); ctx.stroke();
-      }
 
       const body = p.r * cam.pxPerM;
       const reach = p.cls.attackKind === 'melee'
