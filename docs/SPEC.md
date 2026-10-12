@@ -327,9 +327,16 @@ title screen, class selection, depth milestones, boss antechambers and death.
   the keyboard panels, three career cards and the original zoom levels.
 - The thumb cluster is eight circles — ATTACK, DODGE, ability, (TRADE / DOWN when
   something is in reach), HEAL, MANA, PACK, PAUSE — plus the ATTACK pad in the
-  opposite corner. DODGE is placed immediately beside ATTACK so one thumb covers a
-  swing and a step, and the ability keeps the ring it always had. All eight fit a
-  390x844 portrait cluster (two columns) and an 844x390 single row.
+  opposite corner and a **second DODGE circle one gap to the right of that pad**.
+  DODGE is placed immediately beside ATTACK so one thumb covers a swing and a
+  step, and the ability keeps the ring it always had; the left-hand twin exists
+  because the thumb that owns the pad should own the step as well, and making it
+  cross the glass is a reason not to dodge at all. Both circles read the same
+  `p.dodgeCd`, so they cool together and ring together. The left one is a plain
+  circle: `hitButton` round-tests it, `Touch.down` dashes, and it never becomes
+  the aim stick and never sets `firing`. Nine controls fit a 390x844 portrait
+  cluster (two columns, left DODGE centre 139,811 clear of the pad box) and an
+  844x390 single row (left DODGE centre 169,357), with no pair overlapping.
 
 ## 14. Acceptance checks
 
@@ -425,5 +432,8 @@ title screen, class selection, depth milestones, boss antechambers and death.
     feet are planted, cannot be re-triggered inside `C.DODGE_CD`, and cannot be
     steered once started. `Shift` triggers it on a keyboard; on a phone the DODGE
     circle sits beside ATTACK, is hit-testable, and shows a cooldown ring and a
-    countdown while it is spent.
+    countdown while it is spent. A second DODGE circle sits beside the ATTACK pad
+    for the left thumb: it is hit-testable, dashes, shares the same cooldown and
+    ring, never starts the aim stick and never starts an attack, and the pad
+    beside it still becomes the stick.
 

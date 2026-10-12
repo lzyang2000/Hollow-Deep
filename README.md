@@ -22,7 +22,8 @@ make noise before you touch it.
 The game re-lays itself out for a phone: the frame zooms to about 30 m so the
 torch still covers the screen, the minimap shrinks, and the run is driven by a
 thumb cluster in the bottom-right corner plus an **ATTACK** pad in the
-bottom-left. Serve the folder from your Mac and open it on the phone's browser
+bottom-left with its own **DODGE** circle beside it, so the left thumb owns the
+trigger and the step without crossing the glass. Serve the folder from your Mac and open it on the phone's browser
 (same Wi-Fi):
 
     python3 -m http.server 8080    # then visit http://<mac-ip>:8080
@@ -99,7 +100,7 @@ a thumb is resting on the glass.
 | Tap | Interact — merchant, portal, urn; one swing **at the point you tapped** if there is nothing to talk to |
 | **ATTACK** circle (right cluster) | Swing, aimed for you at the nearest demon the torch is showing. It sits under the thumb that is already walking, so it stays a plain trigger |
 | **ATTACK pad** (bottom-left bar) | Hold to swing, **slide to aim**: the aim is the thumb's travel from where it landed, so the blow can go east while the other thumb walks north. Parked without a push, the swing aims itself |
-| **DODGE** circle (right beside ATTACK) | The dash. It shows a ring and a countdown while the 1.9 s cooldown runs, so you always know whether the step is there |
+| **DODGE** circle (beside ATTACK, and again beside the pad) | The dash. Both circles share one 1.9 s cooldown and each shows a ring and a countdown while it runs, so you always know whether the step is there. The left-hand one is a tap only — it never becomes a stick and never swings |
 
 Two-handed is the way to fight a room full of demons: the right thumb runs the
 walk stick, the left thumb runs the trigger and the aim. Lifting either finger
@@ -114,7 +115,9 @@ cannot steal it mid-stride.
 A touch that barely moves is a rest, not a walk, so a thumb resting on the glass
 will not wander you into a demon. Buttons sit in the bottom-right corner, biggest
 and nearest the thumb first: ATTACK, DODGE, ability, (TRADE / DOWN when something
-is in reach), HEAL, MANA, PACK, PAUSE — and the ATTACK pad sits in the opposite corner.
+is in reach), HEAL, MANA, PACK, PAUSE — and the ATTACK pad sits in the opposite
+corner with a second DODGE one gap to its right, which is where the left thumb
+puts the step when two hands are on the phone.
 Sliding a thumb across the ATTACK **circle** neither walks nor re-aims; sliding
 across the **pad** is how you aim. The aim ray leaves the body along the aim, and
 a crosshair sits at its tip while the stick is pushed, so you can see where a
@@ -196,7 +199,8 @@ off. `I` or `Esc` closes it.
   relatively more common as you go down — and each one sees *slightly* less far
   than your torch reaches, so on a crowded floor you always spot them first. Lose
   sight of a hunter for a few seconds and it gives up the chase and drifts home.
-- **Dodge** (`Shift`, and a **DODGE** circle beside ATTACK on a phone) is 0.2 s at
+- **Dodge** (`Shift`, and a **DODGE** circle beside ATTACK on a phone — plus a
+  second beside the ATTACK pad for the other thumb) is 0.2 s at
   21 m/s — about **4.2 m**, once per 1.9 s. No invulnerability, no steering once
   it has started, a dropped swing and a late next one as the price. The dash is
   drawn as a smear in your career colour, which is also the tell that it is spent.

@@ -119,9 +119,20 @@
         out.push(a);
       }
       const pw = L.tiny ? 96 : 124, ph = 46;
-      out.push({
+      const pad = {
         id: 'attack', label: 'ATTACK', color: '#ffb347', pad: true, hint: 'drag to aim',
         x: L.pad + pw / 2, y: L.h - L.pad - ph / 2, w: pw, h: ph, r: ph / 2,
+      };
+      out.push(pad);
+      /* The thumb that owns the pad should own the step as well. Two-handed,
+         or sideways, the left thumb never leaves this corner: making it cross
+         the glass for the right-hand DODGE is a reason not to dodge at all. So
+         the step lives one gap to the right of the pad, on the pad's own
+         baseline. It stays a tap -- it never becomes an aim stick and it never
+         fires -- and it shows the same cooldown ring as its twin. */
+      out.push({
+        id: 'dodge', label: 'DODGE', color: '#8ef0c0', left: true,
+        x: L.pad + pw + 8 + r, y: pad.y, r: r,
       });
       return out;
     },
