@@ -293,6 +293,7 @@
     act: function (b, game) {
       const p = game.player;
       if (b.id === 'ability') DC.Player.ability(game.world, p, game);
+      else if (b.id === 'dodge') DC.Player.dodge(game.world, p, game);
       else if (b.id === 'heal') DC.Player.drink(game.world, p, 'heal', game);
       else if (b.id === 'mana') DC.Player.drink(game.world, p, 'mana', game);
       else if (b.id === 'pack') game.openPack();

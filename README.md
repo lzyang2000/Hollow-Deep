@@ -62,6 +62,7 @@ browser chrome.
 | Mouse move / drag | Aim |
 | Left click (hold to keep attacking) | Attack |
 | `Space` | Class ability (costs MP) |
+| `Shift` | **Dodge** — a short, committed dash (see below) |
 | `1` / `2` | Drink healing draught / wick oil |
 | `E` | Interact (merchant, portal) |
 | `I` or `Tab` | Open / close **the pack** (pauses the run) |
@@ -73,6 +74,14 @@ browser chrome.
 
 In the merchant: click a row or press `1–9` to buy, `E`/`Esc` to leave. A deep
 counter shelves ten things, so the last one is a click.
+
+**Dodge** (`Shift`) is a fifth of a second and about **4.2 m** of ground, once
+every 1.9 s. It is a step, not a save. There is no invulnerability anywhere in
+it, a swing already in the air is given up, and the next swing cannot start until
+your feet are back under you — so dodging out of a swing you were about to land
+is a real trade of damage for distance. Rock stops it dead and still spends the
+cooldown. It takes you the way you were walking, or the way you are pointing if
+you had stopped, so a dodge never turns your back on a fight by accident.
 
 ### Phone controls (one hand or two)
 
@@ -90,6 +99,7 @@ a thumb is resting on the glass.
 | Tap | Interact — merchant, portal, urn; one swing **at the point you tapped** if there is nothing to talk to |
 | **ATTACK** circle (right cluster) | Swing, aimed for you at the nearest demon the torch is showing. It sits under the thumb that is already walking, so it stays a plain trigger |
 | **ATTACK pad** (bottom-left bar) | Hold to swing, **slide to aim**: the aim is the thumb's travel from where it landed, so the blow can go east while the other thumb walks north. Parked without a push, the swing aims itself |
+| **DODGE** circle (right beside ATTACK) | The dash. It shows a ring and a countdown while the 1.9 s cooldown runs, so you always know whether the step is there |
 
 Two-handed is the way to fight a room full of demons: the right thumb runs the
 walk stick, the left thumb runs the trigger and the aim. Lifting either finger
@@ -103,8 +113,8 @@ cannot steal it mid-stride.
 
 A touch that barely moves is a rest, not a walk, so a thumb resting on the glass
 will not wander you into a demon. Buttons sit in the bottom-right corner, biggest
-and nearest the thumb first: ATTACK, ability, (TRADE / DOWN when something is in
-reach), HEAL, MANA, PACK, PAUSE — and the ATTACK pad sits in the opposite corner.
+and nearest the thumb first: ATTACK, DODGE, ability, (TRADE / DOWN when something
+is in reach), HEAL, MANA, PACK, PAUSE — and the ATTACK pad sits in the opposite corner.
 Sliding a thumb across the ATTACK **circle** neither walks nor re-aims; sliding
 across the **pad** is how you aim. The aim ray leaves the body along the aim, and
 a crosshair sits at its tip while the stick is pushed, so you can see where a
@@ -117,14 +127,17 @@ off. `I` or `Esc` closes it.
 
 ## Careers
 
-- **Mage** — ranged bolts that pierce and splash. More MP than HP, fastest
-  movement, `Space` blinks 9 m along your aim. A mage lives on distance, so
-  heavy plate is priced accordingly: the stride a coat costs a mage is worth
-  more than the defence it buys.
-- **Swordsman** — a 135° arc at sword reach, balanced HP and MP, `Space`
-  whirlwinds everything around you.
-- **Knight** — slow, heavy, highest HP and free defence, longest reach and
-  knockback, `Space` raises a shield wall.
+- **Mage** — ranged bolts that pierce and splash. More MP than HP, **4.6 m/s**,
+  `Space` blinks 9 m along your aim. A mage lives on distance, so heavy plate is
+  priced accordingly: the stride a coat costs a mage is worth more than the
+  defence it buys.
+- **Swordsman** — a 135° arc at sword reach, balanced HP and MP, and the longest
+  stride of the three at **5.5 m/s**: nothing down there can run a swordsman
+  down, which is the whole career. `Space` whirlwinds everything around you.
+- **Knight** — heavy, highest HP and free defence, longest reach and knockback,
+  `Space` raises a shield wall. **4.2 m/s** is slow for a big man but no longer
+  helpless: he can walk an Imp down and back away from a mistake, while a
+  Hellblade (4.7 m/s) still catches him if he is standing where he should not be.
 
 ## The rules that matter
 
@@ -183,6 +196,10 @@ off. `I` or `Esc` closes it.
   relatively more common as you go down — and each one sees *slightly* less far
   than your torch reaches, so on a crowded floor you always spot them first. Lose
   sight of a hunter for a few seconds and it gives up the chase and drifts home.
+- **Dodge** (`Shift`, and a **DODGE** circle beside ATTACK on a phone) is 0.2 s at
+  21 m/s — about **4.2 m**, once per 1.9 s. No invulnerability, no steering once
+  it has started, a dropped swing and a late next one as the price. The dash is
+  drawn as a smear in your career colour, which is also the tell that it is spent.
 - Losing a pack is worth something: once nothing on the floor can see you and you
   have not been touched for five seconds, the wound starts closing on its own.
 - Kills, chests and smashed urns drop equipment (attack / defence), upgrades

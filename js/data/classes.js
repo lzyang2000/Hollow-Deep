@@ -1,4 +1,12 @@
-/* The three careers. Ranged, balanced melee, slow tank. */
+/* The three careers. Ranged, balanced melee, slow tank.
+
+   The stride ladder, and why it sits here: a swordsman (5.5) outruns every
+   demon that hunts him, which is the whole career fantasy. A knight (4.2) is
+   quicker than he used to be -- 3.5 m/s meant a knight could neither close on
+   a shooter nor disengage from a mistake -- but the Hellblade (4.6) still
+   catches him, so being heavy still costs you something real. A mage (4.6)
+   keeps the middle rung: fast enough to trade with a hunter, not fast enough
+   to walk away from one. */
 (function (global) {
   'use strict';
   const DC = global.DC;
@@ -19,7 +27,7 @@
     },
     swordsman: {
       id: 'swordsman', name: 'Swordsman', role: 'Close quarters \u2014 balanced HP and MP',
-      hp: 95, mp: 95, speed: 5.0, def: 1, atk: 19,
+      hp: 95, mp: 95, speed: 5.5, def: 1, atk: 19,
       attackKind: 'melee', attackCd: 0.46, reach: 2.8, arc: 135,
       mpRegen: 4, power: 1.0, moveValue: 4,
       ability: { id: 'whirlwind', name: 'Whirlwind', mp: 16, cd: 7, desc: 'A full circle slash at 1.5x damage, hitting everything close.' },
@@ -28,12 +36,12 @@
     },
     knight: {
       id: 'knight', name: 'Knight', role: 'Close quarters \u2014 slow, heavy, more HP than MP',
-      hp: 145, mp: 70, speed: 3.5, def: 3, atk: 24,
+      hp: 145, mp: 70, speed: 4.2, def: 3, atk: 24,
       attackKind: 'melee', attackCd: 0.72, reach: 2.6, arc: 105,
       mpRegen: 2.6, power: 1.0, knockback: 2.4, moveValue: 2.5,
       ability: { id: 'shieldwall', name: 'Shield Wall', mp: 22, cd: 10, desc: '3.2 s of 70% damage reduction and immunity to knockback.' },
       color: '#c9d4e8', accent: '#6d7a92', robe: '#3b4252',
-      blurb: 'Slow as a door. Hits like one. Can stand in a room full of demons and win.',
+      blurb: 'Slow for a big man. Hits like a door. Can stand in a room full of demons and win.',
     },
   };
 

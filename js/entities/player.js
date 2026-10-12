@@ -18,6 +18,7 @@
         gold: 0,
         aim: 0, facing: 0,
         attackTimer: 0, swing: null, abilityCd: 0, shieldT: 0, castT: 99,
+        dodgeCd: 0, dodgeT: 0, dodgeDir: 0,
         invuln: 0, hurtT: 0, kx: 0, ky: 0,
         anim: 0, walk: 0, dead: false, deadT: 0,
         lastVx: 0, lastVy: 0,
@@ -48,6 +49,7 @@
       p.anim += dt;
       p.attackTimer -= dt;
       p.abilityCd -= dt;
+      p.dodgeCd = Math.max(0, p.dodgeCd - dt);
       p.shieldT = Math.max(0, p.shieldT - dt);
       p.invuln = Math.max(0, p.invuln - dt);
       p.hurtT = Math.max(0, p.hurtT - dt);
@@ -58,19 +60,33 @@
       let mx = input.moveX, my = input.moveY;
       const mag = Math.hypot(mx, my);
       if (mag > 0) { mx /= mag; my /= mag; }
-      const sp = p.speed * (p.shieldT > 0 ? 0.75 : 1);
-      let vx = mx * sp, vy = my * sp;
+      let vx, vy;
+      if (p.dodgeT > 0) {
+        /* A dash is committed. The stick does not steer it, the wall stops it,
+           and nothing about it makes you immune to what is already on its way.
+           It is a step, not a save. */
+        p.dodgeT = Math.max(0, p.dodgeT - dt);
+        vx = Math.cos(p.dodgeDir) * DC.C.DODGE_SPEED;
+        vy = Math.sin(p.dodgeDir) * DC.C.DODGE_SPEED;
+        p.facing = p.dodgeDir;
+        p.walk += dt * 9;
+      } else {
+        const sp = p.speed * (p.shieldT > 0 ? 0.75 : 1);
+        vx = mx * sp; vy = my * sp;
+        if (mag > 0) { p.walk += dt * sp * 1.6; p.facing = Math.atan2(my, mx); }
+      }
       vx += p.kx; vy += p.ky;
       p.kx *= Math.pow(0.0006, dt); p.ky *= Math.pow(0.0006, dt);
       DC.moveBody(world, p, vx * dt, vy * dt);
       p.lastVx = vx; p.lastVy = vy;
-      if (mag > 0) { p.walk += dt * sp * 1.6; p.facing = Math.atan2(my, mx); }
 
       /* --- aim ------------------------------------------------------------ */
       p.aim = input.aim;
 
       /* --- attack --------------------------------------------------------- */
-      if (input.firing && p.attackTimer <= 0) DC.Player.attack(world, p, game);
+      // Mid-dash the hands are elsewhere: no swing starts until the feet are
+      // back under the body.
+      if (input.firing && p.attackTimer <= 0 && p.dodgeT <= 0) DC.Player.attack(world, p, game);
       if (p.swing) { p.swing.t -= dt; if (p.swing.t <= 0) p.swing = null; }
 
       /* --- resources ------------------------------------------------------ */
@@ -123,6 +139,38 @@
         }));
         DC.Audio.play('cast', { pitch: 1.1 });
       }
+    },
+
+    /* The dash itself. Direction is the way you are walking, or the way you are
+       pointing if you are standing still, so a dodge never turns your back on a
+       fight by accident. */
+    dodge: function (world, p, game, input) {
+      input = input || DC.Input;
+      if (p.dead) return false;
+      if (p.dodgeCd > 0) {
+        // noManaT is the general "you asked and the body said not yet" throttle.
+        if (p.noManaT <= 0) {
+          p.noManaT = 0.6;
+          DC.Audio.play('empty');
+          DC.Props.floater(world, p.x, p.y - p.r - 0.6, 'off balance', 'rgba(210,220,235,0.55)', { life: 0.8, size: 11 });
+        }
+        return false;
+      }
+      const mx = input.moveX || 0, my = input.moveY || 0;
+      const dir = (mx || my) ? Math.atan2(my, mx) : p.aim;
+      p.dodgeDir = dir;
+      p.dodgeT = DC.C.DODGE_TIME;
+      p.dodgeCd = DC.C.DODGE_CD;
+      /* The price, and it is a real one: the weight leaves the swing mid-swing.
+         A blow already in the air is given up, and the next one cannot start
+         until the feet are planted -- so dodge-spamming trades damage for
+         distance, which is a decision rather than a reflex. */
+      p.swing = null;
+      p.attackTimer = Math.max(p.attackTimer, DC.C.DODGE_TIME + DC.C.DODGE_RECOVERY);
+      DC.Props.burst(world, p.x - Math.cos(dir) * p.r, p.y - Math.sin(dir) * p.r, 9,
+        { color: [p.cls.color, '#ffffff'], spMin: 1, spMax: 4, lifeMin: 0.15, lifeMax: 0.4 });
+      DC.Audio.play('dodge');
+      return true;
     },
 
     ability: function (world, p, game) {
