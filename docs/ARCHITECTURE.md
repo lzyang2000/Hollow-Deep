@@ -15,15 +15,16 @@ js/data/lore.js         world story, fragments, boss names, epitaphs
 js/data/classes.js      player careers
 js/data/demons.js       demon roster mirroring the careers
 js/data/items.js        equipment, upgrades, potions, shop stock
-js/world/maze.js        maze + arena generation, flood fill, BFS
-js/world/level.js       level assembly: start, portal, chests, demons, merchant
+js/world/maze.js        rooms-and-corridors + arena generation, flood fill, BFS
+js/world/level.js       level assembly: start, portal, chests, urns, demons,
+                        merchant, decor and wall torches
 js/core/input.js        keyboard + mouse (aim, drag, click)
 js/core/audio.js        procedural music engine + synthesised SFX
-js/core/camera.js       follow camera, shake, zoom
+js/core/camera.js       follow camera (never lets the actor leave frame), shake, zoom
 js/entities/player.js   careers, movement, attacks, abilities
 js/entities/demon.js    demon AI (sight gate, flow-field hunt, attacks)
 js/entities/boss.js     boss behaviour and attack patterns
-js/entities/props.js    chests, portal, merchant, projectiles, particles, floaters
+js/entities/props.js    chests, urns, portal, merchant, projectiles, particles, floaters
 js/systems/fog.js       light map, discovery memory, entity visibility
 js/systems/combat.js    damage, arcs, projectiles, knockback, drops
 js/systems/loot.js      drop table, equip/upgrade application, gold
@@ -40,7 +41,11 @@ js/90-game.js           state machine, fixed-step loop, level flow
 
 `tmp/` holds throwaway harnesses and is git-ignored:
 
-- `tmp/test_maze.js` — maze invariants (borders, reachability, braiding, arenas).
+- `tmp/test_maze.js` — level invariants (borders, reachability, room placement,
+  open 2x2 floor, arenas).
+- `tmp/duel.js` — worst-case stand-and-trade fights: each career against 1, 3,
+  5 and 8 of each demon at depth 1 and 10, which is how the melee numbers are
+  kept honest without trusting the pathing bot.
 - `tmp/smoke.js` — evaluates the real files under headless DOM/canvas/WebAudio
   stubs and drives 9000 frames of play, asserting the sight gate, the sleeping
   boss, the scaling ratio, the shop and the fog light map.
@@ -57,3 +62,12 @@ Two ordering rules the harnesses exist to protect:
 - `Fog.discover` runs in `step()`, not `render()`. The minimap, the demon
   sight gate and the sealed boss portal all read discovery, so it is
   simulation state and must not depend on a frame being drawn.
+- `Camera.follow(player, dt)` is called from `Game.step`, not from the render
+  path. `Camera.snap` only runs on a level change; `Camera.update` only does
+  shake. If `follow` is ever dropped from the step, the actor walks out of the
+  browser frame and nothing else in the code notices — `tmp/smoke.js` section
+  [8] is the guard.
+- `world.awakeCount` is the aggro budget and is owned by `DC.Demons.wake` and
+  `DC.Demons.calm`. Nothing else may set `d.hasSeen` directly: the counter and
+  the flag have to move together, and `tmp/smoke.js` section [10] asserts they
+  agree.
