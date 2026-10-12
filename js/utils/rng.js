@@ -44,3 +44,6 @@
     return (h >>> 0) / 4294967296;
   };
 })(typeof window !== 'undefined' ? window : globalThis);
+
+  // Used by cosmetic helpers that want randomness without threading a seed.
+  DC.fallbackRng = new DC.RNG(0x51ed2701);
