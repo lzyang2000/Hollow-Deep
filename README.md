@@ -118,7 +118,9 @@ off. `I` or `Esc` closes it.
 ## Careers
 
 - **Mage** — ranged bolts that pierce and splash. More MP than HP, fastest
-  movement, `Space` blinks 9 m along your aim.
+  movement, `Space` blinks 9 m along your aim. A mage lives on distance, so
+  heavy plate is priced accordingly: the stride a coat costs a mage is worth
+  more than the defence it buys.
 - **Swordsman** — a 135° arc at sword reach, balanced HP and MP, `Space`
   whirlwinds everything around you.
 - **Knight** — slow, heavy, highest HP and free defence, longest reach and
@@ -154,13 +156,21 @@ off. `I` or `Esc` closes it.
   have not been touched for five seconds, the wound starts closing on its own.
 - Kills, chests and smashed urns drop equipment (attack / defence), upgrades
   (movement speed, attack speed, max HP / MP) or coin.
-- **The pack.** Loot lands in a ten-row bag instead of silently re-dressing you;
-  the only exception is the first thing you find for an empty slot, which goes on
-  without asking. Open it with `I` — the run pauses while you choose. Worn gear
-  is the only source of equipment bonuses, so taking something off really does
-  cost you. A full bag gives up whatever helps you *least*, measured against what
-  you are already wearing, which is why a good coat is never traded away for a
-  mediocre blade. Everything you carry can be sold for what it is worth.
+- **The pack.** Loot lands in a ten-row bag instead of making you dress
+  yourself by hand. A find that is a **clear** gain goes on by itself — the first
+  thing you ever find for an empty slot always goes on, and after that only a
+  gain big enough to be worth the decision. Anything closer than that waits in
+  the bag for you, and the piece a new find displaced goes through the bag's own
+  door, so a full bag still melts something. Open it with `I` — the run pauses
+  while you choose. Worn gear is the only source of equipment bonuses, so taking
+  something off really does cost you. Everything you carry can be sold.
+- **Steel has weight.** A Greataxe and an Ash Rod are not the same find at the
+  same item level: the heavy piece buys about 20% more of its slot's stat and
+  pays for it in stride, up to roughly half a metre per second once both slots
+  are loaded with plate. Every piece shows what it costs (`-0.26 m/s`), and
+  `vs worn` is scored in **stats minus stride**, at the rate your career values
+  stride — a mage pays 6 ATK per m/s, a knight 2.5. That is why the same coat is
+  auto-equipped on a knight and left on the floor for a mage.
 - Every **10th level** is a boss arena (no maze) with a merchant. The boss
   sleeps until you strike it; the portal opens when it dies. The counter's wares
   improve as you descend — better item levels than the best chest on that floor,
@@ -169,6 +179,11 @@ off. `I` or `Esc` closes it.
   turning into free money by the third boss.
 - Enemy stats grow with your power, but on a **30 % shallower slope**, so a
   well-played run outpaces the dungeon.
+- **A hot wick refills slowly.** Mana recovery ramps back over 1.6 s of not
+  casting, so holding the trigger spends faster than you recover — a mage's
+  whole pool is gone in about twenty seconds of continuous fire, and after that
+  a bolt costs two seconds of waiting. A measured shot, once every two seconds,
+  pays for itself outright.
 - **Save files.** Pausing offers *Carry this run out*, which downloads the run
   as a small JSON file, and *Take up a saved run*, which reads one back (or you
   can drop the file onto the window). A save stores the level's seed and only
