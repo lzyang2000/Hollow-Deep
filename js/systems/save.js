@@ -281,6 +281,9 @@
         qualityName: String(raw.qualityName || 'Sound').slice(0, 24),
         color: /^#[0-9a-fA-F]{3,8}$/.test(String(raw.color)) ? String(raw.color) : '#d7dee9',
         value: int(raw.value, 1, 1e7, 10),
+        weight: int(raw.weight, 0, 2, 0),
+        weightName: String(raw.weightName || 'light').slice(0, 12),
+        penalty: Math.round(num(raw.penalty, 0, 4, 0) * 100) / 100,
       };
       if (type === 'weapon') out.atk = int(raw.atk, 1, 1e6, Math.max(1, Math.round(2.1 + 0.95 * ilvl)));
       else out.def = int(raw.def, 1, 1e6, Math.max(1, Math.round(1.1 + 0.6 * ilvl)));
