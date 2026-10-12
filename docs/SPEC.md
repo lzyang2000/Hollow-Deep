@@ -133,6 +133,11 @@ a thumb is resting on the glass.
   50 m scale bar and a rectangle showing the minimap's current window. The run
   is paused while it is open — the loop only steps in `playing`, and the fog
   stops advancing — and any click, tap, or `N` / `ESC` / `ENTER` closes it.
+- The toggle is decided on the **press** (`mousedown`, `pointerdown`), never on
+  the `click` that follows it: a press is one gesture, and the compatibility
+  click a browser fires a few hundred ms after a tap was closing the map the
+  same tap had just opened. A drag that merely ends over the panel is not a
+  request to see the floor either, so `onClick` has no say in the map at all.
 
 ## 6. Enemies
 Demons mirror the three player careers, one tier weaker:
@@ -334,6 +339,11 @@ title screen, class selection, depth milestones, boss antechambers and death.
     other. Lifting the walk finger stops the walk only; lifting the pad stops the
     swing and keeps the direction. With nothing on the pad, the fingertip is the
     reticle again.
+26. One press on the minimap opens the whole floor and the click that follows
+    that same press leaves it open; a press afield closes it and its trailing
+    click reopens nothing; a drag that ends over the panel opens nothing. On a
+    phone, a thumb on the panel opens it and the compatibility click does not
+    close it again.
 25. Over 240 generated levels the portal is always inside a room, always has
     open floor all the way round it, is always reachable, and stays a journey
     rather than a slog. Standing in the portal for 150 frames descends nothing

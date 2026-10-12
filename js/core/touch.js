@@ -100,6 +100,12 @@
     down: function (mx, my, game, id) {
       const L = DC.Layout;
       this.lastTouch = nowMs();
+      // The map panel is the same button under a thumb, and while the map is up
+      // the whole glass is the button. Press, never the compatibility click that
+      // follows the same tap -- that click used to close what the tap had just
+      // opened, so the floor flashed for a third of a second and vanished.
+      if (game.state === 'map') { game.toggleMap(); return true; }
+      if (game.state === 'playing' && game.onMinimap && game.onMinimap(mx, my)) { game.toggleMap(); return true; }
       if (game.state !== 'playing') {
         // Menus handle their own taps through the synthesised click.
         return false;

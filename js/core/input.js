@@ -55,11 +55,15 @@
         // taken for a mouse it leaves a drag that no mouse button ever releases
         // -- the player swings forever and the reticle freezes at the tap.
         if (self.mouseBlocked()) return;
-        // The map panel is a button. Pressing on it should open the floor, not
-        // spend a swing and freeze the reticle on the corner of the HUD.
-        if (DC.Game && DC.Game.state === 'playing' && DC.Game.onMinimap) {
+        // The map panel is a button, and while the map is open the whole glass
+        // is that button. Both are decided on the PRESS: the click that a
+        // browser fires afterwards is the tail of the same gesture, and taking
+        // it for a second one made the map open and close in one click.
+        if (DC.Game && DC.Game.onMinimap) {
           const r0 = canvas.getBoundingClientRect();
-          if (DC.Game.onMinimap(e.clientX - r0.left, e.clientY - r0.top)) return;
+          const mx0 = e.clientX - r0.left, my0 = e.clientY - r0.top;
+          if (DC.Game.state === 'map') { DC.Game.toggleMap(); return; }
+          if (DC.Game.state === 'playing' && DC.Game.onMinimap(mx0, my0)) { DC.Game.toggleMap(); return; }
         }
         e.preventDefault();
         self.firing = true; self.dragging = true;
