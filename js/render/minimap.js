@@ -31,20 +31,36 @@
     const ty1 = Math.min(G - 1, Math.ceil((wy0 + span) / T));
     const pal = DC.Render.palette;
 
+    // Runs of the same terrain merge into one rect. Drawn tile by tile the
+    // minimap looks like graph paper; merged, it reads as a floor plan.
     for (let ty = ty0; ty <= ty1; ty++) {
-      for (let tx = tx0; tx <= tx1; tx++) {
+      let tx = tx0;
+      while (tx <= tx1) {
         const i = ty * G + tx;
-        if (!world.discovered[i]) continue;
+        if (!world.discovered[i]) { tx++; continue; }
+        const kind = world.grid[i];
+        let run = 1;
+        while (tx + run <= tx1) {
+          const j = ty * G + tx + run;
+          if (!world.discovered[j] || world.grid[j] !== kind) break;
+          run++;
+        }
         const sx = x0 + (tx * T - wx0) * sc;
         const sy = y0 + (ty * T - wy0) * sc;
-        const w = T * sc + 0.6;
-        if (world.grid[i] === 1) {
-          ctx.fillStyle = world.dist && world.dist[i] >= 0 ? 'rgba(120,140,175,0.30)' : 'rgba(120,140,175,0.22)';
-          ctx.fillRect(sx, sy, w, w);
-        } else {
-          ctx.fillStyle = 'rgba(20,26,36,0.95)';
-          ctx.fillRect(sx, sy, w, w);
+        const w = run * T * sc + 0.6;
+        ctx.fillStyle = kind === 1 ? 'rgba(120,140,175,0.28)' : 'rgba(20,26,36,0.95)';
+        ctx.fillRect(sx, sy, w, T * sc + 0.6);
+        if (kind === 1) {
+          // faint mottling so a big room is not one flat slab
+          for (let k = 0; k < run; k++) {
+            const j = ty * G + tx + k;
+            const h = DC.hash2(tx + k, ty, world.seed);
+            if (h < 0.45) continue;
+            ctx.fillStyle = 'rgba(150,175,215,' + (0.04 + (h - 0.45) * 0.07).toFixed(3) + ')';
+            ctx.fillRect(x0 + ((tx + k) * T - wx0) * sc, sy, T * sc + 0.6, T * sc + 0.6);
+          }
         }
+        tx += run;
       }
     }
 
