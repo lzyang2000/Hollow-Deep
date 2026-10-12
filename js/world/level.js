@@ -111,13 +111,30 @@
       world.start = { tx: s[0], ty: s[1], x: tileCenter(s[0]), y: tileCenter(s[1]) };
       world.dist = DC.Maze.bfs(grid, s[0], s[1]).dist;
 
-      // Portal at the BFS-farthest reachable tile: always reachable, always a
-      // real journey to get to.
-      let best = -1, bestT = -1;
+      // Portal placement: a reachable tile deep in the maze, but not the
+      // absolute farthest one. A perfect maze's farthest tile is a 700m+
+      // corridor slog; we take a tile around the 62nd percentile of walking
+      // distance instead, so every level is a real journey without being a
+      // chore. Ties are broken at random so the gate sits somewhere different
+      // each time.
+      let far = 0;
+      for (let i = 0; i < world.open.length; i++) far = Math.max(far, world.dist[world.open[i]]);
+      const target = Math.max(C.PORTAL_MIN_TILES, Math.round(far * C.PORTAL_FRACTION));
+      let best = -1, bestT = -1, bestScore = Infinity;
       for (let i = 0; i < world.open.length; i++) {
         const t = world.open[i];
-        if (world.dist[t] > best) { best = world.dist[t]; bestT = t; }
+        const d = world.dist[t];
+        if (d < C.PORTAL_MIN_TILES) continue;
+        const score = Math.abs(d - target) + rng.next() * 3;
+        if (score < bestScore) { bestScore = score; bestT = t; best = d; }
       }
+      if (bestT < 0) {
+        for (let i = 0; i < world.open.length; i++) {
+          const t = world.open[i];
+          if (world.dist[t] > best) { best = world.dist[t]; bestT = t; }
+        }
+      }
+      world.portalDistTiles = best;
       world.portal = {
         x: tileCenter(bestT % G), y: tileCenter((bestT - (bestT % G)) / G),
         tx: bestT % G, ty: (bestT - (bestT % G)) / G,

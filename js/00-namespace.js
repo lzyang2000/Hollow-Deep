@@ -41,5 +41,10 @@
     CHEST_PER_DEPTH: 0.34,
     CHEST_MAX: 9,
     MIN_SPAWN_DIST: 26,   // metres from start before a demon may appear
+
+    // Portal gate: a reachable tile this deep into the maze's walking
+    // distance, not the absolute farthest one.
+    PORTAL_MIN_TILES: 30,
+    PORTAL_FRACTION: 0.5,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
