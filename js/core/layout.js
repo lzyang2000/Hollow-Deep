@@ -94,6 +94,11 @@
       return acts;
     },
 
+    /* The cluster plus the left-hand ATTACK pad. The pad is what makes the
+       game playable with two thumbs: the right one drags on the field (walk +
+       aim) and the left one, which is already resting in the left corner, holds
+       ATTACK. One thumb still works -- the pad is only a second way to reach the
+       same hold-button, and a tap in the open remains a single swing. */
     buttons: function (game) {
       const acts = L.actions(game);
       const out = [];
@@ -109,6 +114,11 @@
         a.r = r;
         out.push(a);
       }
+      const pw = L.tiny ? 96 : 124, ph = 46;
+      out.push({
+        id: 'attack', label: 'ATTACK', color: '#ffb347', pad: true,
+        x: L.pad + pw / 2, y: L.h - L.pad - ph / 2, w: pw, h: ph, r: ph / 2,
+      });
       return out;
     },
 
@@ -116,7 +126,8 @@
       const bs = L.buttons(game);
       for (let i = 0; i < bs.length; i++) {
         const b = bs[i];
-        if (mx >= b.x - b.r && mx <= b.x + b.r && my >= b.y - b.r && my <= b.y + b.r) return b;
+        const hw = b.w ? b.w / 2 : b.r, hh = b.h ? b.h / 2 : b.r;
+        if (mx >= b.x - hw && mx <= b.x + hw && my >= b.y - hh && my <= b.y + hh) return b;
       }
       return null;
     },
@@ -126,7 +137,9 @@
       const bs = L.buttons(game);
       if (!bs.length) return L.h;
       let top = L.h;
-      for (let i = 0; i < bs.length; i++) top = Math.min(top, bs[i].y - bs[i].r);
+      for (let i = 0; i < bs.length; i++) {
+        top = Math.min(top, bs[i].y - (bs[i].h ? bs[i].h / 2 : bs[i].r));
+      }
       return top;
     },
   };

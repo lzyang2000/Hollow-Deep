@@ -19,11 +19,12 @@ browser with no build step. The run ends on death; the score is depth reached.
   `X`/`Backspace` sells it, `R` sorts it, `Q`/`F` drink, right-click sells the row
   under the cursor, and clicking a worn piece stows it.
 
-### 2b. Touch (one-handed, phone)
+### 2b. Touch (one hand, or two)
 
-One thumb only. The finger is a joystick and a reticle at the same time, and
-attacking stays a decision: nothing swings just because a thumb is resting on
-the glass.
+The field finger is a joystick and a reticle at the same time, and attacking
+stays a decision: nothing swings just because a thumb is resting on the glass.
+Two fingers are tracked apart, which is what makes fighting possible: ATTACK
+belongs to its own finger, so the other thumb can walk and aim underneath it.
 
 - **Drag** anywhere on the play field: walk along the drag (a joystick measured
   from where the finger landed) **and** aim at the fingertip itself — the aim is
@@ -32,12 +33,16 @@ the glass.
 - **Tap** (short, under 14 px of travel, under 0.4 s): interact with whatever is
   in reach; if nothing is, one swing **at the point tapped** (`Input.tapFrames`
   releases the attack a few frames later so a tap is never a permanent hold).
-- **ATTACK** is the one hold-button: pressing it sets `Input.firing` and keeps it
-  set until the finger lifts, and it neither walks nor re-aims, so you can hold
-  your ground and trade. With no fingertip on the field to aim with it aims
-  itself at the nearest demon the torch is showing (`Game.aimAssist`). A press
-  that never reached a simulation step still gets one swing rather than being
-  swallowed.
+- **ATTACK** is the one hold-button, offered twice: a circle in the right
+  cluster and a wide pad in the bottom-left corner where a second thumb already
+  rests. Pressing it sets `Input.firing` until that finger lifts, and it neither
+  walks nor re-aims. Held with a second thumb it swings *while the first thumb
+  walks and aims*; held alone it aims itself at the nearest demon the torch is
+  showing (`Game.aimAssist`). Lifting it stops the swing without stopping the
+  walk. A press that never reached a simulation step still gets one swing rather
+  than being swallowed.
+- Only one field finger at a time: a second finger dropped on the glass is
+  ignored, so a stray thumb cannot steal the aim mid-stride.
 - A touch that never crosses the dead zone walks nobody and attacks nothing.
 - The HUD draws the three parts separately: a crosshair under the fingertip, the
   aim as a ray leaving the body, and the walk-stick from where the finger landed
@@ -241,8 +246,12 @@ title screen, class selection, depth milestones, boss antechambers and death.
 19. The ATTACK button attacks without walking, keeps attacking while held, stops
     on release, and is unmoved by a thumb that slides across it; with nothing
     under it, it aims at the nearest demon the torch is showing; the whole
-    cluster, seven buttons deep when an interact prompt is up, stays inside a
-    portrait and a landscape phone frame.
+    cluster, seven buttons deep when an interact prompt is up, plus the left
+    ATTACK pad, stays inside a portrait and a landscape phone frame.
+21. Two fingers work apart: a field finger walking plus the ATTACK pad held
+    swings *and* walks at once, keeps the field finger's own aim (no assist),
+    and lifting either finger stops only its own job. A second field finger is
+    refused.
 20. A compatibility mouse event fired within 900 ms of a touch is ignored, and a
     real mouse is not: `Input.mouseBlocked` is true right after a tap and false
     once the touch has aged out.

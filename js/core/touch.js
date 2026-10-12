@@ -1,10 +1,17 @@
-/* One-handed touch control.
-   There is no second thumb to hold a mouse with, so the finger does two jobs at
-   once: the drag is a joystick that walks, and the fingertip is a reticle that
-   aims. It deliberately does NOT swing -- a swing is a decision, made by holding
-   ATTACK or by a tap -- otherwise every shuffle to the merchant becomes a brawl.
-   Everything else is a button big enough for a fingertip, parked in the corner
-   under the thumb that is already there.
+/* Touch control, one hand or two.
+   The field finger does two jobs at once: the drag is a joystick that walks, and
+   the fingertip is a reticle that aims. It deliberately does NOT swing -- a
+   swing is a decision, made by holding ATTACK or by a tap -- otherwise every
+   shuffle to the merchant becomes a brawl.
+
+   Two fingers are tracked apart, which is what makes the game playable with two
+   thumbs: the ATTACK hold-button belongs to its own finger, so the other thumb
+   can keep walking and aiming while it swings, and lifting it stops the swing
+   without stopping the walk. A second finger on the field is ignored, so a
+   stray thumb cannot steal the aim mid-stride.
+   One hand still works: the ATTACK pad in the left corner and the ATTACK circle
+   in the right cluster are the same hold-button, and a tap in the open is one
+   swing at the point tapped.
    A tap (short, barely moved) is the interact gesture: merchant, portal, or one
    swing at whatever is under the finger. */
 (function (global) {
@@ -22,8 +29,11 @@
   };
 
   DC.Touch = {
+    // the field finger: joystick + reticle
     id: null, ox: 0, oy: 0, cx: 0, cy: 0,
-    t0: 0, moved: 0, drag: false, active: false, attack: false,
+    t0: 0, moved: 0, drag: false, active: false,
+    // the button finger: ATTACK, held
+    attack: false, attackId: null, pollAtDown: 0,
     lastTouch: 0,
 
     init: function (canvas, game) {
@@ -81,37 +91,38 @@
 
     down: function (mx, my, game, id) {
       const L = DC.Layout;
-      if (this.id !== null) return false;         // one finger at a time
-      this.id = id === undefined ? 1 : id;
-      this.ox = mx; this.oy = my; this.cx = mx; this.cy = my;
-      this.t0 = game.time; this.moved = 0; this.active = true;
-      this.drag = false;
       this.lastTouch = nowMs();
-
       if (game.state !== 'playing') {
         // Menus handle their own taps through the synthesised click.
-        this.id = null; this.active = false;
         return false;
       }
 
       const b = L.hitButton(game, mx, my);
       if (b) {
-        // The attack button is the one hold-button in the cluster: pressing it
-        // swings until you let go, and it never walks or re-aims, so you can
-        // stand your ground and trade.
+        // ATTACK is the one hold-button, and it has a finger to itself: press
+        // it while the other thumb is mid-stride and both keep working.
         if (b.id === 'attack') {
+          if (this.attackId !== null) return false;      // one button thumb at a time
+          this.attackId = id === undefined ? 1 : id;
           this.attack = true;
           this.pollAtDown = DC.Input.polls;
           DC.Input.firing = true;
           DC.Input.tapFrames = 0;
           return true;
         }
-        this.act(b, game); this.id = null; this.active = false; return true;
+        this.act(b, game);
+        return true;
       }
 
-      // The finger is the reticle the moment it lands, so even a tap aims at
-      // the thing you tapped rather than at wherever you happened to be facing.
+      // The field finger is the joystick and the reticle. Only one at a time: a
+      // second finger on the glass must not steal the aim mid-stride.
+      if (this.id !== null) return false;
+      this.id = id === undefined ? 1 : id;
+      this.ox = mx; this.oy = my; this.cx = mx; this.cy = my;
+      this.t0 = game.time; this.moved = 0; this.active = true;
       this.drag = true;
+      // The finger is the reticle the moment it lands, so even a tap aims at the
+      // thing you tapped rather than at wherever you happened to be facing.
       this.aimAt(mx, my);
       return true;
     },
@@ -140,11 +151,14 @@
     },
 
     move: function (mx, my, id) {
-      if (this.id === null || (id !== undefined && id !== this.id)) return;
-      this.cx = mx; this.cy = my;
       this.lastTouch = nowMs();
-      // A thumb parked on ATTACK that slides a little is still just attacking.
-      if (this.attack) return;
+      const pid = id === undefined ? this.id : id;
+      if (this.id === null && this.attackId === null) return;
+      // A thumb parked on ATTACK that slides a little is still just attacking:
+      // it neither walks nor re-aims, and it does not move the reticle either.
+      if (pid === this.attackId) return;
+      if (pid !== this.id) return;
+      this.cx = mx; this.cy = my;
       if (!this.drag) return;
       const input = DC.Input;
       const dx = mx - this.ox, dy = my - this.oy;
@@ -165,22 +179,21 @@
     },
 
     up: function (mx, my, id, game) {
-      if (this.id === null || (id !== undefined && id !== this.id)) return;
       this.lastTouch = nowMs();
+      const pid = id === undefined ? (this.id !== null ? this.id : this.attackId) : id;
+      if (this.attackId !== null && pid === this.attackId) { this.endAttack(); return; }
+      // A button finger lifting has nothing to undo; the walk belongs to the
+      // field finger and the swing to the button finger, never to both.
+      if (this.id === null || pid !== this.id) return;
+
       const wasDrag = this.drag;
-      const wasAttack = this.attack;
       const dur = game.time - this.t0;
       const far = this.moved >= DEAD;
-      this.id = null; this.active = false; this.drag = false; this.attack = false;
-      this.release();
-
-      if (wasAttack) {
-        // Letting go stops the swing. The one exception is a press that never
-        // reached a simulation step at all -- no frame of it could have swung,
-        // so hand it one swing instead of swallowing the tap.
-        if (DC.Input.polls === this.pollAtDown) { DC.Input.tapFrames = 4; DC.Input.firing = true; }
-        return;
-      }
+      const input = DC.Input;
+      this.id = null; this.active = false; this.drag = false;
+      input.touchX = 0; input.touchY = 0; input.aimHold = false;
+      // The walk ends with this finger. If the other thumb is still holding
+      // ATTACK, its swing carries on.
 
       if (wasDrag && !far && dur < TAP_TIME && game.state === 'playing') {
         if (game.interactTarget) { game.tryInteract(); return; }
@@ -195,9 +208,24 @@
       }
     },
 
+    /* The ATTACK finger lifting. The walk, if the other thumb owns one, is
+       left alone. */
+    endAttack: function () {
+      const wasAttack = this.attack;
+      this.attack = false;
+      this.attackId = null;
+      if (!wasAttack) return;
+      // A press that never reached a simulation step could not have swung, so
+      // hand it one swing rather than swallowing the tap.
+      if (DC.Input.polls === this.pollAtDown) { DC.Input.tapFrames = 4; DC.Input.firing = true; return; }
+      if (!DC.Input.dragging) DC.Input.firing = false;
+    },
+
+    /* Everything down: a cancel, a blur, or a screen change. */
     release: function () {
       const input = DC.Input;
-      this.attack = false;
+      this.id = null; this.active = false; this.drag = false;
+      this.attack = false; this.attackId = null;
       input.touchX = 0; input.touchY = 0; input.aimHold = false;
       if (!input.dragging) input.firing = false;
     },

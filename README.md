@@ -17,18 +17,21 @@ folder instead:
 Audio starts on your first click or keypress — browsers will not let a page
 make noise before you touch it.
 
-### On an iPhone (one-handed)
+### On an iPhone (one hand, or two)
 
 The game re-lays itself out for a phone: the frame zooms to about 30 m so the
 torch still covers the screen, the minimap shrinks, and the run is driven by a
-thumb cluster in the bottom-right corner. Serve the folder from your Mac and
-open it on the phone's browser (same Wi-Fi):
+thumb cluster in the bottom-right corner plus an **ATTACK** pad in the
+bottom-left. Serve the folder from your Mac and open it on the phone's browser
+(same Wi-Fi):
 
     python3 -m http.server 8080    # then visit http://<mac-ip>:8080
 
-Add it to the home screen for a fullscreen, no-chrome run. Drag with your thumb
-to walk, put the fingertip where you want to hit to aim, and hold **ATTACK** to
-swing; the buttons handle the rest.
+Add it to the home screen for a fullscreen, no-chrome run. Two thumbs is the
+comfortable way to fight: drag with the right thumb to walk and aim, and hold
+**ATTACK** with the left — the two fingers are tracked apart, so you swing while
+you move. One thumb is still enough: drag to walk and aim, then tap **ATTACK**
+(or tap the glass) for a swing.
 
 ## Hosting it on GitHub Pages
 
@@ -68,17 +71,24 @@ browser chrome.
 
 In the merchant: click a row or press `1–7` to buy, `E`/`Esc` to leave.
 
-### One-handed on a phone
+### Phone controls (one hand or two)
 
-There is no second thumb, so the finger does two jobs and the buttons do the
-third. A swing is always a decision: nothing attacks just because a thumb is
-resting on the glass.
+The field finger does two jobs at once — the drag is a joystick that walks and
+the fingertip is a reticle that aims — and **ATTACK lives on a finger of its
+own**, so a second thumb can hold it while the first keeps walking. A swing is
+always a decision: nothing attacks just because a thumb is resting on the glass.
 
 | Gesture | Action |
 | --- | --- |
 | Drag anywhere | Walk (the drag is a joystick from where the finger landed) **and** aim — the fingertip is the reticle, so the crosshair on the glass is exactly where the blow or bolt goes |
 | Tap | Interact — merchant, portal, urn; one swing **at the point you tapped** if there is nothing to talk to |
-| **ATTACK** (hold) | Swing without moving. With no fingertip on the field it aims at the nearest demon the torch is showing; release to stop |
+| **ATTACK** (hold, either the right cluster or the left pad) | Swing. Held with the other thumb it swings *while you walk*; held alone it swings on the spot and aims itself at the nearest demon the torch is showing. Release to stop — the walk carries on |
+| **ATTACK pad** (bottom-left bar) | The same hold-button, placed where a second thumb already rests |
+
+Two-handed is the way to fight a room full of demons: right thumb drags (and
+keeps its own aim), left thumb holds ATTACK. Lifting either finger affects only
+its own job. A second finger dropped on the field is ignored, so a stray thumb
+cannot steal your aim mid-stride.
 | **WHIRL / BLINK / SHIELD** | Class ability |
 | **HEAL / MANA** | Drink a draught or wick oil |
 | **PACK** | Open the pack (bottom row: HEAL, MANA, SELL, CLOSE) |
@@ -87,10 +97,10 @@ resting on the glass.
 A touch that barely moves is a rest, not a walk, so a thumb resting on the glass
 will not wander you into a demon. Buttons sit in the bottom-right corner, biggest
 and nearest the thumb first: ATTACK, ability, (TRADE / DOWN when something is in
-reach), HEAL, MANA, PACK, PAUSE. ATTACK is the only hold-button — press and keep
-swinging, let go and stop — and sliding your thumb across it neither walks nor
-re-aims. While a finger is on the field the aim ray leaves the body along the
-aim, so you can see where a swing will land before it lands.
+reach), HEAL, MANA, PACK, PAUSE — and the ATTACK pad sits in the opposite corner.
+Sliding a thumb across the ATTACK button neither walks nor re-aims. While a
+finger is on the field the aim ray leaves the body along the aim, so you can see
+where a swing will land before it lands.
 
 
 In the pack: `1–9`/`0` or the arrows pick a row, `E` wears it, `X` (or right
