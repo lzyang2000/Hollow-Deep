@@ -44,9 +44,16 @@ In the merchant: click a row or press `1`–`7` to buy, `E`/`Esc` to leave.
 
 ## The rules that matter
 
-- Every level is a **300 m x 300 m** procedurally generated maze; every open
-  tile is reachable, and the maze is braided so it reads as rooms and
-  corridors rather than a hedge puzzle.
+- Every level is a **300 m x 300 m** procedurally generated dungeon: 12-18
+  rooms of assorted sizes joined by corridors that bend, occasionally run two
+  tiles wide, and are looped and alcoved so nothing is a dead end. Every open
+  tile is reachable. It is built space, not a hedge puzzle.
+- The **camera follows you**. It eases toward the actor, snaps across big
+  jumps, and gives way at the world edge so you can never walk out of frame.
+- Levels are crowded: demons, chests and **smashable urns** all over the
+  floor, plus rubble, bones, cobwebs, braziers and **wall torches** whose
+  warm glow marks the rooms. A floor is busy, but only a handful of demons
+  hunt at once (the aggro budget), so you can always pull a pack.
 - The portal sits about **half the maze's own walking span** from the stair —
   a real journey each level, never a 700 m slog.
 - Torchlight reveals **15 m** of the dungeon. Everything else is fogged, and
@@ -55,9 +62,10 @@ In the merchant: click a row or press `1`–`7` to buy, `E`/`Esc` to leave.
   ground you have already revealed. Once you find the portal it is marked, and
   an arrow points at it when it is off the minimap.
 - Demons **do not attack until they have seen you**. They mirror your three
-  careers, one notch weaker.
-- Kills and chests drop equipment (attack / defence), upgrades (movement
-  speed, attack speed, max HP / MP) or coin.
+  careers, one notch weaker. Lose sight of a hunter for a few seconds and it
+  gives up the chase and goes back to drifting.
+- Kills, chests and smashed urns drop equipment (attack / defence), upgrades
+  (movement speed, attack speed, max HP / MP) or coin.
 - Every **10th level** is a boss arena (no maze) with a merchant. The boss
   sleeps until you strike it; the portal opens when it dies.
 - Enemy stats grow with your power, but on a **30 % shallower slope**, so a
@@ -69,6 +77,7 @@ In the merchant: click a row or press `1`–`7` to buy, `E`/`Esc` to leave.
     node tmp/test_maze.js    # maze invariants: reachability, borders, arenas
     node tmp/smoke.js        # loads the real files, 9000 frames of headless play
     node tmp/balance.js      # no-cheat difficulty bot across the three careers
+    node tmp/duel.js         # worst-case stand-and-trade fights, career vs demon
 
 `tmp/` is scratch and is git-ignored. `docs/SPEC.md` holds the full
 specification and acceptance criteria; `docs/ARCHITECTURE.md` explains the

@@ -21,8 +21,12 @@ browser with no build step. The run ends on death; the score is depth reached.
 
 ## 4. Levels
 - 300 m x 300 m, 60 x 60 tiles of 5 m.
-- Normal level: perfect maze (recursive backtracker) that is then **braided**
-  (dead ends removed) and looped so it is readable, not a hairball.
+- Normal level: **rooms and corridors**. 12-18 rooms of assorted sizes
+  (4-11 tiles) are placed without touching, joined by a minimum spanning tree
+  of L-shaped corridors with jittered bends; 28 % of corridors are two tiles
+  wide. Extra links between nearby rooms add loops, and alcoves are carved off
+  the corridors. This is deliberately not a lattice maze: the level reads as
+  built space, and the harness asserts it holds a lot of open 2x2 floor.
 - **Every open tile must be reachable** — verified by flood fill at generation.
 - Boss level (every 10th): open arena, no maze, a handful of pillars.
 - Portal: a reachable tile about **half the level's own farthest walk** from
@@ -43,18 +47,29 @@ browser with no build step. The run ends on death; the score is depth reached.
 Demons mirror the three player careers, one tier weaker:
 | Demon | Mirrors | Behaviour |
 | --- | --- | --- |
-| Imp | Mage | Keeps distance, firebolts |
+| Imp | Mage | Keeps distance, firebolts (skittish, not a sprinter) |
 | Hellblade | Swordsman | Fast rusher, quick slashes |
 | Gorewarden | Knight | Slow, tanky, heavy overhead slam |
 
 - A demon **never attacks until it has seen the player** (line of sight within
   its sight radius). Once seen it hunts using a shared BFS flow field.
+- **Aggro budget**: only `AGGRO_BASE + AGGRO_PER_DEPTH * depth` demons (capped
+  at `AGGRO_MAX`) may hunt at once, so a crowded floor never becomes a swarm.
+  Being hit always wakes a demon regardless of the budget, and a kill frees
+  the slot.
+- **Leash**: a hunter that has lost line of sight and is beyond `LEASH_DIST`
+  for `LEASH_TIME` seconds gives up and drifts again, handing its slot back.
+- Population scales with depth: demons, chests and urns all grow, and every
+  level is dressed with rubble, bones, skulls, cobwebs, braziers and wall
+  torches that light the rooms.
 - Boss: large, hits far harder, dormant until the player lands the first hit.
 
 ## 7. Rewards
-Every kill and chest drops exactly one of: equipment (attack or defence),
-an upgrade (movement speed, attack speed, max HP, max MP), money, or (chests
-only) a potion. Equipment that is worse than what you wear is melted into coin.
+Every kill, chest and **smashed urn** drops exactly one of: equipment (attack
+or defence), an upgrade (movement speed, attack speed, max HP, max MP), money,
+or (chests and urns) a potion. Urns mostly hold coin and sometimes hold nothing
+but the satisfaction. Equipment that is worse than what you wear is melted into
+coin.
 
 ## 8. Scaling
 Player power index: `P(d) = 1 + 0.10*d + 0.5*equipIndex`, where `equipIndex` is
@@ -77,9 +92,16 @@ The fallen sky-city of Aetherfall and the Nine Seals; lore is delivered on the
 title screen, class selection, depth milestones, boss antechambers and death.
 
 ## 12. Acceptance checks
-1. Level generation always yields a fully reachable maze (flood fill == open tiles).
+1. Level generation always yields a fully reachable level (flood fill == open
+   tiles) whose rooms sit inside the border, never overlap, and are open at
+   their centre.
 2. Portal is reachable from the start on every normal level.
 3. Enemies deal zero damage before they have line of sight on the player.
 4. Boss deals zero damage before it has been struck.
 5. Enemy stat multiplier slope is exactly 0.7x the player's.
 6. A scripted headless run of 3000 simulated frames with combat throws no errors.
+7. The actor never leaves the frame: across a long scripted walk the camera
+   stays within the inner 82 % of the viewport around the player.
+8. The aggro budget holds — a ring of demons around the player wakes only up to
+   the cap, a kill frees a slot, a wound wakes regardless, and leashing calms.
+9. Urns break from a melee sweep and from an impact, and never pay out twice.
