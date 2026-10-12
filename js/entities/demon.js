@@ -1,0 +1,152 @@
+/* Demons. They mirror the player careers, they are one tier weaker, and they do
+   not attack until they have actually seen you. */
+(function (global) {
+  'use strict';
+  const DC = global.DC;
+  const M = DC.M;
+
+  let UID = 1;
+
+  DC.Demons = {
+    create: function (kind, x, y, depth, rng, player) {
+      const def = DC.DEMONS[kind];
+      const mult = DC.Progression.enemyMult(player || { bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMp: 0 }, depth);
+      const hp = Math.round(def.hp * mult);
+      return {
+        uid: UID++, kind, def, name: def.name,
+        x, y, r: def.r,
+        hp, maxHp: hp,
+        atk: def.atk * mult,
+        defVal: Math.round(def.def * mult * 0.7),
+        speed: def.speed * M.clamp(1 + (mult - 1) * 0.25, 1, 1.5),
+        state: 'idle', hasSeen: false, alertedT: 0,
+        attackCd: rng.range(0, 1), windup: 0, windupMax: 0,
+        hitFlash: 0, kx: 0, ky: 0,
+        anim: rng.range(0, 6.28), facing: rng.range(0, 6.28),
+        wanderT: 0, wx: 0, wy: 0, strafe: rng.chance(0.5) ? 1 : -1,
+        dead: false, deadT: 0, mult,
+      };
+    },
+
+    update: function (world, d, dt, game) {
+      if (d.dead) { d.deadT += dt; return; }
+      const p = world.actor;
+      const def = d.def;
+      d.anim += dt;
+      d.attackCd -= dt;
+      d.hitFlash = Math.max(0, d.hitFlash - dt);
+
+      /* --- sight gate: nothing happens until it has seen the player ------ */
+      if (!d.hasSeen && p && !p.dead) {
+        const dist = Math.hypot(p.x - d.x, p.y - d.y);
+        if (dist <= def.sight && DC.hasLOS(world, d.x, d.y, p.x, p.y)) {
+          d.hasSeen = true;
+          d.state = 'hunt';
+          DC.Audio.play('spot', { pitch: def.id === 'gorewarden' ? 0.65 : def.id === 'imp' ? 1.4 : 1.0 });
+          DC.Props.floater(world, d.x, d.y - d.r - 0.5, '!', '#ff8a5c', { life: 0.7, size: 15 });
+        }
+      }
+
+      let vx = 0, vy = 0;
+      const dist = p ? Math.hypot(p.x - d.x, p.y - d.y) : 999;
+      const los = p ? DC.hasLOS(world, d.x, d.y, p.x, p.y) : false;
+
+      if (!d.hasSeen || !p || p.dead) {
+        // Idle drift. Keeps the level feeling alive without giving anything away.
+        d.wanderT -= dt;
+        if (d.wanderT <= 0) {
+          d.wanderT = game.rng.range(1.6, 4.2);
+          const a = game.rng.range(0, Math.PI * 2);
+          d.wx = Math.cos(a); d.wy = Math.sin(a);
+        }
+        vx = d.wx * def.speed * 0.3;
+        vy = d.wy * def.speed * 0.3;
+      } else {
+        d.state = 'hunt';
+        const dir = DC.Flow.step(world, d);
+        const sp = d.speed;
+        if (def.attackKind === 'ranged') {
+          const keep = def.keepRange;
+          if (dist > keep + 2.5) {
+            if (dir) { vx = dir.x * sp; vy = dir.y * sp; }
+            else { const a = Math.atan2(p.y - d.y, p.x - d.x); vx = Math.cos(a) * sp; vy = Math.sin(a) * sp; }
+          } else if (dist < keep - 3) {
+            const a = Math.atan2(d.y - p.y, d.x - p.x);
+            vx = Math.cos(a) * sp; vy = Math.sin(a) * sp;
+          } else if (los) {
+            const a = Math.atan2(p.y - d.y, p.x - d.x) + d.strafe * Math.PI / 2;
+            vx = Math.cos(a) * sp * 0.7; vy = Math.sin(a) * sp * 0.7;
+            if (game.rng.chance(0.01)) d.strafe *= -1;
+          }
+        } else {
+          if (dist > def.reach * 0.8) {
+            if (dir) { vx = dir.x * sp; vy = dir.y * sp; }
+            else { const a = Math.atan2(p.y - d.y, p.x - d.x); vx = Math.cos(a) * sp; vy = Math.sin(a) * sp; }
+          }
+        }
+        if (vx || vy) d.facing = Math.atan2(vy, vx);
+      }
+
+      /* --- attacks ------------------------------------------------------- */
+      if (d.hasSeen && p && !p.dead && d.windup <= 0 && d.attackCd <= 0) {
+        if (def.attackKind === 'ranged') {
+          if (los && dist < def.keepRange + 6) {
+            d.windup = 0.35; d.windupMax = 0.35;
+            d.facing = Math.atan2(p.y - d.y, p.x - d.x);
+          }
+        } else if (dist <= def.reach + p.r + 0.25 && los) {
+          d.windup = def.id === 'gorewarden' ? 0.6 : 0.32;
+          d.windupMax = d.windup;
+          d.facing = Math.atan2(p.y - d.y, p.x - d.x);
+          d.aim = d.facing;
+        }
+      } else if (d.windup > 0) {
+        d.windup -= dt;
+        d.aim = d.aim == null ? d.facing : d.aim;
+        if (d.windup <= 0) {
+          d.attackCd = def.attackCd * game.rng.range(0.9, 1.15);
+          if (def.attackKind === 'ranged') {
+            const lead = 0.28;
+            const tx = p.x + (p.lastVx || 0) * lead, ty = p.y + (p.lastVy || 0) * lead;
+            const a = Math.atan2(ty - d.y, tx - d.x);
+            world.projectiles.push(DC.Props.projectile({
+              x: d.x + Math.cos(a) * (d.r + 0.3), y: d.y + Math.sin(a) * (d.r + 0.3),
+              vx: Math.cos(a) * def.projSpeed, vy: Math.sin(a) * def.projSpeed,
+              dmg: d.atk, side: 'demon', life: def.projLife, kind: 'fire',
+              color: '#ff8a5c', r: 0.32, sourceName: def.name,
+            }));
+            DC.Audio.play('cast', { pitch: 1.25 });
+          } else if (def.id === 'gorewarden') {
+            DC.Props.ring(world, d.x, d.y, def.reach + 1.2, { color: '#ff5c5c', life: 0.35, width: 4 });
+            DC.Audio.play('slam');
+            game.shake(0.5);
+            if (Math.hypot(p.x - d.x, p.y - d.y) <= def.reach + 1.2 + p.r) {
+              DC.Combat.damagePlayer(world, p, d.atk, game, { fromX: d.x, fromY: d.y, knock: def.knockback || 2.4, killer: def.name });
+            }
+          } else {
+            DC.Combat.sweep(world, { side: 'demon', x: d.x, y: d.y, aim: d.aim, name: def.name },
+              { arc: def.arc, reach: def.reach, dmg: d.atk, knock: def.knockback || 1.6 }, game);
+            DC.Audio.play('swing', { pitch: 0.9 });
+          }
+        }
+      }
+
+      /* --- separation so a pack does not become one blob ------------------ */
+      for (let i = 0; i < world.demons.length; i++) {
+        const o = world.demons[i];
+        if (o === d || o.dead) continue;
+        const dx = d.x - o.x, dy = d.y - o.y;
+        const dd = Math.hypot(dx, dy);
+        const min = d.r + o.r;
+        if (dd > 0.001 && dd < min) {
+          vx += (dx / dd) * (min - dd) * 4;
+          vy += (dy / dd) * (min - dd) * 4;
+        }
+      }
+
+      vx += d.kx; vy += d.ky;
+      d.kx *= Math.pow(0.0008, dt); d.ky *= Math.pow(0.0008, dt);
+      DC.moveBody(world, d, vx * dt, vy * dt);
+    },
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
