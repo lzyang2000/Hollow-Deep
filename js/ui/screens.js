@@ -177,22 +177,30 @@
   };
 
   /* ---------------- career select ----------------
-     Three cards side by side is the desktop layout. On a phone three cards is
-     three unreadable slivers, so the narrow layout shows one career at a time
-     with arrows -- same information, one thumb. */
+     Two cards side by side is the desktop layout, and with only two they get
+     the room the third one used to take. On a phone even two is two
+     unreadable slivers, so the narrow layout shows one career at a time with
+     arrows -- same information, one thumb. */
   DC.UI.classCards = function (game) {
     const W = game.cam.w, H = game.cam.h, L = DC.Layout;
     if (L.narrow) {
       const sel = game.hoverClass || DC.CLASS_ORDER[0];
       const cw = Math.min(340, W - 24);
       const y = 84;
-      const ch = Math.min(400, H - y - 72);
+      // Four stat rows, an ability and two lines of it: 336 px is the whole
+      // card with room to spare. The old 400 left a third of a phone screen
+      // of empty panel under the last line.
+      const ch = Math.min(336, H - y - 72);
       return [{ id: sel, x: (W - cw) / 2, y: y, w: cw, h: ch, single: true }];
     }
     const n = DC.CLASS_ORDER.length;
     const gap = 22;
-    const cw = Math.min(320, (W - gap * (n + 1)) / n);
-    const ch = Math.min(430, H * 0.66);
+    // Two careers means two wider cards, not two narrow ones stranded in the
+    // middle of the screen with a gap where the Swordsman used to be.
+    const cw = Math.min(n <= 2 ? 372 : 320, (W - gap * (n + 1)) / n);
+    // ...and a shorter one, because two careers fill less than three and a
+    // card that runs 130 px past its own last line reads as a mistake.
+    const ch = Math.min(n <= 2 ? 344 : 430, H * 0.66);
     const totalW = cw * n + gap * (n - 1);
     const x0 = (W - totalW) / 2;
     const y0 = (H - ch) / 2 + 20;
@@ -210,7 +218,7 @@
     return {
       prev: { x: 6, y: c.y + c.h / 2 - s / 2, w: s, h: s },
       next: { x: game.cam.w - 6 - s, y: c.y + c.h / 2 - s / 2, w: s, h: s },
-      choose: { x: c.x, y: c.y + c.h + 10, w: c.w, h: bh, label: 'DESCEND AS THE ' + DC.CLASSES[game.hoverClass || 'mage'].name.toUpperCase(), primary: true },
+      choose: { x: c.x, y: c.y + c.h + 22, w: c.w, h: bh, label: 'DESCEND AS THE ' + DC.CLASSES[game.hoverClass || 'mage'].name.toUpperCase(), primary: true },
     };
   };
 
@@ -314,11 +322,16 @@
       ctx.lineWidth = 1;
       ctx.strokeRect(nav.prev.x + 0.5, nav.prev.y + 0.5, nav.prev.w - 1, nav.prev.h - 1);
       ctx.strokeRect(nav.next.x + 0.5, nav.next.y + 0.5, nav.next.w - 1, nav.next.h - 1);
+      // The dots go in the gap between the card and CHOOSE, not at the arrow
+      // row's height: mid-card is where the stat rows are, and a dot landing
+      // on "MP 130" is unreadable whatever the career count.
+      const card = DC.UI.classCards(game)[0];
+      const dotY = card.y + card.h + 9;
       const dots = DC.CLASS_ORDER.length;
       for (let i = 0; i < dots; i++) {
         const on = DC.CLASS_ORDER[i] === sel.id;
         ctx.beginPath();
-        ctx.arc(W / 2 + (i - (dots - 1) / 2) * 16, nav.prev.y - 14, on ? 4 : 3, 0, Math.PI * 2);
+        ctx.arc(W / 2 + (i - (dots - 1) / 2) * 16, dotY, on ? 4 : 3, 0, Math.PI * 2);
         ctx.fillStyle = on ? sel.color : 'rgba(255,255,255,0.25)';
         ctx.fill();
       }

@@ -1,4 +1,4 @@
-/* The delver. Three careers, one shared body: WASD move, mouse aim, click attack,
+/* The delver. Two careers, one shared body: WASD move, mouse aim, click attack,
    Space ability. */
 (function (global) {
   'use strict';
@@ -7,9 +7,16 @@
 
   DC.Player = {
     create: function (classId) {
-      const cls = DC.CLASSES[classId];
+      /* A career this build does not offer -- an old save file, an old
+         bookmark, an ?auto=swordsman link from before the Swordsman was
+         retired -- still has to produce a body. Walk the alias table, then
+         fall back to the first career, rather than handing back an object with
+         no stats on it and crashing the first recalc. */
+      let id = classId;
+      if (!DC.CLASSES[id]) id = (DC.CLASS_ALIAS && DC.CLASS_ALIAS[id]) || DC.CLASS_ORDER[0];
+      const cls = DC.CLASSES[id];
       const p = {
-        kind: 'player', cls, classId,
+        kind: 'player', cls, classId: id,
         x: 0, y: 0, r: 0.7,
         bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMp: 0, bonusMove: 0, bonusAtkSpeed: 0,
         weapon: null, armor: null,
@@ -211,13 +218,7 @@
         p.mp -= ab.mp;
         p.abilityCd = ab.cd;
       }
-      if (ab.id === 'whirlwind') {
-        p.swing = { t: 0.3, dur: 0.3, arc: 360, reach: p.cls.reach + 0.7, dir: p.aim, kind: 'whirl' };
-        DC.Combat.sweep(world, { side: 'player', x: p.x, y: p.y, aim: p.aim },
-          { arc: 360, reach: p.cls.reach + 0.7, dmg: p.atk * 1.5, knock: 2.6 }, game);
-        DC.Props.ring(world, p.x, p.y, p.cls.reach + 0.9, { color: p.cls.color, life: 0.4, width: 4 });
-        DC.Audio.play('whirl');
-      } else if (ab.id === 'shieldwall') {
+      if (ab.id === 'shieldwall') {
         p.shieldT = 3.2;
         DC.Props.ring(world, p.x, p.y, 2.4, { color: p.cls.color, life: 0.5, width: 4 });
         DC.Audio.play('shield');
