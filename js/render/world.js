@@ -13,6 +13,67 @@
     { floor: '#4f443d', floor2: '#443a34', wall: '#110c0a', wallTop: '#2c231e', edge: '#8b7355', glow: '#ffd166', rim: 'rgba(255,209,102,0.17)' },
   ];
 
+  /* The straight line where a wall meets the floor is the single biggest
+     tell that a level is a tilemap. Break it: every edge gets a rock lip of
+     its own depth plus a boulder poking out at a hash-chosen offset, and the
+     contact shadow follows the lip instead of the tile border. */
+  function rockEdge(world, ctx, x, y, ts, tx, ty, P, px) {
+    const sh = Math.max(2, px * 0.9);
+    const t = Math.max(1, px * 0.14);          // thickness of the lit rock face
+    /* orient 'h' = the wall runs above or below this tile; atEnd picks which
+       side. Everything is drawn inside the FLOOR tile so the wall pass cannot
+       cover it, and it pokes inward by a hash-chosen amount. */
+    const side = function (hx, hy, orient, atEnd) {
+      const h = DC.hash2(hx, hy, world.seed + 31);
+      const lip = ts * (0.06 + h * 0.16);
+      const bh = DC.hash2(hx * 13 + 7, hy * 17 + 3, world.seed + 57);
+      if (orient === 'h') {
+        // the rock face line, and how far the rock reaches into the floor
+        const faceY = atEnd ? y + ts - lip : y;
+        ctx.fillStyle = P.wall;
+        ctx.fillRect(x, faceY, ts, lip);
+        ctx.fillStyle = P.wallTop;
+        ctx.fillRect(x, atEnd ? faceY : faceY + lip - t, ts, t);
+        // one boulder, deeper and narrower than the lip
+        const bw = ts * (0.16 + bh * 0.22);
+        const bx = x + (ts - bw) * bh;
+        const deep = lip * 1.7;
+        const by = atEnd ? faceY - (deep - lip) : faceY;
+        ctx.fillStyle = P.wall;
+        ctx.fillRect(bx, by, bw, deep);
+        ctx.fillStyle = P.wallTop;
+        ctx.fillRect(bx, atEnd ? by : by + deep - t, bw, t);
+        // contact shadow hugging the lip
+        ctx.fillStyle = 'rgba(0,0,0,0.34)';
+        ctx.fillRect(x, atEnd ? faceY - sh : faceY + lip, ts, sh);
+        ctx.fillStyle = 'rgba(0,0,0,0.14)';
+        ctx.fillRect(x, atEnd ? faceY - sh * 2 : faceY + lip + sh, ts, sh);
+      } else {
+        const faceX = atEnd ? x + ts - lip : x;
+        ctx.fillStyle = P.wall;
+        ctx.fillRect(faceX, y, lip, ts);
+        ctx.fillStyle = P.wallTop;
+        ctx.fillRect(atEnd ? faceX : faceX + lip - t, y, t, ts);
+        const bh2 = ts * (0.16 + bh * 0.22);
+        const by2 = y + (ts - bh2) * bh;
+        const deep = lip * 1.7;
+        const bx2 = atEnd ? faceX - (deep - lip) : faceX;
+        ctx.fillStyle = P.wall;
+        ctx.fillRect(bx2, by2, deep, bh2);
+        ctx.fillStyle = P.wallTop;
+        ctx.fillRect(atEnd ? bx2 : bx2 + deep - t, by2, t, bh2);
+        ctx.fillStyle = 'rgba(0,0,0,0.34)';
+        ctx.fillRect(atEnd ? faceX - sh : faceX + lip, y, sh, ts);
+        ctx.fillStyle = 'rgba(0,0,0,0.14)';
+        ctx.fillRect(atEnd ? faceX - sh * 2 : faceX + lip + sh, y, sh, ts);
+      }
+    };
+    if (DC.isSolid(world, tx, ty - 1)) side(tx * 2 + 1, ty * 3 + 2, 'h', false);
+    if (DC.isSolid(world, tx, ty + 1)) side(tx * 5 + 3, ty * 7 + 4, 'h', true);
+    if (DC.isSolid(world, tx - 1, ty)) side(tx * 11 + 5, ty * 13 + 6, 'v', false);
+    if (DC.isSolid(world, tx + 1, ty)) side(tx * 17 + 7, ty * 19 + 8, 'v', true);
+  }
+
   DC.Render = DC.Render || {};
   DC.Render.palette = PALETTES[0];
 
@@ -37,7 +98,9 @@
     const ts = T * px;
     const seam = Math.max(1, px * 0.06);
 
-    // Floors first, with cheap contact shadow against walls.
+    // Floors. Tone varies in 2x2 patches so the shading never lines up with
+    // the slab seams, and the seams themselves sit on a staggered coarse
+    // lattice -- built flagstones, not graph paper.
     for (let ty = ty0; ty <= ty1; ty++) {
       for (let tx = tx0; tx <= tx1; tx++) {
         const i = ty * G + tx;
@@ -45,12 +108,17 @@
         if (world.grid[i] !== 1) continue;
         const x = tx * T * px + ox, y = ty * T * px + oy;
         const h = DC.hash2(tx, ty, world.seed);
-        ctx.fillStyle = h > 0.62 ? P.floor2 : P.floor;
+        const hp = DC.hash2(tx >> 1, ty >> 1, world.seed + 991);
+        ctx.fillStyle = hp > 0.58 ? P.floor2 : P.floor;
         ctx.fillRect(x, y, ts + 1, ts + 1);
-        // slab seams so corridors read as built floor, not flat paint
-        ctx.fillStyle = 'rgba(0,0,0,0.22)';
-        ctx.fillRect(x, y, seam, ts + 1);
-        ctx.fillRect(x, y, ts + 1, seam);
+        if (((tx + (ty & 1)) & 1) === 0) {
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
+          ctx.fillRect(x, y, seam, ts + 1);
+        }
+        if (((ty + (tx & 1)) & 1) === 0) {
+          ctx.fillStyle = 'rgba(0,0,0,0.12)';
+          ctx.fillRect(x, y, ts + 1, seam);
+        }
         if (h > 0.86) {
           ctx.fillStyle = 'rgba(255,255,255,0.045)';
           ctx.fillRect(x + ts * 0.2, y + ts * 0.25, ts * 0.6, ts * 0.5);
@@ -59,16 +127,13 @@
           ctx.fillStyle = 'rgba(0,0,0,0.16)';
           ctx.fillRect(x + ts * 0.15, y + ts * 0.6, ts * 0.35, ts * 0.22);
         }
-        // contact shadow strips
-        const sw = Math.max(2, px * 1.1);
-        if (DC.isSolid(world, tx, ty - 1)) { ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(x, y, ts, sw); ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.fillRect(x, y + sw, ts, sw); }
-        if (DC.isSolid(world, tx, ty + 1)) { ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.fillRect(x, y + ts - sw, ts, sw); ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.fillRect(x, y + ts - sw * 2, ts, sw); }
-        if (DC.isSolid(world, tx - 1, ty)) { ctx.fillStyle = 'rgba(0,0,0,0.32)'; ctx.fillRect(x, y, sw, ts); ctx.fillStyle = 'rgba(0,0,0,0.14)'; ctx.fillRect(x + sw, y, sw, ts); }
-        if (DC.isSolid(world, tx + 1, ty)) { ctx.fillStyle = 'rgba(0,0,0,0.32)'; ctx.fillRect(x + ts - sw, y, sw, ts); ctx.fillStyle = 'rgba(0,0,0,0.14)'; ctx.fillRect(x + ts - sw * 2, y, sw, ts); }
+        rockEdge(world, ctx, x, y, ts, tx, ty, P, px);
       }
     }
 
-    // Walls as beveled blocks.
+    // Walls are one rock mass, not a row of identical boxes: no per-tile
+    // bevel. A wall tile only ever shows its dark body plus mottling, and the
+    // only lines across it are occasional mortar on a coarse 2-tile lattice.
     for (let ty = ty0; ty <= ty1; ty++) {
       for (let tx = tx0; tx <= tx1; tx++) {
         const i = ty * G + tx;
@@ -80,28 +145,23 @@
         const h = DC.hash2(tx * 3 + 1, ty * 7 + 5, world.seed);
         ctx.fillStyle = P.wall;
         ctx.fillRect(x, y, ts + 1, ts + 1);
-        // top face of the block
-        ctx.fillStyle = P.wallTop;
-        ctx.fillRect(x + ts * 0.05, y + ts * 0.05, ts * 0.9, ts * 0.56);
-        // masonry seams on the top face
-        ctx.fillStyle = 'rgba(0,0,0,0.42)';
-        ctx.fillRect(x + ts * 0.05, y + ts * 0.05, ts * 0.9, seam);
-        ctx.fillRect(x + ts * 0.05, y + ts * 0.33, ts * 0.9, seam);
-        ctx.fillRect(x + ts * (0.05 + (0.18 + h * 0.5) * 0.9), y + ts * 0.05, seam, ts * 0.56);
-        // lit upper edge, shaded lower edge
-        ctx.fillStyle = 'rgba(255,255,255,0.16)';
-        ctx.fillRect(x, y, ts, Math.max(1, px * 0.12));
-        ctx.fillStyle = 'rgba(0,0,0,0.55)';
-        ctx.fillRect(x, y + ts - Math.max(2, px * 0.16), ts, Math.max(2, px * 0.16));
-        ctx.fillRect(x + ts - Math.max(2, px * 0.16), y, Math.max(2, px * 0.16), ts);
-        if (h > 0.72) {
-          ctx.fillStyle = 'rgba(255,255,255,0.05)';
-          const bx = x + ts * (0.15 + h * 0.4), by = y + ts * (0.1 + (h * 0.7));
-          ctx.fillRect(bx, by, ts * 0.18, ts * 0.1);
+        // mottled rock body
+        if (h > 0.45) {
+          ctx.fillStyle = P.wallTop;
+          ctx.globalAlpha = 0.30 + h * 0.25;
+          const bw = ts * (0.3 + h * 0.4), bh = ts * (0.28 + ((h * 3) % 1) * 0.4);
+          ctx.fillRect(x + ts * 0.08 + ((h * 5) % 1) * (ts - bw - ts * 0.16),
+            y + ts * 0.08 + ((h * 7) % 1) * (ts - bh - ts * 0.16), bw, bh);
+          ctx.globalAlpha = 1;
         }
-        if (h < 0.16) {
-          ctx.fillStyle = 'rgba(0,0,0,0.35)';
-          ctx.fillRect(x + ts * 0.2, y + ts * 0.62, ts * 0.5, ts * 0.08);
+        // mortar only on a coarse lattice, and only sometimes
+        if (((tx & 1) === 0) && h > 0.62) {
+          ctx.fillStyle = 'rgba(0,0,0,0.5)';
+          ctx.fillRect(x, y + ts * (0.3 + h * 0.4), ts, seam);
+        }
+        if (((ty & 1) === 0) && h < 0.2) {
+          ctx.fillStyle = 'rgba(0,0,0,0.45)';
+          ctx.fillRect(x + ts * (0.25 + h * 0.5), y, seam, ts);
         }
         // rim light where a wall face meets revealed floor
         if (disc[i]) {
@@ -109,6 +169,7 @@
           if (openS) ctx.fillRect(x, y + ts - Math.max(2, px * 0.16), ts, Math.max(2, px * 0.16));
           if (openE) ctx.fillRect(x + ts - Math.max(2, px * 0.16), y, Math.max(2, px * 0.16), ts);
           if (openN) ctx.fillRect(x, y, ts, Math.max(1, px * 0.1));
+          if (openW) ctx.fillRect(x, y, Math.max(2, px * 0.16), ts);
         }
       }
     }
@@ -120,7 +181,16 @@
       const d = world.decor[i];
       if (Math.abs(d.x - cx) > vr || Math.abs(d.y - cy) > vr) continue;
       const tx = Math.floor(d.x / T), ty = Math.floor(d.y / T);
-      if (!disc[ty * G + tx]) continue;
+      let seen = disc[ty * G + tx];
+      // A wall torch lives on a wall tile, which the fog never discovers on
+      // its own -- it counts as seen as soon as the floor in front of it is.
+      if (!seen && d.wall) {
+        for (let k = 0; k < 4; k++) {
+          const nx = tx + DC.Maze.DIRS[k][0], ny = ty + DC.Maze.DIRS[k][1];
+          if (nx >= 0 && ny >= 0 && nx < G && ny < G && disc[ny * G + nx]) { seen = true; break; }
+        }
+      }
+      if (!seen) continue;
       DC.Render.decor(ctx, d, cam);
     }
   };
@@ -183,12 +253,72 @@
         ctx.lineWidth = Math.max(1, s * 0.05);
         ctx.beginPath(); ctx.arc(0, 0, s * 0.16, 0, Math.PI * 2); ctx.stroke();
         break;
+      case 'skull':
+        ctx.fillStyle = 'rgba(216,214,196,0.5)';
+        ctx.beginPath(); ctx.arc(0, 0, s * 0.16, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-s * 0.1, s * 0.12, s * 0.2, s * 0.08);
+        ctx.fillStyle = 'rgba(20,18,16,0.7)';
+        ctx.beginPath(); ctx.arc(-s * 0.06, -s * 0.03, s * 0.045, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(s * 0.06, -s * 0.03, s * 0.045, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'web':
+        ctx.strokeStyle = 'rgba(200,210,225,0.16)';
+        ctx.lineWidth = Math.max(1, s * 0.03);
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * Math.PI * 1.2 - 0.3;
+          ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * s * 0.4, Math.sin(a) * s * 0.4); ctx.stroke();
+        }
+        for (let i = 1; i <= 3; i++) {
+          ctx.beginPath(); ctx.arc(0, 0, s * 0.12 * i, -0.3, Math.PI * 0.9); ctx.stroke();
+        }
+        break;
+      case 'brazier':
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.beginPath(); ctx.ellipse(0, s * 0.2, s * 0.22, s * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(52,44,40,0.85)';
+        ctx.fillRect(-s * 0.05, -s * 0.1, s * 0.1, s * 0.3);
+        ctx.beginPath(); ctx.ellipse(0, -s * 0.12, s * 0.2, s * 0.09, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,150,60,0.5)';
+        ctx.beginPath(); ctx.ellipse(0, -s * 0.2, s * 0.11, s * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,220,140,0.45)';
+        ctx.beginPath(); ctx.ellipse(0, -s * 0.24, s * 0.05, s * 0.09, 0, 0, Math.PI * 2); ctx.fill();
+        break;
+      case 'debris':
+        ctx.fillStyle = 'rgba(40,44,52,0.5)';
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 + d.tint;
+          const rr = s * (0.12 + ((i * 37) % 11) / 40);
+          ctx.fillRect(Math.cos(a) * s * 0.28, Math.sin(a) * s * 0.24, rr, rr * 0.6);
+        }
+        break;
+      case 'sconce': {
+        // Wall-mounted torch: bracket, flame and a warm wash down the wall.
+        const px = cam.pxPerM;
+        ctx.restore();
+        ctx.save();
+        const wx = cam.worldToScreenX(d.x), wy = cam.worldToScreenY(d.y);
+        const nx = DC.Maze.DIRS[d.dir][0], ny = DC.Maze.DIRS[d.dir][1];
+        const fx = wx + nx * px * 0.42, fy = wy + ny * px * 0.42;
+        const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, px * 2.6);
+        g.addColorStop(0, 'rgba(255,170,80,0.20)');
+        g.addColorStop(1, 'rgba(255,170,80,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(fx, fy, px * 2.6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(46,38,32,0.9)';
+        ctx.fillRect(wx - px * 0.08, wy - px * 0.08, px * 0.16, px * 0.34);
+        const fl = 0.8 + 0.2 * Math.sin(d.tint * 30 + performance.now() * 0.004);
+        ctx.fillStyle = 'rgba(255,158,66,0.75)';
+        ctx.beginPath(); ctx.ellipse(fx, fy - px * 0.1, px * 0.11, px * 0.2 * fl, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,232,170,0.8)';
+        ctx.beginPath(); ctx.ellipse(fx, fy - px * 0.14, px * 0.05, px * 0.1 * fl, 0, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
       default: break;
     }
     ctx.restore();
   };
 
-  /* Chests, portal, merchant. Drawn only when the player can actually see them. */
+  /* Chests, urns, portal, merchant. Drawn only when the player can see them. */
   DC.Render.props = function (ctx, world, cam, fog) {
     const p = world.actor;
     for (let i = 0; i < world.chests.length; i++) {
@@ -196,11 +326,42 @@
       if (!fog.visible(world, p, c.x, c.y, 0.5)) continue;
       DC.Render.chest(ctx, c, cam);
     }
+    for (let i = 0; i < world.urns.length; i++) {
+      const u = world.urns[i];
+      if (u.broken) continue;
+      if (!fog.visible(world, p, u.x, u.y, 0.4)) continue;
+      DC.Render.urn(ctx, u, cam);
+    }
     if (world.merchant && fog.visible(world, p, world.merchant.x, world.merchant.y, 1)) {
       DC.Render.merchant(ctx, world.merchant, cam);
     }
     const pt = world.portal;
     if (pt && pt.active && fog.visible(world, p, pt.x, pt.y, 1.5)) DC.Render.portal(ctx, pt, cam);
+  };
+
+  DC.Render.urn = function (ctx, u, cam) {
+    const x = cam.worldToScreenX(u.x), y = cam.worldToScreenY(u.y);
+    const s = cam.pxPerM;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath(); ctx.ellipse(0, s * 0.42, s * 0.5, s * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+    const body = u.variant === 0 ? '#8c6242' : (u.variant === 1 ? '#5f6b74' : '#7a5a52');
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.34, s * 0.34);
+    ctx.quadraticCurveTo(-s * 0.5, -s * 0.1, -s * 0.16, -s * 0.34);
+    ctx.lineTo(s * 0.16, -s * 0.34);
+    ctx.quadraticCurveTo(s * 0.5, -s * 0.1, s * 0.34, s * 0.34);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(-s * 0.18, -s * 0.42, s * 0.36, s * 0.1);
+    ctx.fillStyle = 'rgba(255,255,255,0.14)';
+    ctx.fillRect(-s * 0.3, -s * 0.12, s * 0.12, s * 0.3);
+    ctx.strokeStyle = 'rgba(20,16,14,0.5)';
+    ctx.lineWidth = Math.max(1, s * 0.04);
+    ctx.beginPath(); ctx.moveTo(-s * 0.28, s * 0.02); ctx.lineTo(s * 0.28, s * 0.02); ctx.stroke();
+    ctx.restore();
   };
 
   DC.Render.chest = function (ctx, c, cam) {
