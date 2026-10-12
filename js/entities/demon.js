@@ -4,6 +4,7 @@
   'use strict';
   const DC = global.DC;
   const M = DC.M;
+  const C = DC.C;
 
   let UID = 1;
 
@@ -28,6 +29,37 @@
       };
     },
 
+    /* Aggro budget. Waking costs a slot; dying or leashing gives it back. */
+    aggroOpen: function (world) {
+      const cap = Math.min(C.AGGRO_MAX,
+        Math.round(C.AGGRO_BASE + C.AGGRO_PER_DEPTH * (world.depth || 1)));
+      return (world.awakeCount || 0) < cap;
+    },
+
+    wake: function (world, d, game, opts) {
+      if (d.hasSeen) return false;
+      d.hasSeen = true;
+      d.state = 'hunt';
+      d.lostT = 0;
+      world.awakeCount = (world.awakeCount || 0) + 1;
+      if (!(opts && opts.silent)) {
+        const id = d.def.id;
+        DC.Audio.play('spot', { pitch: id === 'gorewarden' ? 0.65 : id === 'imp' ? 1.4 : 1.0 });
+        DC.Props.floater(world, d.x, d.y - d.r - 0.5, '!', '#ff8a5c', { life: 0.7, size: 15 });
+      }
+      return true;
+    },
+
+    calm: function (world, d) {
+      if (!d.hasSeen) return false;
+      d.hasSeen = false;
+      d.state = 'idle';
+      d.windup = 0;
+      d.lostT = 0;
+      world.awakeCount = Math.max(0, (world.awakeCount || 0) - 1);
+      return true;
+    },
+
     update: function (world, d, dt, game) {
       if (d.dead) { d.deadT += dt; return; }
       const p = world.actor;
@@ -36,14 +68,13 @@
       d.attackCd -= dt;
       d.hitFlash = Math.max(0, d.hitFlash - dt);
 
-      /* --- sight gate: nothing happens until it has seen the player ------ */
+      /* --- sight gate: nothing happens until it has seen the player ------
+         A floor is crowded, but only AGGRO of them hunt at once, so you can
+         always pull a pack instead of being eaten by the whole level. */
       if (!d.hasSeen && p && !p.dead) {
         const dist = Math.hypot(p.x - d.x, p.y - d.y);
-        if (dist <= def.sight && DC.hasLOS(world, d.x, d.y, p.x, p.y)) {
-          d.hasSeen = true;
-          d.state = 'hunt';
-          DC.Audio.play('spot', { pitch: def.id === 'gorewarden' ? 0.65 : def.id === 'imp' ? 1.4 : 1.0 });
-          DC.Props.floater(world, d.x, d.y - d.r - 0.5, '!', '#ff8a5c', { life: 0.7, size: 15 });
+        if (dist <= def.sight && DC.hasLOS(world, d.x, d.y, p.x, p.y) && DC.Demons.aggroOpen(world)) {
+          DC.Demons.wake(world, d, game);
         }
       }
 
@@ -85,6 +116,15 @@
           }
         }
         if (vx || vy) d.facing = Math.atan2(vy, vx);
+
+        /* Leash: break sight, get away, and it eventually forgets you. That
+           hands its aggro slot to whoever you meet next. */
+        if (!los || dist > C.LEASH_DIST) {
+          d.lostT = (d.lostT || 0) + dt;
+          if (d.lostT >= C.LEASH_TIME && dist > C.LEASH_DIST * 0.6) DC.Demons.calm(world, d);
+        } else {
+          d.lostT = 0;
+        }
       }
 
       /* --- attacks ------------------------------------------------------- */
