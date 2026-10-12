@@ -187,7 +187,7 @@
       ctx.moveTo(rx, ry - 12); ctx.lineTo(rx, ry - 9);
       ctx.moveTo(rx, ry + 9); ctx.lineTo(rx, ry + 12);
       ctx.stroke();
-    } else if (DC.Touch && DC.Touch.active) {
+    } else if (DC.Touch && (DC.Touch.active || DC.Touch.attack)) {
       /* On a phone the fingertip IS the cursor, so the drawing has to say so in
          three parts: a crosshair under the thumb, the aim ray leaving the body
          along the aim the swing will use, and -- only while the joystick is
@@ -196,7 +196,9 @@
          is measured from the body to exactly that point on the glass. */
       const px = cam.worldToScreenX(p.x), py = cam.worldToScreenY(p.y);
       const fx = DC.Touch.cx, fy = DC.Touch.cy;
-      const aiming = !DC.Touch.attack;   // a thumb on ATTACK has no reticle
+      // The crosshair belongs to the field finger. A second thumb parked on
+      // ATTACK changes nothing about where the aim is or where it is drawn.
+      const aiming = DC.Touch.active;
 
       if (DC.Input.touchX || DC.Input.touchY) {
         ctx.strokeStyle = 'rgba(255,255,255,0.16)';
@@ -261,6 +263,23 @@
       } else if (b.id === 'interact') {
         edge = '#8ef0c0'; text = '#8ef0c0'; fill = 'rgba(20,40,32,0.72)';
       }
+      if (b.pad) {
+        // The left-hand ATTACK pad: a wide bar under the second thumb, the same
+        // hold-button as the circle in the right cluster, lit the same way.
+        const x = b.x - b.w / 2, y = b.y - b.h / 2;
+        ctx.fillStyle = fill; ctx.fillRect(x, y, b.w, b.h);
+        ctx.strokeStyle = edge; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, b.w - 2, b.h - 2);
+        ctx.textAlign = 'center';
+        ctx.font = '700 ' + DC.Layout.font(11, 10) + 'px ' + FONT;
+        ctx.fillStyle = text;
+        ctx.fillText(b.label, b.x, b.y - 1);
+        ctx.font = '600 ' + DC.Layout.font(8, 8) + 'px ' + FONT;
+        ctx.fillStyle = 'rgba(255,255,255,0.42)';
+        ctx.fillText('2nd thumb', b.x, b.y + 12);
+        ctx.textAlign = 'left';
+        continue;
+      }
+
       ctx.beginPath(); ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
       ctx.fillStyle = fill; ctx.fill();
       ctx.strokeStyle = edge; ctx.lineWidth = 2; ctx.stroke();

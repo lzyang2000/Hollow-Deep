@@ -92,7 +92,7 @@
       const el = global.document && global.document.getElementById('hint');
       if (!el) return;
       if (DC.Layout.touch) {
-        el.textContent = 'Drag to walk \u00b7 point the finger to aim \u00b7 hold ATTACK to swing \u00b7 tap to interact or strike \u00b7 buttons for potions, pack and pause';
+        el.textContent = 'Two thumbs: drag with one to walk and aim, hold ATTACK with the other \u00b7 one thumb: tap to strike, or tap ATTACK \u00b7 tap the merchant or the portal';
       } else {
         el.textContent = 'WASD move \u00b7 mouse aim \u00b7 click attack \u00b7 SPACE ability \u00b7 E interact \u00b7 1/2 potions \u00b7 I pack \u00b7 V zoom \u00b7 M mute \u00b7 ESC pause \u00b7 S/L save and load in the pause menu';
       }
@@ -676,10 +676,11 @@
       } else if (DC.Input.moveX || DC.Input.moveY) {
         DC.Input.aim = Math.atan2(DC.Input.moveY, DC.Input.moveX);
       }
-      // One-handed assist: while the ATTACK button is held there is no finger
-      // on the field to aim with, so the swing finds the nearest demon in view.
-      // A drag or a tap still aims for itself, and a mouse always wins.
-      if (DC.Input.firing && DC.Touch && DC.Touch.attack && !DC.Input.hasMouse) {
+      // One-handed assist: while ATTACK is held with no finger on the field to
+      // aim with, the swing finds the nearest demon in view. With two hands the
+      // field finger is aiming, so its aim is left alone; a tap aims for itself
+      // too, and a mouse always wins.
+      if (DC.Input.firing && DC.Touch && DC.Touch.attack && !DC.Touch.drag && !DC.Input.hasMouse) {
         const t = G.aimAssist(p);
         if (t) DC.Input.aim = Math.atan2(t.y - p.y, t.x - p.x);
       }

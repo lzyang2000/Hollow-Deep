@@ -12,7 +12,7 @@ js/00-namespace.js      DC namespace + tuning constants
 js/utils/rng.js         seeded RNG (mulberry32) + deterministic tile hash
 js/utils/math.js        vector/angle helpers, DDA line-of-sight
 js/core/layout.js       what the viewport implies: touch? narrow? panel sizes,
-                        thumb buttons, zoom levels
+                        thumb buttons (right cluster + left ATTACK pad), zoom levels
 js/data/lore.js         world story, fragments, boss names, epitaphs
 js/data/classes.js      player careers
 js/data/demons.js       demon roster mirroring the careers
@@ -22,9 +22,11 @@ js/world/level.js       level assembly: start, portal, chests, urns, demons,
                         merchant, decor and wall torches
 js/core/input.js        keyboard + mouse (aim, drag, click; swallows the
                           compatibility mouse event iOS fires after a tap)
-js/core/touch.js        one-handed pointer input: drag = walk + aim-at-fingertip
-                        (never a swing), tap = interact-or-one-swing-where-tapped,
-                        ATTACK hold-button, button hit tests
+js/core/touch.js        pointer input, two fingers tracked apart: field finger =
+                        walk + aim-at-fingertip (never a swing); ATTACK
+                        hold-button on its own finger (circle + left pad), so a
+                        second thumb swings while the first walks; tap =
+                        interact-or-one-swing-where-tapped; button hit tests
 js/core/audio.js        procedural music engine + synthesised SFX
 js/core/camera.js       follow camera (never lets the actor leave frame), shake, zoom
 js/entities/player.js   careers, movement, attacks, abilities
