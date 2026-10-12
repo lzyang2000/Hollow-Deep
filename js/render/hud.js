@@ -215,7 +215,10 @@
       let fill = 'rgba(8,11,17,0.62)';
       let edge = 'rgba(255,255,255,0.3)';
       let text = 'rgba(232,238,248,0.9)';
-      if (b.id === 'ability') {
+      if (b.id === 'attack') {
+        edge = DC.Input.firing ? b.color : 'rgba(255,179,71,0.55)';
+        if (DC.Input.firing) fill = 'rgba(48,32,10,0.78)';
+      } else if (b.id === 'ability') {
         const ready = p.abilityCd <= 0 && p.mp >= ab.mp;
         edge = ready ? p.cls.color : 'rgba(255,255,255,0.22)';
         text = ready ? '#fff' : 'rgba(255,255,255,0.45)';
@@ -246,7 +249,7 @@
       }
 
       ctx.textAlign = 'center';
-      ctx.font = '700 ' + DC.Layout.font(b.id === 'ability' ? 10 : 9, 9) + 'px ' + FONT;
+      ctx.font = '700 ' + DC.Layout.font(b.id === 'ability' || b.id === 'attack' ? 10 : 9, 9) + 'px ' + FONT;
       ctx.fillStyle = text;
       ctx.fillText(b.label, b.x, b.y + 3);
       if (b.count !== undefined) {

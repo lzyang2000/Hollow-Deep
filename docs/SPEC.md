@@ -30,6 +30,11 @@ what drag already means with a mouse:
 - **Tap** (short, under 14 px of travel, under 0.4 s): interact with whatever is
   in reach; if nothing is, one swing (`Input.tapFrames` releases the attack a
   few frames later so a tap is never a permanent hold).
+- **ATTACK** is the one hold-button: pressing it sets `Input.firing` and keeps it
+  set until the finger lifts, and it neither walks nor re-aims, so you can hold
+  your ground and trade. It exists because a drag always walks. A press that
+  never reached a simulation step still gets one swing rather than being
+  swallowed.
 - A touch that never crosses the dead zone walks nobody and attacks nothing.
 - Buttons are laid out by `DC.Layout.buttons()` in the bottom-right corner,
   each at least 44 px across, and hit-tested before the drag starts.
@@ -222,6 +227,10 @@ title screen, class selection, depth milestones, boss antechambers and death.
     when one is in reach and swings once when nothing is.
 17. The pause menu, the pack, the career card and the merchant's leave button all
     fit a portrait phone and a landscape phone.
+19. The ATTACK button attacks without walking, keeps attacking while held, stops
+    on release, and is unmoved by a thumb that slides across it; the whole
+    cluster, seven buttons deep when an interact prompt is up, stays inside a
+    portrait and a landscape phone frame.
 18. A desktop viewport is not `touch`: it keeps the keyboard panels, three
     career cards, one-column pack and the original zoom levels.
 

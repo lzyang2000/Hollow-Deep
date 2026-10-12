@@ -56,13 +56,18 @@ There is no second thumb, so the drag does all three jobs at once:
 | --- | --- |
 | Drag anywhere | Walk, aim **and** attack (the finger is the reticle and stays put) |
 | Tap | Interact — merchant, portal, urn; one swing if there is nothing to talk to |
+| **ATTACK** (hold) | Swing without moving. A drag always walks, so this is how you stand your ground and trade; release to stop |
 | **WHIRL / BLINK / SHIELD** | Class ability |
 | **HEAL / MANA** | Drink a draught or wick oil |
 | **PACK** | Open the pack (bottom row: HEAL, MANA, SELL, CLOSE) |
 | **PAUSE** | Pause menu — resume, pack, save, load, mute, abandon |
 
 A touch that barely moves is a rest, not a walk, so a thumb resting on the glass
-will not wander you into a demon.
+will not wander you into a demon. Buttons sit in the bottom-right corner, biggest
+and nearest the thumb first: ATTACK, ability, (TRADE / DOWN when something is in
+reach), HEAL, MANA, PACK, PAUSE. ATTACK is the only hold-button — press and keep
+swinging, let go and stop — and sliding your thumb across it neither walks nor
+re-aims.
 
 
 In the pack: `1–9`/`0` or the arrows pick a row, `E` wears it, `X` (or right
