@@ -104,4 +104,12 @@
     body.y = M.clamp(body.y, r + 0.05, lim);
     return moved;
   };
+  DC.rgba = function (hex, a) {
+    if (hex.charAt(0) !== '#') return hex;
+    let h = hex.slice(1);
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    const n = parseInt(h, 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  };
+
 })(typeof window !== 'undefined' ? window : globalThis);

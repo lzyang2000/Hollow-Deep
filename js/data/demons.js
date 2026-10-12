@@ -39,8 +39,8 @@
   };
 
   DC.BOSS = {
-    knight: { hp: 420, atk: 26, def: 5, speed: 3.4, r: 2.5, color: '#9fb0cc', accent: '#4a5772' },
-    mage: { hp: 340, atk: 30, def: 3, speed: 3.9, r: 2.2, color: '#ff8f5e', accent: '#7c2c1c' },
-    swordsman: { hp: 380, atk: 28, def: 4, speed: 4.6, r: 2.3, color: '#e8564d', accent: '#5d160d' },
+    knight: { hp: 420, atk: 26, def: 5, speed: 3.4, r: 2.5, color: '#9fb0cc', accent: '#4a5772', body: '#2b3444', cape: '#161c26', horn: '#c8b79a' },
+    mage: { hp: 340, atk: 30, def: 3, speed: 3.9, r: 2.2, color: '#ff8f5e', accent: '#7c2c1c', body: '#3a1f1a', cape: '#1d0f0d', horn: '#e2c39b' },
+    swordsman: { hp: 380, atk: 28, def: 4, speed: 4.6, r: 2.3, color: '#e8564d', accent: '#5d160d', body: '#33171a', cape: '#1a0c0e', horn: '#d8b78e' },
   };
 })(typeof window !== 'undefined' ? window : globalThis);
