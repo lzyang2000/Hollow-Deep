@@ -12,17 +12,26 @@
     logs: [], banner: null, stats: null, best: null,
     shop: null, loreCard: null, hoverClass: null, interactTarget: null,
     transition: null, deathCause: '', heartT: 0, hoverShop: -1,
-    invSel: 0, invHover: null,
+    invSel: 0, invHover: null, pauseHover: null, titleHover: null, classHover: null,
 
     /* ---------------- boot ---------------- */
     init: function () {
       G.canvas = document.getElementById('game');
       G.ctx = G.canvas.getContext('2d');
       DC.Fog.init(document);
+      DC.Layout.detect();
       G.resize();
       global.addEventListener('resize', function () { G.resize(); });
+      // iOS reports the new size before the keyboard/rotation has settled, so
+      // a phone turning sideways needs a second look.
+      global.addEventListener('orientationchange', function () {
+        global.setTimeout(function () { G.resize(); }, 150);
+      });
 
       DC.Input.init(G.canvas);
+      DC.Touch.init(G.canvas, G);
+      G.wireFiles();
+      G.setHint();
       G.canvas.addEventListener('click', function (e) {
         const r = G.canvas.getBoundingClientRect();
         G.onClick(e.clientX - r.left, e.clientY - r.top);
@@ -74,6 +83,82 @@
       G.canvas.style.height = cssH + 'px';
       G.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       DC.Camera.setViewport(cssW, cssH);
+      G.setHint();
+    },
+
+    /* The one-line control reminder at the bottom of the page. A phone has no
+       WASD, so it gets the gestures it actually has. */
+    setHint: function () {
+      const el = global.document && global.document.getElementById('hint');
+      if (!el) return;
+      if (DC.Layout.touch) {
+        el.textContent = 'Drag anywhere to move, aim and attack \u00b7 tap a button for the ability, potions and pack \u00b7 tap the merchant or the portal';
+      } else {
+        el.textContent = 'WASD move \u00b7 mouse aim \u00b7 click attack \u00b7 SPACE ability \u00b7 E interact \u00b7 1/2 potions \u00b7 I pack \u00b7 V zoom \u00b7 M mute \u00b7 ESC pause \u00b7 S/L save and load in the pause menu';
+      }
+    },
+
+    /* ---------------- save / load ----------------
+       A run is carried out as a JSON file and taken back in as one. The level
+       itself is never stored -- it is rebuilt from the seed -- so the file is
+       small, readable, and cannot smuggle in a floor that does not exist. */
+    wireFiles: function () {
+      const doc = global.document;
+      if (!doc) return;
+      const input = doc.getElementById('load-file');
+      if (input) {
+        input.addEventListener('change', function () {
+          const f = input.files && input.files[0];
+          if (!f) return;
+          G.readFile(f);
+          input.value = '';
+        });
+      }
+      // Dragging a save onto the window is the desktop shortcut for the same thing.
+      global.addEventListener('dragover', function (e) { if (e.preventDefault) e.preventDefault(); });
+      global.addEventListener('drop', function (e) {
+        if (e.preventDefault) e.preventDefault();
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) G.readFile(f);
+      });
+    },
+
+    readFile: function (file) {
+      if (!global.FileReader) { G.log('This browser cannot open a file.', '#ff5c5c'); return; }
+      const fr = new global.FileReader();
+      fr.onload = function () { G.loadFromText(String(fr.result || '')); };
+      fr.onerror = function () { G.log('The file would not open.', '#ff5c5c'); };
+      fr.readAsText(file);
+    },
+
+    saveToDisk: function () {
+      if (!G.player || G.player.dead) { G.log('A dead run cannot be carried out.', '#ff8a5c'); return { ok: false }; }
+      const res = DC.Save.download(G);
+      if (res.ok) {
+        DC.Audio.play('buy');
+        G.log((res.shared ? 'Shared ' : 'Saved ') + res.name + (res.bytes ? ' \u00b7 ' + res.bytes + ' B' : ''), '#8ef0c0');
+      } else {
+        DC.Audio.play('empty');
+        G.log('Could not write the save: ' + res.error, '#ff5c5c');
+      }
+      return res;
+    },
+
+    openLoadPicker: function () {
+      const el = global.document && global.document.getElementById('load-file');
+      if (!el) { G.log('No file picker in this browser.', '#ff5c5c'); return false; }
+      el.click();
+      return true;
+    },
+
+    loadFromText: function (text) {
+      const parsed = DC.Save.parse(text);
+      if (!parsed.ok) { DC.Audio.play('empty'); G.log(parsed.error, '#ff5c5c'); return parsed; }
+      const out = DC.Save.restore(G, parsed.save);
+      if (!out.ok) { DC.Audio.play('empty'); G.log(out.error, '#ff5c5c'); return out; }
+      DC.Audio.play('uiSelect');
+      G.setState('playing');
+      return out;
     },
 
     loadBest: function () {
@@ -96,6 +181,11 @@
       G.state = s;
       DC.Input.firing = false;
       DC.Input.dragging = false;
+      DC.Input.tapFrames = 0;
+      if (DC.Touch) DC.Touch.release();
+      G.pauseHover = null;
+      G.titleHover = null;
+      G.classHover = null;
       if (s === 'playing') DC.Input.keys = Object.create(null);
     },
 
@@ -269,9 +359,36 @@
     /* ---------------- interaction ---------------- */
     onClick: function (mx, my) {
       DC.Audio.resume();
-      if (G.state === 'title') { G.setState('classSelect'); G.hoverClass = 'mage'; return; }
+      if (G.state === 'title') {
+        const tb = DC.UI.titleButtons(G);
+        for (let i = 0; i < tb.length; i++) {
+          if (DC.UI.hit(tb[i], mx, my)) {
+            if (tb[i].id === 'load') { DC.Audio.play('uiSelect'); G.openLoadPicker(); return; }
+            break;
+          }
+        }
+        DC.Audio.play('uiSelect');
+        G.setState('classSelect'); G.hoverClass = 'mage'; return;
+      }
+      if (G.state === 'pause') {
+        const rows = DC.UI.pauseMenu(G);
+        for (let i = 0; i < rows.length; i++) {
+          if (DC.UI.hit(rows[i], mx, my)) { G.pauseAction(rows[i].id); return; }
+        }
+        return;
+      }
       if (G.state === 'dead') { G.setState('classSelect'); return; }
       if (G.state === 'classSelect') {
+        const nav = DC.UI.classNav(G);
+        if (nav) {
+          if (DC.UI.hit(nav.prev, mx, my)) { G.cycleClass(-1); return; }
+          if (DC.UI.hit(nav.next, mx, my)) { G.cycleClass(1); return; }
+          if (DC.UI.hit(nav.choose, mx, my)) {
+            DC.Audio.play('uiSelect');
+            G.newRun(G.hoverClass || 'mage');
+            return;
+          }
+        }
         const cards = DC.UI.classCards(G);
         for (let i = 0; i < cards.length; i++) {
           const c = cards[i];
@@ -284,6 +401,8 @@
       }
       if (G.state === 'lore') { G.loreCard = null; G.pendingLore = false; G.setState('playing'); return; }
       if (G.state === 'shop') {
+        const L = DC.Shop.layout(G);
+        if (L.back && DC.UI.hit(L.back, mx, my)) { G.setState('playing'); DC.Audio.play('uiSelect'); return; }
         const hit = DC.Shop.hover(G, mx, my);
         if (hit >= 0) G.buy(hit);
         return;
@@ -291,22 +410,45 @@
       if (G.state === 'inventory') {
         const hit = DC.UI.Inv.hover(G, mx, my);
         if (!hit) return;
-        if (hit.kind === 'bag') { G.invSel = hit.i; G.equipFromPack(hit.i); }
-        else if (hit.kind === 'equip') G.stowSlot(hit.slot);
+        if (hit.kind === 'close') { G.closePack(); return; }
+        if (hit.kind === 'sell') { G.sellFromPack(G.invSel); return; }
+        if (hit.kind === 'bag') {
+          // On a fingertip a row is picked up first and worn second, because a
+          // mis-tap that re-dresses you is a mistake you cannot see coming.
+          if (DC.Layout.touch && G.player.inv[hit.i] && G.invSel !== hit.i) G.invSel = hit.i;
+          else G.equipFromPack(hit.i);
+        } else if (hit.kind === 'equip') G.stowSlot(hit.slot);
         else if (hit.kind === 'potion') DC.Player.drink(G.world, G.player, hit.key, G);
         return;
       }
     },
 
     onMove: function (mx, my) {
-      if (G.state === 'classSelect') {
+      if (G.state === 'title') {
+        const tb = DC.UI.titleButtons(G);
+        let hit = null;
+        for (let i = 0; i < tb.length; i++) if (DC.UI.hit(tb[i], mx, my)) hit = tb[i].id;
+        if (hit !== G.titleHover) { if (hit) DC.Audio.play('uiMove'); G.titleHover = hit; }
+      } else if (G.state === 'pause') {
+        const rows = DC.UI.pauseMenu(G);
+        let hit = null;
+        for (let i = 0; i < rows.length; i++) if (DC.UI.hit(rows[i], mx, my)) hit = rows[i].id;
+        if (hit !== G.pauseHover) { if (hit) DC.Audio.play('uiMove'); G.pauseHover = hit; }
+      } else if (G.state === 'classSelect') {
+        const nav = DC.UI.classNav(G);
+        G.classHover = nav && DC.UI.hit(nav.choose, mx, my) ? 'choose' : null;
         const cards = DC.UI.classCards(G);
-        G.hoverClass = null;
+        let over = null;
         for (let i = 0; i < cards.length; i++) {
           const c = cards[i];
-          if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) G.hoverClass = c.id;
+          if (mx >= c.x && mx <= c.x + c.w && my >= c.y && my <= c.y + c.h) over = c.id;
         }
-        if (G.hoverClass) DC.Audio.play('uiMove');
+        if (nav) {
+          if (DC.UI.hit(nav.prev, mx, my)) over = G.hoverClass;
+          if (DC.UI.hit(nav.next, mx, my)) over = G.hoverClass;
+        }
+        if (over && over !== G.hoverClass) DC.Audio.play('uiMove');
+        if (over) G.hoverClass = over;
       } else if (G.state === 'shop') {
         const hit = DC.Shop.hover(G, mx, my);
         if (hit >= 0 && hit !== G.shop.hover) DC.Audio.play('uiMove');
@@ -323,6 +465,7 @@
       if (code === 'KeyM') { const m = DC.Audio.toggleMute(); G.log(m ? 'Audio muted' : 'Audio on', 'rgba(255,255,255,0.5)'); }
       if (G.state === 'title') {
         if (code === 'Enter' || code === 'Space' || code === 'NumpadEnter') { DC.Audio.play('uiSelect'); G.setState('classSelect'); G.hoverClass = 'mage'; }
+        if (code === 'KeyL') { DC.Audio.play('uiSelect'); G.openLoadPicker(); }
         return;
       }
       if (G.state === 'classSelect') {
@@ -343,8 +486,11 @@
         return;
       }
       if (G.state === 'pause') {
-        if (code === 'Escape') G.setState('playing');
-        if (code === 'KeyR') { G.deathCause = 'Your own patience'; G.saveBest(); G.player.dead = true; G.setState('dead'); DC.Audio.setScene('dead'); }
+        if (code === 'Escape' || code === 'Enter' || code === 'NumpadEnter') { G.setState('playing'); return; }
+        if (code === 'KeyS') { G.saveToDisk(); return; }
+        if (code === 'KeyL') { G.openLoadPicker(); return; }
+        if (code === 'KeyI') { G.openPack(); return; }
+        if (code === 'KeyR') { G.abandonRun(); return; }
         return;
       }
       if (G.state === 'shop') {
@@ -378,6 +524,24 @@
         if (code === 'Digit1') { DC.Player.drink(G.world, G.player, 'heal', G); return; }
         if (code === 'Digit2') { DC.Player.drink(G.world, G.player, 'mana', G); return; }
       }
+    },
+
+    pauseAction: function (id) {
+      if (id === 'resume') { G.setState('playing'); DC.Audio.play('uiSelect'); }
+      else if (id === 'pack') G.openPack();
+      else if (id === 'save') G.saveToDisk();
+      else if (id === 'load') G.openLoadPicker();
+      else if (id === 'mute') { const m = DC.Audio.toggleMute(); G.log(m ? 'Audio muted' : 'Audio on', 'rgba(255,255,255,0.5)'); }
+      else if (id === 'abandon') G.abandonRun();
+    },
+
+    abandonRun: function () {
+      if (!G.player || G.player.dead) return;
+      G.deathCause = 'Your own patience';
+      G.saveBest();
+      G.player.dead = true;
+      G.setState('dead');
+      DC.Audio.setScene('dead');
     },
 
     cycleClass: function (dir) {
@@ -481,7 +645,9 @@
       DC.Input.poll();
       // Aim comes from the cursor, in world terms, and is handed to the actor
       // through the input frame so attacks and the drawn aim always agree.
-      if (DC.Input.hasMouse) {
+      if (DC.Input.aimHold) {
+        // touch already put the aim where the finger is
+      } else if (DC.Input.hasMouse) {
         const sx = DC.Camera.worldToScreenX(p.x), sy = DC.Camera.worldToScreenY(p.y);
         DC.Input.aim = Math.atan2(DC.Input.my - sy, DC.Input.mx - sx);
       } else if (DC.Input.moveX || DC.Input.moveY) {

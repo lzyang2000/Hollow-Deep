@@ -2,7 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- No zooming, no double-tap, and the notch stays out of the way: the whole
+     screen is game glass on a phone. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>The Hollow Deep — a roguelike descent</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -10,9 +16,15 @@
 <canvas id="game" width="1280" height="720"></canvas>
 <div id="hint">WASD move &middot; mouse aim &middot; click attack &middot; SPACE ability &middot; E interact &middot; 1/2 potions &middot; I pack &middot; V zoom &middot; M mute &middot; ESC pause</div>
 
+<!-- A run leaves the browser as a JSON file and comes back as one. Both are
+     hidden controls the pause menu drives. -->
+<a id="save-link" download hidden></a>
+<input id="load-file" type="file" accept="application/json,.json" hidden>
+
 <script src="js/00-namespace.js"></script>
 <script src="js/utils/rng.js"></script>
 <script src="js/utils/math.js"></script>
+<script src="js/core/layout.js"></script>
 <script src="js/data/lore.js"></script>
 <script src="js/data/classes.js"></script>
 <script src="js/data/demons.js"></script>
@@ -21,6 +33,7 @@
 <script src="js/world/level.js"></script>
 <script src="js/core/camera.js"></script>
 <script src="js/core/input.js"></script>
+<script src="js/core/touch.js"></script>
 <script src="js/core/audio.js"></script>
 <script src="js/entities/props.js"></script>
 <script src="js/entities/demon.js"></script>
@@ -31,6 +44,7 @@
 <script src="js/systems/combat.js"></script>
 <script src="js/systems/loot.js"></script>
 <script src="js/systems/inventory.js"></script>
+<script src="js/systems/save.js"></script>
 <script src="js/systems/fog.js"></script>
 <script src="js/render/world.js"></script>
 <script src="js/render/entities.js"></script>

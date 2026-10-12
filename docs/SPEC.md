@@ -11,12 +11,33 @@ browser with no build step. The run ends on death; the score is depth reached.
 - Left click — attack. Holding repeats at the current attack rate.
 - `Space` — class ability (MP cost). `E` — interact. `Esc` — pause.
   `V` — zoom. `M` — mute.
-- `I` / `Tab` — open or close **the pack**. While it is open the simulation does
+- While paused: `Esc`/`Enter` resume, `I` pack, `S` **save to a file**,
+  `L` **load a file**, `M` mute, `R` abandon the run.
+- `I` / `Tab` — open or close **the pack**.
+ While it is open the simulation does
   not advance: `1–9`/`0` or `W`/`S`/arrows pick a row, `E`/`Enter` wears it,
   `X`/`Backspace` sells it, `R` sorts it, `Q`/`F` drink, right-click sells the row
   under the cursor, and clicking a worn piece stows it.
 
+### 2b. Touch (one-handed, phone)
+
+One thumb only. The drag is the whole locomotion-and-combat gesture, mirroring
+what drag already means with a mouse:
+
+- **Drag** anywhere on the play field: walk in the direction of the finger, aim
+  along it, and keep attacking. The aim stays where the finger left it
+  (`Input.aimHold`) instead of snapping back to a phantom cursor.
+- **Tap** (short, under 14 px of travel, under 0.4 s): interact with whatever is
+  in reach; if nothing is, one swing (`Input.tapFrames` releases the attack a
+  few frames later so a tap is never a permanent hold).
+- A touch that never crosses the dead zone walks nobody and attacks nothing.
+- Buttons are laid out by `DC.Layout.buttons()` in the bottom-right corner,
+  each at least 44 px across, and hit-tested before the drag starts.
+- Menus are tap-only: every screen has a real button for leaving it, and the
+  career select folds to one card with prev/next arrows.
+
 ## 3. Classes (career choices)
+
 | Class | Style | HP | MP | Move | Attack | Ability |
 | --- | --- | --- | --- | --- | --- | --- |
 | Mage | Ranged | 60 | 130 | 4.6 m/s | Magic bolt, costs MP | Blink |
@@ -134,7 +155,38 @@ coins, portals, purchases and level descents.
 The fallen sky-city of Aetherfall and the Nine Seals; lore is delivered on the
 title screen, class selection, depth milestones, boss antechambers and death.
 
-## 12. Acceptance checks
+## 12. Save and load (files)
+
+- The pause menu offers **save** (downloads a JSON file) and **load** (a file
+  picker, or drop the file onto the window). Format `hollowdeep-save` v1.
+- A save stores the run (career, depth, seed, gold, gear, pack, stats, potions,
+  position) plus **deltas** for the current level, which is rebuilt from its
+  seed: dead demons, wounded demon positions/HP, opened chests, broken urns,
+  the fog as run-length pairs. It never stores the maze itself.
+- Every value read from a file is treated as hostile: numbers are clamped to
+  sane ranges, indices out of range are dropped rather than wrapped, unknown
+  careers and wrong versions are refused, and a boss portal cannot be marked
+  open before the boss is dead.
+- `localStorage` is not used: the run leaves the browser as a file and can be
+  moved between machines.
+
+## 13. Mobile / one-handed layout
+
+- `DC.Layout` derives everything from the viewport: `touch` (coarse pointer,
+  or under 640 px wide, or under 480 px tall), `narrow`, `tiny`, the minimap
+  size, the thumb cluster, and the zoom levels. It is recomputed inside
+  `Camera.setViewport`, so any resize re-derives the whole layout.
+- A phone cannot show 64 m of floor and keep the torch legible, so the zoom
+  scales with the frame: `base = clamp(min(w,h)/30, 9, 20)` px/m, giving a
+  desktop 1280x720 the original 14/20/26 and an iPhone 390x844 about 9/13/17 —
+  roughly a 30 m frame, i.e. the torch diameter.
+- The minimap shrinks to `clamp(min(w*0.30, h*0.42), 104, 300)` px and stays
+  inside the frame; the HUD, shop, pack and menus all fold to fit.
+- Desktop behaviour is unchanged: a mouse-driven viewport is not `touch`, keeps
+  the keyboard panels, three career cards and the original zoom levels.
+
+## 14. Acceptance checks
+
 1. Level generation always yields a fully reachable level (flood fill == open
    tiles) whose rooms sit inside the border, never overlap, and are open at
    their centre.
@@ -156,3 +208,20 @@ title screen, class selection, depth milestones, boss antechambers and death.
 12. Every harness loads the same script list as `index.html`, in the same order —
     a screen that works in the browser and silently fails in the test rig (or the
     reverse) is the cheapest possible bug to prevent.
+13. A save round-trips: depth, career, gold, worn gear, the pack, stat bonuses,
+    potions, position, the fog, and the state of every demon / chest / urn on the
+    floor come back identical from the JSON file.
+14. A hand-edited or corrupt file cannot cheat: wrong version or unknown career
+    is refused, absurd numbers are clamped, out-of-range indices are dropped, and
+    a boss portal cannot be pre-opened.
+15. On a 390x844 viewport the layout reports `touch`, the minimap fits across the
+    screen, the torch diameter fits inside the frame, and every thumb button is
+    on screen and at least 44 px across.
+16. A drag walks, aims and attacks with no mouse involved; lifting the finger
+    stops both; a touch that barely moves does neither; a tap descends a portal
+    when one is in reach and swings once when nothing is.
+17. The pause menu, the pack, the career card and the merchant's leave button all
+    fit a portrait phone and a landscape phone.
+18. A desktop viewport is not `touch`: it keeps the keyboard panels, three
+    career cards, one-column pack and the original zoom levels.
+

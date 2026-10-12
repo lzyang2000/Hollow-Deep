@@ -11,14 +11,35 @@
 
     setViewport: function (w, h) {
       this.w = w; this.h = h;
-      this.pxPerM = DC.C.ZOOM_LEVELS[this.zoomIndex];
+      // The layout is a property of the viewport, so it is recomputed here
+      // rather than only in Game.resize -- anything that moves the frame gets
+      // the same panels and the same zoom for free.
+      if (DC.Layout) DC.Layout.recompute(w, h);
+      this.pxPerM = this.levels()[this.zoomIndex];
       this.viewW = w / this.pxPerM;
       this.viewH = h / this.pxPerM;
     },
 
+    /* Zoom levels are responsive: a phone cannot show 64 m of floor and keep
+       the torch on screen, so the frame decides the scale. */
+    levels: function () {
+      return (DC.Layout && DC.Layout.zoomLevels) || DC.C.ZOOM_LEVELS;
+    },
+
     zoomCycle: function () {
-      const L = DC.C.ZOOM_LEVELS;
+      const L = this.levels();
       this.zoomIndex = (this.zoomIndex + 1) % L.length;
+      this.setViewport(this.w, this.h);
+    },
+
+    setZoom: function (pxPerM) {
+      const L = this.levels();
+      let best = 0, bd = Infinity;
+      for (let i = 0; i < L.length; i++) {
+        const d = Math.abs(L[i] - pxPerM);
+        if (d < bd) { bd = d; best = i; }
+      }
+      this.zoomIndex = best;
       this.setViewport(this.w, this.h);
     },
 

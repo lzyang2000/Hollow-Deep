@@ -11,6 +11,8 @@ css/style.css           page chrome, menus, HUD overlays
 js/00-namespace.js      DC namespace + tuning constants
 js/utils/rng.js         seeded RNG (mulberry32) + deterministic tile hash
 js/utils/math.js        vector/angle helpers, DDA line-of-sight
+js/core/layout.js       what the viewport implies: touch? narrow? panel sizes,
+                        thumb buttons, zoom levels
 js/data/lore.js         world story, fragments, boss names, epitaphs
 js/data/classes.js      player careers
 js/data/demons.js       demon roster mirroring the careers
@@ -19,6 +21,8 @@ js/world/maze.js        rooms-and-corridors + arena generation, flood fill, BFS
 js/world/level.js       level assembly: start, portal, chests, urns, demons,
                         merchant, decor and wall torches
 js/core/input.js        keyboard + mouse (aim, drag, click)
+js/core/touch.js        one-handed pointer input: drag = walk+aim+attack, tap =
+                        interact-or-one-swing, button hit tests
 js/core/audio.js        procedural music engine + synthesised SFX
 js/core/camera.js       follow camera (never lets the actor leave frame), shake, zoom
 js/entities/player.js   careers, movement, attacks, abilities
@@ -29,6 +33,7 @@ js/systems/fog.js       light map, discovery memory, entity visibility
 js/systems/combat.js    damage, arcs, projectiles, knockback, drops
 js/systems/loot.js      drop table, equip/upgrade application, gold
 js/systems/inventory.js the pack: worn slots, bag triage, equip/stow/sell/sort
+js/systems/save.js      run <-> JSON file: seed + deltas, validation, download
 js/systems/progression.js  the 30 %-shallower scaling curve
 js/systems/flowfield.js BFS distance field for demon pathing
 js/render/world.js      tiles, walls, props, light overlay
@@ -55,6 +60,13 @@ js/90-game.js           state machine, fixed-step loop, level flow
   real potions) across all three careers.
 - `tmp/shot.html` — drives one screen per query param and screenshots it with
   headless Chrome; `&dump=1` prints game state and any `window.onerror` hits.
+  `&touch=1&vw=390&vh=844` fakes an iPhone, because headless Chrome refuses to
+  open a window narrower than 500 px.
+- `tmp/dump.sh` + `tmp/dumpcheck.py` — run every screen through that page at
+  desktop, iPhone-portrait and iPhone-landscape sizes and fail on any error or
+  any panel that does not fit. `tmp/shots3.sh` writes the PNG set.
+- `tmp/smoke.js` sections [16] and [17] are the save-file and one-handed suites.
+
 
 Two ordering rules the harnesses exist to protect:
 
@@ -80,7 +92,21 @@ Two ordering rules the harnesses exist to protect:
 - `tmp/shot.html` carries its own script list because it is a separate page.
   `tmp/smoke.js` section [0] fails if it ever drifts from `index.html` — the HUD
   reading `DC.Inv` with the module missing is exactly that bug.
-- `world.awakeCount` is the aggro budget and is owned by `DC.Demons.wake` and
+- The layout is a **property of the viewport**, not a flag set once at boot:
+  `Camera.setViewport` calls `DC.Layout.recompute(w, h)`. Anything that reads
+  `Layout.touch`, `minimapPx` or `Camera.levels()` therefore stays correct after
+  a resize or an orientation change. `Layout.buttons()` returns fresh objects
+  every call — compare `id`, never identity.
+- `DC.Touch` writes into the same `DC.Input` frame the keyboard does, so the
+  simulation never learns which device moved it. `Input.endFrame()` owns
+  `tapFrames` and releases a tapped attack; `Touch.up()` only raises it.
+- A save is **seed + deltas**. `DC.Save.restore` regenerates the level from the
+  stored seed and replays only what changed, so the maze in the file can never
+  disagree with the maze in the game. Every number and index that arrives from a
+  file goes through `num()` / `idx()`, which clamp or reject — never wrap, never
+  trust.
+- `world.awakeCount` is the aggro budget
+ and is owned by `DC.Demons.wake` and
   `DC.Demons.calm`. Nothing else may set `d.hasSeen` directly: the counter and
   the flag have to move together, and `tmp/smoke.js` section [10] asserts they
   agree.
