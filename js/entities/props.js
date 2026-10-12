@@ -35,6 +35,8 @@
       life: o.life || 1.2, maxLife: o.life || 1.2,
       kind: o.kind || 'bolt', pierce: o.pierce || 0, splash: o.splash || 0,
       hitIds: null, trail: 0, color: o.color || '#9fe8ff',
+      // Who threw it. The death screen credits a name, not "a demon".
+      sourceName: o.sourceName || null,
     };
   };
 
