@@ -10,20 +10,20 @@
       // to keepRange, not by outrunning a knight forever.
       id: 'imp', mirrors: 'mage', name: 'Imp',
       hp: 26, atk: 8, def: 0, speed: 3.4, r: 0.62,
-      attackKind: 'ranged', attackCd: 1.5, sight: 15, keepRange: 9,
+      attackKind: 'ranged', attackCd: 1.5, sight: 12, keepRange: 9,
       projSpeed: 15, projLife: 2.0,
       powerFactor: 0.62, color: '#ff7a59', accent: '#8f2f22', xp: 1,
     },
     hellblade: {
       id: 'hellblade', mirrors: 'swordsman', name: 'Hellblade',
       hp: 34, atk: 10, def: 1, speed: 4.7, r: 0.66,
-      attackKind: 'melee', attackCd: 0.95, reach: 2.2, arc: 110, sight: 15,
+      attackKind: 'melee', attackCd: 0.95, reach: 2.2, arc: 110, sight: 11,
       powerFactor: 0.66, color: '#e0524b', accent: '#68190f', xp: 1,
     },
     gorewarden: {
       id: 'gorewarden', mirrors: 'knight', name: 'Gorewarden',
       hp: 58, atk: 16, def: 3, speed: 3.0, r: 0.82,
-      attackKind: 'melee', attackCd: 1.5, reach: 2.4, arc: 95, sight: 13,
+      attackKind: 'melee', attackCd: 1.5, reach: 2.4, arc: 95, sight: 10,
       knockback: 2.6, powerFactor: 0.7, xp: 2,
     },
   };

@@ -20,7 +20,7 @@
         invuln: 0, hurtT: 0, kx: 0, ky: 0,
         anim: 0, walk: 0, dead: false, deadT: 0,
         lastVx: 0, lastVy: 0,
-        noManaT: 0,
+        noManaT: 0, calmT: 0, regenT: 0,
       };
       DC.Player.recalc(p);
       p.hp = p.maxHp; p.mp = p.maxMp;
@@ -70,6 +70,17 @@
 
       /* --- resources ------------------------------------------------------ */
       p.mp = Math.min(p.maxMp, p.mp + p.cls.mpRegen * dt);
+      /* Recovery is not a timer on the player, it is a property of the floor:
+         calmT only runs while nothing on this level can see you and you have
+         not been touched lately. Game.step owns that flag. */
+      if (p.calmT > DC.C.REGEN_DELAY && p.hp < p.maxHp) {
+        p.hp = Math.min(p.maxHp, p.hp + p.maxHp * DC.C.REGEN_FRAC * dt);
+        p.regenT -= dt;
+        if (p.regenT <= 0) {
+          p.regenT = 2;
+          DC.Props.floater(world, p.x, p.y - p.r - 0.5, 'catching breath', '#8ef0c0', { life: 1.1, size: 11 });
+        }
+      }
     },
 
     attack: function (world, p, game) {
