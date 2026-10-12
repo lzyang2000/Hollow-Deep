@@ -7,10 +7,12 @@
   DC.VERSION = '1.0.0';
 
   DC.C = {
-    // World geometry. 60 tiles * 5 m = a 300 m x 300 m level.
+    // World geometry. 40 tiles * 5 m = a 200 m x 200 m level. The tile stays
+    // 5 m, so every metre figure below -- torch, minimap, sight, reach --
+    // carries over unchanged; only the square got smaller.
     TILE: 5,
-    GRID: 60,
-    WORLD_M: 300,
+    GRID: 40,
+    WORLD_M: 200,
 
     // Information fog.
     REVEAL: 15,          // metres of torchlight
@@ -34,35 +36,36 @@
     FLOW_INTERVAL: 0.3,
 
     // Level population. A floor is meant to feel inhabited: you meet the
-    // whole ecosystem of the deep, not three demons and a chest. The caps
-    // exist because the open floor of a level is only ~1000 tiles and the
-    // spawner needs room to keep things apart.
-    ENEMY_BASE: 42,
-    ENEMY_PER_DEPTH: 4.5,
-    ENEMY_MAX: 180,
-    CHEST_BASE: 18,
-    CHEST_PER_DEPTH: 1.5,
-    CHEST_MAX: 48,
-    URN_BASE: 27,
-    URN_PER_DEPTH: 2.1,
-    URN_MAX: 66,
-    MIN_SPAWN_DIST: 40,   // metres from start before a demon may appear
+    // whole ecosystem of the deep, not three demons and a chest. These are
+    // density figures, not raw counts -- the walkable floor went from ~1000 to
+    // ~450 tiles when the level shrank, so the counts came down with it and a
+    // corridor still holds the same number of demons per torch.
+    ENEMY_BASE: 30,
+    ENEMY_PER_DEPTH: 3.2,
+    ENEMY_MAX: 120,
+    CHEST_BASE: 11,
+    CHEST_PER_DEPTH: 0.9,
+    CHEST_MAX: 26,
+    URN_BASE: 16,
+    URN_PER_DEPTH: 1.2,
+    URN_MAX: 39,
+    MIN_SPAWN_DIST: 26,   // metres from start before a demon may appear
 
     // Portal gate: a reachable tile this deep into the maze's walking
     // distance, not the absolute farthest one.
-    PORTAL_MIN_TILES: 30,
+    PORTAL_MIN_TILES: 20,
     PORTAL_FRACTION: 0.5,
 
     // Dungeon plan: rooms joined by corridors, not a lattice maze.
-    ROOM_COUNT_MIN: 12,
-    ROOM_COUNT_MAX: 18,
+    ROOM_COUNT_MIN: 9,
+    ROOM_COUNT_MAX: 13,
     ROOM_MIN: 4,          // tiles
-    ROOM_MAX: 11,
-    CORRIDOR_WIDE_CHANCE: 0.28,
+    ROOM_MAX: 9,
+    CORRIDOR_WIDE_CHANCE: 0.30,
     ROOM_LOOP_CHANCE: 0.4,      // extra links as a fraction of the room count
-    ROOM_LOOP_MAX_DIST: 24,     // Manhattan between room centres
-    ALCOVE_MIN: 10,
-    ALCOVE_MAX: 18,
+    ROOM_LOOP_MAX_DIST: 16,     // Manhattan between room centres
+    ALCOVE_MIN: 7,
+    ALCOVE_MAX: 12,
 
     // Aggro budget: how many demons may hunt at once. Levels are dense but
     // the whole floor never comes with you, so a pack can always be pulled.

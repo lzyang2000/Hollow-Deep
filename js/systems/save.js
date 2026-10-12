@@ -10,7 +10,9 @@
   const C = DC.C;
 
   const FORMAT = 'hollowdeep-save';
-  const VERSION = 1;
+  // 2: the level is 40x40 tiles now, so an old save's seed builds a different
+  // floor and its stored demon coordinates no longer mean anything.
+  const VERSION = 2;
 
   function num(v, min, max, dflt) {
     const n = typeof v === 'number' ? v : Number(v);

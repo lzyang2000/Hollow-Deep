@@ -213,7 +213,8 @@
     const out = [];
     const kinds = ['rubble', 'rubble', 'debris', 'bones', 'skull', 'crack', 'lantern',
       'mushroom', 'chain', 'stump', 'web', 'web', 'brazier'];
-    const want = world.isBoss ? 170 : 300;
+    // Decor density, not a fixed pile: the floor is 4/9 the area it was.
+    const want = world.isBoss ? 110 : 190;
     for (let i = 0; i < want; i++) {
       const t = rng.pick(world.open);
       const tx = t % C.GRID, ty = (t - tx) / C.GRID;
