@@ -29,6 +29,25 @@ open it on the phone's browser (same Wi-Fi):
 Add it to the home screen for a fullscreen, no-chrome run. Drag anywhere with a
 thumb to walk, aim and swing at once; the buttons handle the rest.
 
+## Hosting it on GitHub Pages
+
+It is a plain static site — no build step, no bundler, no dependencies — so
+Pages serves it as it is:
+
+    git remote add origin git@github.com:<you>/hollow-deep.git
+    git push -u origin main
+
+Then in the repository's **Settings → Pages** pick **Deploy from a branch**,
+branch `main`, folder **/ (root)**. About a minute later the game lives at
+`https://<you>.github.io/hollow-deep/`. The `.nojekyll` at the root tells Pages
+to serve the files verbatim instead of running them through Jekyll.
+
+Hosting is better than `file://` or a LAN server for phone play, not just more
+convenient: browsers only offer the share sheet ("Save to Files") on a secure
+context, so an HTTPS URL is what makes *Carry this run out* work on an iPhone.
+Open it there, use **Add to Home Screen**, and it runs fullscreen with no
+browser chrome.
+
 ## Controls
 
 | Input | Action |
