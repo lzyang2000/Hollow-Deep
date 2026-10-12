@@ -68,7 +68,7 @@
 
   DC.levels = {};
 
-  DC.levels.build = function (depth, rng) {
+  DC.levels.build = function (depth, rng, player) {
     const isBoss = depth % 10 === 0;
     const G = C.GRID;
     let world = null;
@@ -86,7 +86,9 @@
       const m = openTileNear(grid, startTx + rng.int(-4, 4), startTy - rng.int(2, 4), 6);
       world.merchant = DC.Props.merchant(tileCenter(m[0]), tileCenter(m[1]), rng, depth);
       const b = openTileNear(grid, G >> 1, G >> 1, 6);
-      world.boss = DC.Boss.create(rng.pick(['knight', 'mage', 'swordsman']), tileCenter(b[0]), tileCenter(b[1]), depth, rng);
+      const tier = Math.max(1, Math.round(depth / 10));
+      const entry = DC.LORE.bosses[(tier - 1) % DC.LORE.bosses.length];
+      world.boss = DC.Boss.create(entry.kind, tileCenter(b[0]), tileCenter(b[1]), depth, rng, player, entry);
       world.portal = {
         x: tileCenter(b[0]), y: tileCenter(b[1]), tx: b[0], ty: b[1],
         active: false, discovered: false, anim: 0,
@@ -131,7 +133,7 @@
         const t = eTiles[i];
         let r = rng.next() * totalW, kind = mix[0][0];
         for (let k = 0; k < mix.length; k++) { r -= mix[k][1]; if (r <= 0) { kind = mix[k][0]; break; } }
-        world.demons.push(DC.Demons.create(kind, tileCenter(t % G), tileCenter((t - (t % G)) / G), depth, rng));
+        world.demons.push(DC.Demons.create(kind, tileCenter(t % G), tileCenter((t - (t % G)) / G), depth, rng, player));
       }
 
       const chestCount = Math.min(C.CHEST_MAX, Math.round(C.CHEST_BASE + C.CHEST_PER_DEPTH * depth));
