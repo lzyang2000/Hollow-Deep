@@ -25,9 +25,11 @@ browser with no build step. The run ends on death; the score is depth reached.
   (dead ends removed) and looped so it is readable, not a hairball.
 - **Every open tile must be reachable** — verified by flood fill at generation.
 - Boss level (every 10th): open arena, no maze, a handful of pillars.
-- Portal: placed at the BFS-farthest reachable tile from the player start, so
-  it is always reachable and always worth travelling to. On a boss level it
-  only materialises after the boss dies.
+- Portal: a reachable tile about **half the level's own farthest walk** from
+  the stair (never closer than 30 tiles), chosen with random tie-breaking. It
+  is always reachable and always worth travelling to, without the 700 m slog
+  that the absolute farthest tile turns a level into. On a boss level it only
+  materialises after the boss dies.
 
 ## 5. Fog of war / information fog
 - Torchlight radius 15 m, line-of-sight aware, with torch flicker.
