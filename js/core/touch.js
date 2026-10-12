@@ -15,7 +15,7 @@
 
   DC.Touch = {
     id: null, ox: 0, oy: 0, cx: 0, cy: 0,
-    t0: 0, moved: 0, drag: false, active: false,
+    t0: 0, moved: 0, drag: false, active: false, attack: false,
 
     init: function (canvas, game) {
       const self = this;
@@ -78,7 +78,19 @@
       }
 
       const b = L.hitButton(game, mx, my);
-      if (b) { this.act(b, game); this.id = null; this.active = false; return true; }
+      if (b) {
+        // The attack button is the one hold-button in the cluster: pressing it
+        // swings until you let go, and it never walks or re-aims, so you can
+        // stand your ground and trade.
+        if (b.id === 'attack') {
+          this.attack = true;
+          this.pollAtDown = DC.Input.polls;
+          DC.Input.firing = true;
+          DC.Input.tapFrames = 0;
+          return true;
+        }
+        this.act(b, game); this.id = null; this.active = false; return true;
+      }
 
       this.drag = true;
       return true;
@@ -86,6 +98,8 @@
 
     move: function (mx, my, id) {
       if (this.id === null || (id !== undefined && id !== this.id)) return;
+      // A thumb parked on ATTACK that slides a little is still just attacking.
+      if (this.attack) { this.cx = mx; this.cy = my; return; }
       this.cx = mx; this.cy = my;
       const dx = mx - this.ox, dy = my - this.oy;
       this.moved = Math.max(this.moved, Math.hypot(dx, dy));
@@ -105,10 +119,19 @@
     up: function (mx, my, id, game) {
       if (this.id === null || (id !== undefined && id !== this.id)) return;
       const wasDrag = this.drag;
+      const wasAttack = this.attack;
       const dur = game.time - this.t0;
       const far = this.moved >= DEAD;
-      this.id = null; this.active = false; this.drag = false;
+      this.id = null; this.active = false; this.drag = false; this.attack = false;
       this.release();
+
+      if (wasAttack) {
+        // Letting go stops the swing. The one exception is a press that never
+        // reached a simulation step at all -- no frame of it could have swung,
+        // so hand it one swing instead of swallowing the tap.
+        if (DC.Input.polls === this.pollAtDown) { DC.Input.tapFrames = 4; DC.Input.firing = true; }
+        return;
+      }
 
       if (wasDrag && !far && dur < TAP_TIME && game.state === 'playing') {
         if (game.interactTarget) { game.tryInteract(); return; }
@@ -121,6 +144,7 @@
 
     release: function () {
       const input = DC.Input;
+      this.attack = false;
       input.touchX = 0; input.touchY = 0; input.aimHold = false;
       if (!input.dragging) input.firing = false;
     },

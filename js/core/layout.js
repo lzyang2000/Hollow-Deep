@@ -80,6 +80,9 @@
       const acts = [];
       if (!L.touch || !game || !game.player) return acts;
       const p = game.player;
+      // Corner-most, because it is the one control a drag cannot replace: a
+      // drag always walks, so this is how you swing without moving.
+      acts.push({ id: 'attack', label: 'ATTACK', color: '#ffb347' });
       acts.push({ id: 'ability', label: p.cls.ability.name.split(' ')[0].slice(0, 6).toUpperCase(), big: true });
       if (game.interactTarget) {
         acts.push({ id: 'interact', label: game.interactTarget.kind === 'merchant' ? 'TRADE' : 'DOWN', glow: true });

@@ -14,7 +14,7 @@
   DC.Input = {
     keys: Object.create(null),
     moveX: 0, moveY: 0,
-    aim: 0, firing: false, dragging: false,
+    aim: 0, firing: false, dragging: false, polls: 0,
     mx: 0, my: 0, hasMouse: false,
     // Touch writes a movement vector and an aim here; see core/touch.js.
     // aimHold means "the aim was set by something other than the cursor", so
@@ -66,6 +66,7 @@
 
     /* Recompute the movement vector and refresh per-frame edge flags. */
     poll: function () {
+      this.polls++;
       let x = 0, y = 0;
       for (const code in this.keys) {
         if (!this.keys[code]) continue;
