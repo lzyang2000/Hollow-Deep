@@ -80,7 +80,10 @@
 
       let vx = 0, vy = 0;
       const dist = p ? Math.hypot(p.x - d.x, p.y - d.y) : 999;
-      const los = p ? DC.hasLOS(world, d.x, d.y, p.x, p.y) : false;
+      /* A voxel walk per demon per frame is the expensive part of a crowded
+         floor. Nothing below reads sight beyond the leash radius, so a demon
+         that is nowhere near you does not get one. */
+      const los = (p && dist <= C.SIGHT_CULL) ? DC.hasLOS(world, d.x, d.y, p.x, p.y) : false;
 
       if (!d.hasSeen || !p || p.dead) {
         // Idle drift. Keeps the level feeling alive without giving anything away.
@@ -171,17 +174,22 @@
         }
       }
 
-      /* --- separation so a pack does not become one blob ------------------ */
+      /* --- separation so a pack does not become one blob ------------------
+         Squared distances and an axis reject: with a couple of hundred
+         demons on a floor this loop is the other half of the frame budget. */
       for (let i = 0; i < world.demons.length; i++) {
         const o = world.demons[i];
         if (o === d || o.dead) continue;
-        const dx = d.x - o.x, dy = d.y - o.y;
-        const dd = Math.hypot(dx, dy);
+        const dx = d.x - o.x;
         const min = d.r + o.r;
-        if (dd > 0.001 && dd < min) {
-          vx += (dx / dd) * (min - dd) * 4;
-          vy += (dy / dd) * (min - dd) * 4;
-        }
+        if (dx > min || dx < -min) continue;
+        const dy = d.y - o.y;
+        if (dy > min || dy < -min) continue;
+        const dd2 = dx * dx + dy * dy;
+        if (dd2 <= 0.0001 || dd2 >= min * min) continue;
+        const dd = Math.sqrt(dd2);
+        vx += (dx / dd) * (min - dd) * 4;
+        vy += (dy / dd) * (min - dd) * 4;
       }
 
       vx += d.kx; vy += d.ky;

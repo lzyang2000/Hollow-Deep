@@ -33,17 +33,20 @@
     // Flow field recompute cadence (seconds).
     FLOW_INTERVAL: 0.3,
 
-    // Level population.
-    ENEMY_BASE: 14,
-    ENEMY_PER_DEPTH: 1.5,
-    ENEMY_MAX: 60,
-    CHEST_BASE: 6,
-    CHEST_PER_DEPTH: 0.5,
-    CHEST_MAX: 16,
-    URN_BASE: 9,
-    URN_PER_DEPTH: 0.7,
-    URN_MAX: 22,
-    MIN_SPAWN_DIST: 26,   // metres from start before a demon may appear
+    // Level population. A floor is meant to feel inhabited: you meet the
+    // whole ecosystem of the deep, not three demons and a chest. The caps
+    // exist because the open floor of a level is only ~1000 tiles and the
+    // spawner needs room to keep things apart.
+    ENEMY_BASE: 42,
+    ENEMY_PER_DEPTH: 4.5,
+    ENEMY_MAX: 180,
+    CHEST_BASE: 18,
+    CHEST_PER_DEPTH: 1.5,
+    CHEST_MAX: 48,
+    URN_BASE: 27,
+    URN_PER_DEPTH: 2.1,
+    URN_MAX: 66,
+    MIN_SPAWN_DIST: 40,   // metres from start before a demon may appear
 
     // Portal gate: a reachable tile this deep into the maze's walking
     // distance, not the absolute farthest one.
@@ -63,10 +66,17 @@
 
     // Aggro budget: how many demons may hunt at once. Levels are dense but
     // the whole floor never comes with you, so a pack can always be pulled.
-    AGGRO_BASE: 4,
-    AGGRO_PER_DEPTH: 0.4,
-    AGGRO_MAX: 12,
+    AGGRO_BASE: 3,
+    AGGRO_PER_DEPTH: 0.8,
+    AGGRO_MAX: 14,
     LEASH_DIST: 30,      // metres -- beyond this a lost hunter gives up
+    SIGHT_CULL: 44,      // metres -- no line-of-sight test is paid for beyond this
+
+    // Out-of-combat recovery. A crowded floor is only survivable if losing
+    // a pack is worth something: once nothing can see you and you have not
+    // been hit for a few seconds, the wound starts to close.
+    REGEN_DELAY: 5,      // seconds calm before it starts
+    REGEN_FRAC: 0.014,   // fraction of max HP per second, once calm
     LEASH_TIME: 3.5,     // seconds out of sight before it gives up
   };
 })(typeof window !== 'undefined' ? window : globalThis);

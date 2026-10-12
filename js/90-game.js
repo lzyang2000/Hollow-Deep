@@ -98,7 +98,7 @@
       G.rng = new DC.RNG(G.seed);
       G.depth = Math.max(1, startDepth | 0) || 1;
       G.player = DC.Player.create(classId);
-      G.stats = { kills: 0, goldEarned: 0, time: 0, meleeHits: 0, chests: 0, potions: 0 };
+      G.stats = { kills: 0, goldEarned: 0, time: 0, meleeHits: 0, chests: 0, urns: 0, potions: 0 };
       G.logs = [];
       G.addItem(DC.makePotion('heal'));
       G.startLevel(G.depth, true);
@@ -438,6 +438,18 @@
           G.stats.chests++;
         }
       }
+      // Urns shatter on contact. With a floor this crowded the pottery
+      // along the walkway is the potion supply, and stopping to chip at
+      // every one of sixty of them is not a game.
+      for (let i = 0; i < w.urns.length; i++) {
+        const u = w.urns[i];
+        u.anim += dt;
+        if (!u.broken && Math.hypot(u.x - p.x, u.y - p.y) < u.r + p.r + 0.15) {
+          u.broken = true;   // the caller marks it, as the combat smashes do
+          DC.Loot.onUrn(G, w, u);
+          G.stats.urns++;
+        }
+      }
       if (w.merchant) w.merchant.bob += dt;
       if (w.portal) w.portal.anim += dt;
 
@@ -457,14 +469,18 @@
         if (G.heartT <= 0) { G.heartT = 1.15; DC.Audio.play('heartbeat'); }
       }
 
-      // music intensity from the local heat
-      let heat = 0;
+      // music intensity from the local heat, and the calm clock that gates
+      // out-of-combat recovery: any hunter on this floor, or a hit in the
+      // last moments, resets it.
+      let heat = 0, seenByAny = false;
       for (let i = 0; i < w.demons.length; i++) {
         const d = w.demons[i];
         if (d.dead || !d.hasSeen) continue;
+        seenByAny = true;
         if (Math.hypot(d.x - p.x, d.y - p.y) < 26) heat++;
       }
-      if (w.boss && !w.boss.dead && w.boss.awake) heat += 4;
+      if (w.boss && !w.boss.dead && w.boss.awake) { seenByAny = true; heat += 4; }
+      if (seenByAny || p.hurtT > 0 || p.dead) p.calmT = 0; else p.calmT += dt;
       DC.Audio.setIntensity(heat / 6);
 
       // logs age
