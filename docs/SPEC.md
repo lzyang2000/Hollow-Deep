@@ -21,32 +21,44 @@ browser with no build step. The run ends on death; the score is depth reached.
 
 ### 2b. Touch (one hand, or two)
 
-The field finger is a joystick and a reticle at the same time, and attacking
-stays a decision: nothing swings just because a thumb is resting on the glass.
-Two fingers are tracked apart, which is what makes fighting possible: ATTACK
-belongs to its own finger, so the other thumb can walk and aim underneath it.
+Two thumbs, two sticks. The field finger is a joystick; the wide ATTACK pad in
+the free corner is a trigger *and* an aim stick. That split is the point: one
+fingertip on the glass is one point, and one point can only ever be the direction
+you are walking, so a phone that aims with its walking thumb can never walk north
+and hit east. Attacking stays a decision either way: nothing swings just because
+a thumb is resting on the glass.
 
 - **Drag** anywhere on the play field: walk along the drag (a joystick measured
-  from where the finger landed) **and** aim at the fingertip itself — the aim is
-  the line from the player's own screen position to the finger, so the crosshair
-  you can see and the blow you get are the same thing. It does not attack.
+  from where the finger landed). It does not attack. While nothing is on the pad
+  that same finger **also** aims at the fingertip itself — the aim is the line
+  from the player's own screen position to the finger — so one thumb still points
+  where it walks and a tap still hits what it tapped.
 - **Tap** (short, under 14 px of travel, under 0.4 s): interact with whatever is
   in reach; if nothing is, one swing **at the point tapped** (`Input.tapFrames`
   releases the attack a few frames later so a tap is never a permanent hold).
-- **ATTACK** is the one hold-button, offered twice: a circle in the right
-  cluster and a wide pad in the bottom-left corner where a second thumb already
-  rests. Pressing it sets `Input.firing` until that finger lifts, and it neither
-  walks nor re-aims. Held with a second thumb it swings *while the first thumb
-  walks and aims*; held alone it aims itself at the nearest demon the torch is
-  showing (`Game.aimAssist`). Lifting it stops the swing without stopping the
-  walk. A press that never reached a simulation step still gets one swing rather
-  than being swallowed.
+- **ATTACK** is the one hold-button, offered twice, and either sets
+  `Input.firing` until that finger lifts. The circle in the right cluster sits
+  under the thumb that is already walking, so it stays a plain trigger: it
+  neither walks nor re-aims, and its swing aims itself at the nearest demon the
+  torch is showing (`Game.aimAssist`).
+- The wide **pad** in the bottom-left corner is also the **aim stick**
+  (`DC.Touch.stick`). The thumb holding it may slide, and the aim becomes that
+  travel from where the thumb landed (`atan2(dy, dx)` beyond a 12 px dead zone)
+  rather than the line from the body to the thumb — so the thumb never leaves its
+  corner and the aim can be east while the other thumb walks north. Parked
+  without a push it lets the assist aim; pushed, it is left alone. While it is
+  held the field finger is a joystick only, and the direction the stick leaves
+  behind survives its release. A press that never reached a simulation step still
+  gets one swing rather than being swallowed.
 - Only one field finger at a time: a second finger dropped on the glass is
-  ignored, so a stray thumb cannot steal the aim mid-stride.
+  ignored, and while the aim stick is held the field finger cannot move the aim
+  at all, so a stray thumb cannot steal it mid-stride.
 - A touch that never crosses the dead zone walks nobody and attacks nothing.
-- The HUD draws the three parts separately: a crosshair under the fingertip, the
-  aim as a ray leaving the body, and the walk-stick from where the finger landed
-  to where it is.
+- The HUD draws every part on its own: the walk-stick from where the field
+  finger landed to where it is, the aim as a ray leaving the body, a crosshair
+  under the field fingertip while that finger is the one aiming, a crosshair at
+  the tip of the ray while the aim stick is pushed, and the stick itself as a
+  ring at its pivot with a knob at the direction it is pushing.
 - A mouse event that arrives just after a touch is the same finger arriving
   twice, so `Input.mouseBlocked` swallows it. Taken for a mouse it starts a drag
   that no mouse button ever releases: the player swings forever and the reticle
@@ -161,9 +173,20 @@ the average of attack / defence / HP / MP bonus ratios against class baselines.
 Enemy multiplier: `E(d) = 1 + 0.70*(P(d) - 1)` — a 30 % shallower slope.
 
 ## 9. Merchant
-Sits in every boss arena. Sells potions, HP/MP elixirs, weapons, armour,
-movement speed, attack speed. Prices scale with boss tier; expected income is
-tuned so a careful run affords roughly two to three purchases per boss visit.
+Sits in every boss arena. Sells potions, weapons, armour and repeatable stat
+upgrades (`DC.shopStock`), and the shelf lengthens with depth: always weapon,
+armour and two upgrades, a third upgrade from the second boss floor, and a finer
+pair of the same kind (item level +3, priced for it) from the fourth — ten rows
+at the deepest.
+
+Two curves have to hold. **The wares must beat the floor:** chests roll
+`depth+1..3` at a random quality, so the counter rolls `depth+4+t`
+(`t = round(depth/10)`) and floors the quality at Fine, Runed from the second
+boss floor and Seal-forged from the fourth. **The prices must keep up with the
+purse:** income per floor grows with depth, so gear is priced off depth squared
+(`13d^2 - 58d + 150`, floor 180) with potions and upgrades as fractions of it.
+Measured against a careful bot's savings that lands near a tenth of the purse at
+every depth, which is roughly two to three purchases per boss visit.
 
 ## 10. Audio
 All audio is generated at runtime with WebAudio: an adaptive procedural
@@ -249,9 +272,18 @@ title screen, class selection, depth milestones, boss antechambers and death.
     cluster, seven buttons deep when an interact prompt is up, plus the left
     ATTACK pad, stays inside a portrait and a landscape phone frame.
 21. Two fingers work apart: a field finger walking plus the ATTACK pad held
-    swings *and* walks at once, keeps the field finger's own aim (no assist),
-    and lifting either finger stops only its own job. A second field finger is
-    refused.
+    swings *and* walks at once, and lifting either finger stops only its own
+    job. A second field finger is refused.
+22. The counter's best gear improves at every boss tier, always outscores the
+    best chest on the same floor (`depth+3`), never sells below Fine at depth 10
+    and never below Seal-forged at depth 40, and its cheapest piece of gear costs
+    more than three times as much ten depths later. A full ten-row counter fits a
+    portrait phone, a landscape phone and a desktop panel, LEAVE button included.
+23. With the pad held, pushing it points the weapon and a field finger pulling
+    the other way cannot move the aim: the actor walks one way and blows the
+    other. Lifting the walk finger stops the walk only; lifting the pad stops the
+    swing and keeps the direction. With nothing on the pad, the fingertip is the
+    reticle again.
 20. A compatibility mouse event fired within 900 ms of a touch is ignored, and a
     real mouse is not: `Input.mouseBlocked` is true right after a tap and false
     once the touch has aged out.

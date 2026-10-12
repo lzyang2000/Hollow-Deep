@@ -196,9 +196,11 @@
          is measured from the body to exactly that point on the glass. */
       const px = cam.worldToScreenX(p.x), py = cam.worldToScreenY(p.y);
       const fx = DC.Touch.cx, fy = DC.Touch.cy;
-      // The crosshair belongs to the field finger. A second thumb parked on
-      // ATTACK changes nothing about where the aim is or where it is drawn.
-      const aiming = DC.Touch.active;
+      const stick = DC.Touch.stick;
+      // The crosshair on the glass belongs to the field finger only while that
+      // finger is the one aiming. With the aim stick out there, the point that
+      // matters is the tip of the aim ray, and that is what gets a crosshair.
+      const aiming = DC.Touch.active && !stick.active;
 
       if (DC.Input.touchX || DC.Input.touchY) {
         ctx.strokeStyle = 'rgba(255,255,255,0.16)';
@@ -220,6 +222,20 @@
       ctx.lineTo(px + Math.cos(p.aim) * (body + reach), py + Math.sin(p.aim) * (body + reach));
       ctx.stroke();
       ctx.setLineDash([]);
+
+      if (stick.active && stick.dragged) {
+        const tx = px + Math.cos(p.aim) * (body + reach);
+        const ty = py + Math.sin(p.aim) * (body + reach);
+        ctx.strokeStyle = 'rgba(255,255,255,0.62)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(tx, ty, 8, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(tx - 13, ty); ctx.lineTo(tx - 10, ty);
+        ctx.moveTo(tx + 10, ty); ctx.lineTo(tx + 13, ty);
+        ctx.moveTo(tx, ty - 13); ctx.lineTo(tx, ty - 10);
+        ctx.moveTo(tx, ty + 10); ctx.lineTo(tx, ty + 13);
+        ctx.stroke();
+      }
 
       if (aiming) {
         ctx.strokeStyle = 'rgba(255,255,255,0.62)';
@@ -275,8 +291,20 @@
         ctx.fillText(b.label, b.x, b.y - 1);
         ctx.font = '600 ' + DC.Layout.font(8, 8) + 'px ' + FONT;
         ctx.fillStyle = 'rgba(255,255,255,0.42)';
-        ctx.fillText('2nd thumb', b.x, b.y + 12);
+        ctx.fillText(b.hint || '2nd thumb', b.x, b.y + 12);
         ctx.textAlign = 'left';
+        // The stick, drawn where the thumb actually is: a ring at the pivot it
+        // landed on, a knob at the direction it is pushing.
+        const st = DC.Touch.stick;
+        if (st.active) {
+          const len = Math.hypot(st.dx, st.dy);
+          const k = len > 0 ? Math.min(len, 26) / len : 0;
+          ctx.strokeStyle = 'rgba(255,179,71,0.45)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(st.ox, st.oy, 20, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = 'rgba(255,179,71,0.8)';
+          ctx.beginPath(); ctx.arc(st.ox + st.dx * k, st.oy + st.dy * k, 11, 0, Math.PI * 2); ctx.fill();
+        }
         continue;
       }
 

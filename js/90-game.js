@@ -676,11 +676,14 @@
       } else if (DC.Input.moveX || DC.Input.moveY) {
         DC.Input.aim = Math.atan2(DC.Input.moveY, DC.Input.moveX);
       }
-      // One-handed assist: while ATTACK is held with no finger on the field to
-      // aim with, the swing finds the nearest demon in view. With two hands the
-      // field finger is aiming, so its aim is left alone; a tap aims for itself
-      // too, and a mouse always wins.
-      if (DC.Input.firing && DC.Touch && DC.Touch.attack && !DC.Touch.drag && !DC.Input.hasMouse) {
+      // Assist aims for whoever is not aiming on purpose. A pushed aim stick is
+      // a deliberate direction, so it is left alone; so is a field fingertip
+      // serving as the reticle one-handed. Everything else -- a thumb parked on
+      // the pad, a thumb on the ATTACK circle -- gets the nearest demon in the
+      // light, because a swing that hits nothing is not a fight. A mouse wins.
+      const stickAims = DC.Touch && DC.Touch.stick.active && DC.Touch.stick.dragged;
+      const fieldAims = DC.Touch && DC.Touch.active && !DC.Touch.stick.active;
+      if (DC.Input.firing && DC.Touch && DC.Touch.attack && !stickAims && !fieldAims && !DC.Input.hasMouse) {
         const t = G.aimAssist(p);
         if (t) DC.Input.aim = Math.atan2(t.y - p.y, t.x - p.x);
       }
