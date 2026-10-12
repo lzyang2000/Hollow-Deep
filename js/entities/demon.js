@@ -19,7 +19,9 @@
         hp, maxHp: hp,
         atk: def.atk * mult,
         defVal: Math.round(def.def * mult * 0.7),
-        speed: def.speed * M.clamp(1 + (mult - 1) * 0.25, 1, 1.5),
+        // A ranged demon's stride is capped per-kind: depth may buy it hp, atk
+        // and defence, but never the legs to escape a career it already lost.
+        speed: def.speed * M.clamp(1 + (mult - 1) * 0.25, 1, def.speedCap || 1.5),
         state: 'idle', hasSeen: false, alertedT: 0,
         attackCd: rng.range(0, 1), windup: 0, windupMax: 0,
         hitFlash: 0, kx: 0, ky: 0,

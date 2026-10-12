@@ -7,9 +7,12 @@
   DC.DEMONS = {
     imp: {
       // Skittish but not a sprinter: an imp keeps its distance by backing off
-      // to keepRange, not by outrunning a knight forever.
+      // to keepRange, not by outrunning a knight forever. The stride is set
+      // under the knight's 3.5 on purpose -- a shooter you can eventually run
+      // down is a fight, a shooter you cannot is a countdown. speedCap keeps
+      // deep floors from buying that stride back (2.6 x 1.18 = 3.07 m/s).
       id: 'imp', mirrors: 'mage', name: 'Imp',
-      hp: 26, atk: 8, def: 0, speed: 3.4, r: 0.62,
+      hp: 26, atk: 8, def: 0, speed: 2.6, speedCap: 1.18, r: 0.62,
       attackKind: 'ranged', attackCd: 1.5, sight: 12, keepRange: 9,
       projSpeed: 15, projLife: 2.0,
       powerFactor: 0.62, color: '#ff7a59', accent: '#8f2f22', xp: 1,
@@ -49,7 +52,10 @@
 
   DC.BOSS = {
     knight: { hp: 420, atk: 26, def: 5, speed: 3.4, r: 2.5, color: '#9fb0cc', accent: '#4a5772', body: '#2b3444', cape: '#161c26', horn: '#c8b79a' },
-    mage: { hp: 340, atk: 30, def: 3, speed: 3.9, r: 2.2, color: '#ff8f5e', accent: '#7c2c1c', body: '#3a1f1a', cape: '#1d0f0d', horn: '#e2c39b' },
+    // The sovereign kites too, so it obeys the same rule: slower than a knight
+    // even at the x1.18 enrage (2.9 x 1.18 = 3.42 < 3.5). Its threat is the
+    // volley and the slam, not the ability to never be caught.
+    mage: { hp: 340, atk: 30, def: 3, speed: 2.9, r: 2.2, color: '#ff8f5e', accent: '#7c2c1c', body: '#3a1f1a', cape: '#1d0f0d', horn: '#e2c39b' },
     swordsman: { hp: 380, atk: 28, def: 4, speed: 4.6, r: 2.3, color: '#e8564d', accent: '#5d160d', body: '#33171a', cape: '#1a0c0e', horn: '#d8b78e' },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

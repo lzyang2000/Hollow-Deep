@@ -109,7 +109,7 @@ a thumb is resting on the glass.
 Demons mirror the three player careers, one tier weaker:
 | Demon | Mirrors | Behaviour |
 | --- | --- | --- |
-| Imp | Mage | Keeps distance, firebolts (skittish, not a sprinter) |
+| Imp | Mage | Keeps distance, firebolts (skittish, and deliberately slower than you) |
 | Hellblade | Swordsman | Fast rusher, quick slashes |
 | Gorewarden | Knight | Slow, tanky, heavy overhead slam |
 
@@ -123,6 +123,14 @@ Demons mirror the three player careers, one tier weaker:
 - Every sight radius sits **just inside the 15 m torch** (Imp 12, Hellblade 11,
   Gorewarden 10). On a floor this crowded that gap is what makes it walkable
   rather than a minefield: you always see them first, and the harness asserts it.
+- **A shooter may never outrun the slowest career.** An Imp that can back away
+  at your own stride is not a fight, it is a countdown. Imp stride is **2.6 m/s**
+  against a knight's 3.5, and a per-kind `speedCap` (1.18) stops depth scaling
+  from buying the legs back: an Imp tops out at **3.07 m/s**, not the 5.10 the
+  old blanket 1.5x cap allowed. The mage sovereign obeys the same rule (2.9 m/s,
+  3.42 while enraged). Melee mirrors stay allowed to be faster — a Hellblade at
+  4.7 must close to hit you, which is a different problem than never being
+  catchable. The smoke test asserts all three cases.
 - Line-of-sight tests are only paid for inside `SIGHT_CULL` (44 m).
 - **Aggro budget**: only `AGGRO_BASE + AGGRO_PER_DEPTH * depth` demons (capped
   at `AGGRO_MAX`) may hunt at once, so a crowded floor never becomes a swarm.
