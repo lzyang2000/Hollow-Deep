@@ -151,6 +151,13 @@ off. `I` or `Esc` closes it.
 - The **minimap** (upper right) is a 45 m square centred on you and shows the
   ground you have already revealed. Once you find the portal it is marked, and
   an arrow points at it when it is off the minimap.
+- **Click / tap the minimap** (or press **N**) for the **whole floor**: the level
+  at full scale with every tile your torch has already taken back drawn clear of
+  the fog, the explored percentage, a 50 m scale bar and a box showing which
+  slice the little map is looking at. Anything the torch has not seen stays
+  black, and demons, chests and urns still only appear while they are actually
+  in the light. The floor stops while the map is up — a map read mid-fight is an
+  obituary. Click, tap, or press N / ESC / ENTER to close it.
 - Demons **do not attack until they have seen you**. All three mirrors walk every
   floor — imps are commonest early, the heavier Gorewarden and Hellblade get
   relatively more common as you go down — and each one sees *slightly* less far

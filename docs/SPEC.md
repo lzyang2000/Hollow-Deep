@@ -111,7 +111,17 @@ a thumb is resting on the glass.
   faintly remembered (terrain only — enemies and chests are never remembered).
 - The minimap is a 45 m square centred on the player showing revealed terrain.
   The portal is marked once discovered; when it is discovered but outside the
-  minimap window an arrow on the rim points at it.
+  minimap window an arrow on the rim points at it. Everything it draws is
+  clipped to the panel — a tile that starts inside the 45 m span and ends
+  outside it must not bleed past the frame.
+- Clicking / tapping the minimap, or pressing `N`, opens the **whole-floor map**
+  (`state === 'map'`): the level at `WORLD_M` scale, discovered tiles drawn
+  clear of the fog, undiscovered tiles left black, and the same marker rules as
+  the minimap (demons / chests / urns only while actually visible, portal only
+  once discovered). It reports the explored percentage of the floor, draws a
+  50 m scale bar and a rectangle showing the minimap's current window. The run
+  is paused while it is open — the loop only steps in `playing`, and the fog
+  stops advancing — and any click, tap, or `N` / `ESC` / `ENTER` closes it.
 
 ## 6. Enemies
 Demons mirror the three player careers, one tier weaker:
@@ -313,6 +323,11 @@ title screen, class selection, depth milestones, boss antechambers and death.
     other. Lifting the walk finger stops the walk only; lifting the pad stops the
     swing and keeps the direction. With nothing on the pad, the fingertip is the
     reticle again.
+24. The minimap clips before it paints any terrain, on desktop and on a phone,
+    even though its tile window genuinely overflows the panel. Clicking, tapping
+    or pressing `N` on the minimap opens the whole-floor map, which paints only
+    discovered tiles, stays inside its board and its screen, holds the floor
+    still while it is up, and closes on a click, a tap, `N`, `ESC` or `ENTER`.
 20. A compatibility mouse event fired within 900 ms of a touch is ignored, and a
     real mouse is not: `Input.mouseBlocked` is true right after a tap and false
     once the touch has aged out.
