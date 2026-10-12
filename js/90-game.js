@@ -92,9 +92,9 @@
       const el = global.document && global.document.getElementById('hint');
       if (!el) return;
       if (DC.Layout.touch) {
-        el.textContent = 'Two thumbs: drag with one to walk and aim, hold ATTACK with the other \u00b7 one thumb: tap to strike, or tap ATTACK \u00b7 tap the merchant or the portal';
+        el.textContent = 'Two thumbs: drag with one to walk and aim, hold ATTACK with the other \u00b7 one thumb: tap to strike, or tap ATTACK \u00b7 tap the merchant or the portal \u00b7 tap the map for the whole floor';
       } else {
-        el.textContent = 'WASD move \u00b7 mouse aim \u00b7 click attack \u00b7 SPACE ability \u00b7 E interact \u00b7 1/2 potions \u00b7 I pack \u00b7 V zoom \u00b7 M mute \u00b7 ESC pause \u00b7 S/L save and load in the pause menu';
+        el.textContent = 'WASD move \u00b7 mouse aim \u00b7 click attack \u00b7 SPACE ability \u00b7 E interact \u00b7 1/2 potions \u00b7 I pack \u00b7 N map \u00b7 V zoom \u00b7 M mute \u00b7 ESC pause \u00b7 S/L save and load in the pause menu';
       }
     },
 
@@ -175,6 +175,19 @@
           G.best = { depth: G.depth, cls: G.player ? G.player.classId : '' };
         }
       } catch (e) { /* file:// may block storage */ }
+    },
+
+    /* The map is a state, not an overlay painted over a live fight: the loop
+       only steps while state is 'playing', so opening the map stops the floor
+       and everything on it. */
+    toggleMap: function () {
+      if (G.state === 'playing') { G.setState('map'); DC.Audio.play('uiSelect'); }
+      else if (G.state === 'map') { G.setState('playing'); DC.Audio.play('uiSelect'); }
+    },
+
+    onMinimap: function (mx, my) {
+      const r = DC.Render && DC.Render.minimapRect;
+      return !!r && mx >= r.x && mx <= r.x + r.size && my >= r.y && my <= r.y + r.size;
     },
 
     setState: function (s) {
@@ -373,6 +386,12 @@
     /* ---------------- interaction ---------------- */
     onClick: function (mx, my) {
       DC.Audio.resume();
+      if (G.state === 'playing') {
+        // A click on the map panel is a request to see the floor, not a swing.
+        if (G.onMinimap(mx, my)) G.toggleMap();
+        return;
+      }
+      if (G.state === 'map') { G.toggleMap(); return; }
       if (G.state === 'title') {
         const tb = DC.UI.titleButtons(G);
         for (let i = 0; i < tb.length; i++) {
@@ -529,8 +548,16 @@
         if (code === 'KeyF') { DC.Player.drink(G.world, G.player, 'mana', G); return; }
         return;
       }
+      if (G.state === 'map') {
+        if (code === 'Escape' || code === 'Enter' || code === 'Space' || code === 'KeyN' || code === 'Tab') {
+          if (code === 'Tab') ev.preventDefault();
+          G.toggleMap();
+        }
+        return;
+      }
       if (G.state === 'playing') {
         if (code === 'Escape') { G.setState('pause'); return; }
+        if (code === 'KeyN') { G.toggleMap(); return; }
         if (code === 'KeyI' || code === 'Tab') { G.openPack(); return; }
         if (code === 'KeyV') { DC.Camera.zoomCycle(); G.log('Zoom ' + DC.Camera.pxPerM + ' px/m', 'rgba(255,255,255,0.45)'); return; }
         if (code === 'Space') { DC.Player.ability(G.world, G.player, G); return; }
@@ -818,7 +845,9 @@
       const ctx = G.ctx, cam = DC.Camera;
       ctx.save();
       if (G.world && G.player) {
-        DC.Fog.update(G.world, G.player, cam, 0.016);
+        // The whole-floor map is a snapshot: while it is open the torch stops
+        // taking back ground, so reading the map is never itself a scout.
+        if (G.state !== 'map') DC.Fog.update(G.world, G.player, cam, 0.016);
         DC.Render.world(ctx, G.world, cam);
         DC.Render.props(ctx, G.world, cam, DC.Fog);
         if (G.world.boss) {
@@ -851,6 +880,7 @@
       else if (G.state === 'pause') DC.UI.drawPause(ctx, G);
       else if (G.state === 'shop') DC.Shop.draw(ctx, G);
       else if (G.state === 'inventory') DC.UI.Inv.draw(ctx, G);
+      else if (G.state === 'map') DC.Render.fullMap(ctx, G, cam);
       else if (G.state === 'dead') DC.UI.drawDeath(ctx, G);
 
       if (G.transition) {

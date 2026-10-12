@@ -127,6 +127,9 @@
         return true;
       }
 
+      // The map panel is the same button under a thumb.
+      if (game.onMinimap && game.onMinimap(mx, my)) { game.toggleMap(); return true; }
+
       // The field finger is the joystick and the reticle. Only one at a time: a
       // second finger on the glass must not steal the aim mid-stride.
       if (this.id !== null) return false;

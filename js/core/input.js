@@ -55,6 +55,12 @@
         // taken for a mouse it leaves a drag that no mouse button ever releases
         // -- the player swings forever and the reticle freezes at the tap.
         if (self.mouseBlocked()) return;
+        // The map panel is a button. Pressing on it should open the floor, not
+        // spend a swing and freeze the reticle on the corner of the HUD.
+        if (DC.Game && DC.Game.state === 'playing' && DC.Game.onMinimap) {
+          const r0 = canvas.getBoundingClientRect();
+          if (DC.Game.onMinimap(e.clientX - r0.left, e.clientY - r0.top)) return;
+        }
         e.preventDefault();
         self.firing = true; self.dragging = true;
         const r = canvas.getBoundingClientRect();
