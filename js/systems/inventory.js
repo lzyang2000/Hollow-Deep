@@ -24,22 +24,39 @@
       return (item.value || 0) / 1000;
     },
 
+    /* The stride a piece costs, spelled out wherever the piece is shown. */
+    weightTag: function (item) {
+      if (!item || !item.penalty) return '';
+      return '  -' + item.penalty.toFixed(2) + ' m/s';
+    },
+
     statLine: function (item) {
       if (!item) return '';
-      if (item.type === 'weapon') return '+' + item.atk + ' ATK';
-      if (item.type === 'armor') return '+' + item.def + ' DEF';
+      if (item.type === 'weapon') return '+' + item.atk + ' ATK' + DC.Inv.weightTag(item);
+      if (item.type === 'armor') return '+' + item.def + ' DEF' + DC.Inv.weightTag(item);
       if (item.type === 'potion') {
         return 'Restores ' + Math.round(item.frac * 100) + '% ' + (item.kind === 'hp' ? 'HP' : 'MP');
       }
       return '';
     },
 
-    /* What equipping this would do to the number you actually fight with. */
+    /* What putting this on actually does to you: the stat it buys, minus the
+       stride it costs, at the rate this career values stride. This is the one
+       number a piece of gear should be judged by, and it is what "vs worn"
+       means everywhere in the interface. */
+    fit: function (p, item) {
+      const slot = DC.Inv.slotOf(item);
+      if (!slot) return (item.value || 0) / 1000;
+      const worn = p[slot];
+      const dStat = DC.Inv.power(item) - DC.Inv.power(worn);
+      const dPen = (item.penalty || 0) - (worn ? worn.penalty || 0 : 0);
+      return dStat - dPen * (p.cls.moveValue || 4);
+    },
+
     compare: function (p, item) {
       const slot = DC.Inv.slotOf(item);
       if (!slot) return '';
-      const cur = p[slot] ? DC.Inv.power(p[slot]) : 0;
-      const d = DC.Inv.power(item) - cur;
+      const d = Math.round(DC.Inv.fit(p, item));
       return (d >= 0 ? '+' : '') + d;
     },
 
@@ -60,10 +77,7 @@
        same object, but both are measured against what you are already wearing.
        Something worse than what you wear is worth less than nothing. */
     urgency: function (p, item) {
-      const slot = DC.Inv.slotOf(item);
-      if (!slot) return (item.value || 0) / 1000;
-      const worn = p[slot] ? DC.Inv.power(p[slot]) : 0;
-      return DC.Inv.power(item) - worn + (item.value || 0) / 100000;
+      return DC.Inv.fit(p, item) + (item.value || 0) / 100000;
     },
 
     /* Put a find in the bag. A full bag gives up the thing that helps you

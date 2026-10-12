@@ -83,9 +83,11 @@
     const W = game.cam.w, H = game.cam.h, L = DC.Layout;
     const bh = L.touch ? 46 : 34;
     const gap = 12;
-    const bw = Math.min(L.narrow ? 158 : 214, (W - 30 - gap) / 2);
+    const bw = Math.min(L.narrow ? 158 : 214, (W - 2 * L.pad - gap) / 2);
     const x0 = (W - (bw * 2 + gap)) / 2;
-    const y = H * 0.84;
+    /* Anchored to the bottom, not to a fraction of the height: on a phone
+       lying on its side 0.84 * 390 leaves the buttons cut in half. */
+    const y = H - L.pad - bh;
     return [
       { id: 'descend', label: 'DESCEND', primary: true, x: x0, y: y, w: bw, h: bh },
       { id: 'load', label: 'LOAD A SAVE', accent: '#ffd166', x: x0 + bw + gap, y: y, w: bw, h: bh },
@@ -98,35 +100,80 @@
     ctx.fillRect(0, 0, W, H);
 
     const t = game.time;
-    DC.UI.centerText(ctx, DC.LORE.title, W / 2, H * 0.16, '700 ' + L.font(46, 24) + 'px ' + FONT, '#e8eef8');
-    DC.UI.centerText(ctx, DC.LORE.subtitle, W / 2, H * 0.16 + L.font(30, 20), '600 ' + L.font(14, 11) + 'px ' + FONT, 'rgba(255,209,102,0.85)');
+    const btns = DC.UI.titleButtons(game);
+    const best = game.best && game.best.depth;
 
-    ctx.font = '500 ' + L.font(14, 11) + 'px ' + FONT;
+    /* Nothing here may be clipped, and on a phone held upright both the title
+       and the crawl are too wide as authored. So measure the title down until
+       it fits, then wrap the crawl to the panel and take a point off the type
+       until the whole block fits the band between the subtitle and the
+       buttons. The reveal timing stays keyed to the authored line, so wrapping
+       a line into two does not give it two beats. */
+    let tf = L.font(46, 24);
+    ctx.font = '700 ' + tf + 'px ' + FONT;
+    while (tf > 15 && ctx.measureText(DC.LORE.title).width > W - 20) tf = Math.max(15, Math.round(tf * 0.9));
+    const titleW = ctx.measureText(DC.LORE.title).width;
+    const titleY = Math.max(tf + L.pad, H * 0.16);
+    DC.UI.centerText(ctx, DC.LORE.title, W / 2, titleY, '700 ' + tf + 'px ' + FONT, '#e8eef8');
+
+    const sf = L.font(14, 11);
+    const subY = titleY + sf + L.font(12, 10);
+    DC.UI.centerText(ctx, DC.LORE.subtitle, W / 2, subY, '600 ' + sf + 'px ' + FONT, 'rgba(255,209,102,0.85)');
+
+    const hintF = L.font(12, 10);
+    const hintY = btns[0].y - hintF - L.font(8, 6);
+    const bestF = L.font(12, 10);
+    const bestY = hintY - bestF - L.font(10, 8);
+    const bottom = (best ? bestY : hintY) - L.font(10, 8);
+    const top = subY + L.font(14, 11);
+
+    let cf = L.font(14, 11);
+    let rows = [], lh = 0;
+    for (;;) {
+      ctx.font = '500 ' + cf + 'px ' + FONT;
+      rows = [];
+      for (let i = 0; i < DC.LORE.crawl.length; i++) {
+        const line = DC.LORE.crawl[i];
+        if (!line) { rows.push({ text: '', src: i }); continue; }
+        const parts = DC.UI.wrap(ctx, line, W - 2 * L.pad);
+        for (let j = 0; j < parts.length; j++) rows.push({ text: parts[j], src: i });
+      }
+      lh = Math.max(cf + 3, Math.round(cf * 1.55));
+      if (rows.length * lh <= bottom - top || cf <= 9) break;
+      cf = Math.max(9, cf - 1);
+    }
+    const crawlTop = top + Math.max(0, (bottom - top - rows.length * lh) / 2);
     ctx.textAlign = 'center';
-    const lines = DC.LORE.crawl;
-    const lineH = L.font(22, 16);
-    const crawlTop = Math.max(H * 0.26, H * 0.34 - (lines.length * lineH - H * 0.4) / 2);
-    for (let i = 0; i < lines.length; i++) {
-      const appear = M.clamp((t - 0.6 - i * 0.45) * 1.6, 0, 1);
+    for (let i = 0; i < rows.length; i++) {
+      const y = crawlTop + i * lh;
+      if (y > bottom) break;
+      const appear = M.clamp((t - 0.6 - rows[i].src * 0.45) * 1.6, 0, 1);
       if (appear <= 0) continue;
       ctx.globalAlpha = appear;
-      ctx.fillStyle = lines[i] ? 'rgba(210,220,235,0.85)' : ' ';
-      ctx.fillText(lines[i], W / 2, crawlTop + i * lineH);
+      ctx.fillStyle = rows[i].text ? 'rgba(210,220,235,0.85)' : ' ';
+      ctx.fillText(rows[i].text, W / 2, y);
     }
     ctx.globalAlpha = 1;
     ctx.textAlign = 'left';
 
-    if (game.best && game.best.depth) {
+    if (best) {
       DC.UI.centerText(ctx, 'DEEPEST DESCENT: DEPTH ' + game.best.depth + '  \u00b7  ' + game.best.cls,
-        W / 2, Math.min(H * 0.78, crawlTop + lines.length * lineH + 26), '600 ' + L.font(12, 10) + 'px ' + FONT, 'rgba(142,240,192,0.8)');
+        W / 2, bestY, '600 ' + bestF + 'px ' + FONT, 'rgba(142,240,192,0.8)');
     }
 
-    const btns = DC.UI.titleButtons(game);
     for (let i = 0; i < btns.length; i++) DC.UI.drawButton(ctx, btns[i], game.titleHover === btns[i].id, game);
 
     const blink = 0.4 + 0.4 * Math.sin(t * 3);
-    DC.UI.centerText(ctx, L.touch ? 'tap to begin' : 'or press ENTER', W / 2, btns[0].y + btns[0].h + L.font(26, 18),
-      '600 ' + L.font(12, 10) + 'px ' + FONT, 'rgba(255,255,255,' + blink + ')');
+    DC.UI.centerText(ctx, L.touch ? 'tap to begin' : 'or press ENTER', W / 2, hintY,
+      '600 ' + hintF + 'px ' + FONT, 'rgba(255,255,255,' + blink + ')');
+
+    // What the harness needs to know: did the block actually fit, or did the
+    // type hit its floor and start dropping lines?
+    game.titleBox = {
+      cf: cf, rows: rows.length, lh: lh, used: rows.length * lh, band: bottom - top,
+      titleW: Math.round(titleW), titleFits: titleW <= W - 20,
+      dropped: Math.max(0, rows.length - Math.floor((bottom - top) / lh)),
+    };
   };
 
   /* ---------------- career select ----------------

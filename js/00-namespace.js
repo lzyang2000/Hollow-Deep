@@ -83,5 +83,12 @@
     // the finite number of rows is what turns every find into a decision:
     // wear it, carry it, or sell it.
     INV_SIZE: 10,
+    /* A find goes on by itself only when it is a clear gain, measured in stats
+       *and* stride. Below this it waits in the pack for a decision. */
+    AUTO_EQUIP_MARGIN: 1,
+    /* Casting on an empty wick: how long the flame takes to stop guttering
+       after the last bolt, and how little it recovers while it is still hot. */
+    MP_CALM: 1.6,
+    MP_HEAT_FLOOR: 0.12,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -44,23 +44,63 @@
     return { index: i, q: DC.QUALITY[Math.min(i, DC.QUALITY.length - 1)] };
   };
 
+  /* Weight. Steel that turns a claw also drags on a stride, so armour is never
+     a free upgrade: the heaviest pieces cost real movement, and whether that is
+     worth the defence is a career question, not arithmetic. A mage in Warden
+     Plate is a slow target; a knight in one is just a knight. */
+  DC.WEIGHT_NAME = ['light', 'medium', 'heavy'];
+  DC.WEIGHT_PENALTY = [0, 0.11, 0.26];   // m/s at item level 0
+  /* Weight is a trade, not a tax. The piece heavy enough to drag on a stride
+     is also the piece forged to turn a claw, so it buys more of the stat its
+     slot is for and pays for it in movement. That is what makes a Greataxe
+     and an Ash Rod two different finds rather than one find with two names,
+     and it is why a knight -- who never had stride to lose -- wants the plate
+     a mage would leave on the floor. */
+  DC.WEIGHT_STAT = [0.92, 1.06, 1.2];
+  DC.ARMOR_WEIGHT = {
+    'Leather Jerkin': 0, 'Taper Cloak': 0, 'Ash Vest': 0,
+    'Ring Mail': 1, 'Brigandine': 1, 'Scale Hauberk': 1,
+    'Cuirass': 2, 'Half-Plate': 2, 'Warden Plate': 2, 'Tower Shield': 2,
+  };
+  DC.WEAPON_WEIGHT = {
+    Greataxe: 2, Warhammer: 2, Maul: 2, Falchion: 1, Cleaver: 1, Billhook: 1, Longsword: 1,
+  };
+
+  /* Deeper steel is thicker steel, so the bite grows a little with item level.
+     A two-handed blade is heavy but it is also the fastest way to shorten a
+     fight, so a weapon costs 60% of what the same class of plate costs. */
+  function weightOf(table, base, ilvl, scale) {
+    const w = table[base] || 0;
+    const pen = (DC.WEIGHT_PENALTY[w] + ilvl * 0.0015) * scale;
+    return {
+      weight: w, weightName: DC.WEIGHT_NAME[w],
+      penalty: Math.round(pen * 100) / 100,
+    };
+  }
+
   DC.makeWeapon = function (rng, ilvl, opts) {
     const { index, q } = DC.rollQuality(rng, ilvl, opts && opts.minQuality);
-    const atk = Math.max(1, Math.round((2.1 + 0.95 * ilvl) * q.mult));
-    const name = (rng.chance(0.55) ? rng.pick(DC.WEAPON_PREFIX) + ' ' : '') + rng.pick(DC.WEAPON_NAMES);
+    const pre = rng.chance(0.55) ? rng.pick(DC.WEAPON_PREFIX) + ' ' : '';
+    const base = rng.pick(DC.WEAPON_NAMES);
+    const wt = weightOf(DC.WEAPON_WEIGHT, base, ilvl, 0.6);
+    const atk = Math.max(1, Math.round((2.1 + 0.95 * ilvl) * q.mult * DC.WEIGHT_STAT[wt.weight]));
     return {
-      type: 'weapon', name, ilvl, quality: index, qualityName: q.name, color: q.color,
-      atk, value: Math.round((26 + 13 * ilvl) * q.mult),
+      type: 'weapon', name: pre + base, ilvl, quality: index, qualityName: q.name, color: q.color,
+      atk, weight: wt.weight, weightName: wt.weightName, penalty: wt.penalty,
+      value: Math.round((26 + 13 * ilvl) * q.mult * DC.WEIGHT_STAT[wt.weight]),
     };
   };
 
   DC.makeArmor = function (rng, ilvl, opts) {
     const { index, q } = DC.rollQuality(rng, ilvl, opts && opts.minQuality);
-    const def = Math.max(1, Math.round((1.1 + 0.6 * ilvl) * q.mult));
-    const name = (rng.chance(0.55) ? rng.pick(DC.ARMOR_PREFIX) + ' ' : '') + rng.pick(DC.ARMOR_NAMES);
+    const pre = rng.chance(0.55) ? rng.pick(DC.ARMOR_PREFIX) + ' ' : '';
+    const base = rng.pick(DC.ARMOR_NAMES);
+    const wt = weightOf(DC.ARMOR_WEIGHT, base, ilvl, 1);
+    const def = Math.max(1, Math.round((1.1 + 0.6 * ilvl) * q.mult * DC.WEIGHT_STAT[wt.weight]));
     return {
-      type: 'armor', name, ilvl, quality: index, qualityName: q.name, color: q.color,
-      def, value: Math.round((24 + 12 * ilvl) * q.mult),
+      type: 'armor', name: pre + base, ilvl, quality: index, qualityName: q.name, color: q.color,
+      def, weight: wt.weight, weightName: wt.weightName, penalty: wt.penalty,
+      value: Math.round((24 + 12 * ilvl) * q.mult * DC.WEIGHT_STAT[wt.weight]),
     };
   };
 

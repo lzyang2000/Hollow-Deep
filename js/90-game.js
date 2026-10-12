@@ -267,18 +267,32 @@
       return G.applyItem(item);
     },
 
-    /* A find either goes straight onto your back or into the pack. The one
-       exception is the first thing you ever find for an empty slot: nobody
-       should start a run unarmed because they did not know to press a key. */
+    /* A find goes straight onto your back when it is a real gain -- stats
+       bought with stride included, at the rate this career values stride -- and
+       otherwise waits in the pack for you to decide. The first thing you ever
+       find for an empty slot always goes on: nobody should start a run unarmed
+       because they did not know to press a key. */
     applyItem: function (item) {
       const p = G.player;
       const slot = DC.Inv.slotOf(item);
       if (!slot) return { text: 'Found ' + item.name, color: item.color };
-      if (!p[slot]) {
+      const worn = p[slot];
+      const gain = DC.Inv.fit(p, item);
+      if (!worn || gain >= DC.C.AUTO_EQUIP_MARGIN) {
         p[slot] = item;
+        // The displaced piece goes through the pack's own door, so a full bag
+        // still melts the least useful thing rather than quietly overflowing.
+        let tail = '';
+        if (worn) {
+          const off = DC.Inv.add(p, worn, G);
+          if (off.text) tail = '  ' + off.text;
+        }
         DC.Inv.applyStats(p);
         DC.Audio.play('levelUp');
-        return { text: 'Equipped ' + item.name + ' (' + DC.Inv.statLine(item) + ')', color: item.color };
+        return {
+          text: 'Equipped ' + item.name + ' (' + DC.Inv.statLine(item) + ')' + tail,
+          color: item.color, auto: !!worn,
+        };
       }
       const res = DC.Inv.add(p, item, G);
       if (res.packed) {

@@ -45,10 +45,10 @@
     describe: function (item, p, short) {
       const s = short ? '  ' : '   ';
       if (item.type === 'weapon') {
-        return '+' + item.atk + ' ATK' + s + DC.Inv.compare(p, item) + ' vs worn' + (short ? '  sell ' + item.value : '   worth ' + item.value + ' if you sell it');
+        return '+' + item.atk + ' ATK' + DC.Inv.weightTag(item) + s + DC.Inv.compare(p, item) + ' vs worn' + (short ? '  sell ' + item.value : '   worth ' + item.value + ' if you sell it');
       }
       if (item.type === 'armor') {
-        return '+' + item.def + ' DEF' + s + DC.Inv.compare(p, item) + ' vs worn' + (short ? '  sell ' + item.value : '   worth ' + item.value + ' if you sell it');
+        return '+' + item.def + ' DEF' + DC.Inv.weightTag(item) + s + DC.Inv.compare(p, item) + ' vs worn' + (short ? '  sell ' + item.value : '   worth ' + item.value + ' if you sell it');
       }
       if (item.type === 'upgrade') {
         if (item.stat === 'attackSpeed') return '+' + Math.round(item.amount * 100) + '% attack speed';

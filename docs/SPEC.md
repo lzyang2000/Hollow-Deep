@@ -148,20 +148,29 @@ but the satisfaction.
 
 ### 7.1 The pack
 
-Equipment does not auto-equip. It lands in a bag of `INV_SIZE` (10) rows and the
-player decides what to wear.
+Equipment auto-equips only when it is a clear gain, and the judgement calls land
+in a bag of `INV_SIZE` (10) rows for the player to decide.
 
-- The one exception: the first find for an **empty** worn slot goes on without
-  asking, so a run never starts unarmed by accident.
+- The first find for an **empty** worn slot goes on without asking, so a run
+  never starts unarmed by accident.
+- After that a find goes on by itself only when its **fit** — the stat it buys
+  minus the stride it costs, priced at the career's `moveValue` — beats what is
+  worn by `AUTO_EQUIP_MARGIN`. The displaced piece goes through `Inv.add`, so a
+  full bag still melts its least useful row rather than overflowing.
+- Weight is a trade, not a tax: `WEIGHT_STAT` gives a heavy piece more of its
+  slot's stat and `WEIGHT_PENALTY` takes stride (`penalty`, growing slightly
+  with item level, weapons at 60% of armour). `Player.recalc` subtracts the worn
+  penalty from speed with a floor of 1.2 m/s.
 - Worn gear is the only source of equipment bonuses. Stowing a piece really does
   lower ATK or DEF, and stowing needs a free row.
 - Wearing from the bag puts the displaced piece into the row the new one just
   left, so the bag never reshuffles under the cursor.
 - A full bag gives up the item with the lowest **urgency**, defined as
-  `power(item) - power(worn in that slot)`. Comparing raw ATK against DEF would
-  let a good coat be melted by a mediocre blade, which is the whole reason this
-  rule is written down. A piece worse than what you already wear therefore has
-  negative urgency and is the first thing to go.
+  `fit(p, item) + value/100000`, where `fit` is the stat it buys over what is
+  worn in that slot minus the stride it costs at the career's `moveValue`.
+  Comparing raw ATK against DEF would let a good coat be melted by a mediocre
+  blade, which is the whole reason this rule is written down. A piece worse than
+  what you already wear therefore has negative urgency and is the first to go.
 - Carried casualties pay half value; a find that never arrives pays full value.
 - Selling pays full value anywhere, which is what makes the merchant's prices the
   interesting half of the economy rather than a toll.
@@ -248,6 +257,10 @@ title screen, class selection, depth milestones, boss antechambers and death.
     each move exactly one item and recalculate the derived stats.
 11. A full pack never melts a piece of one slot to make room for a piece of
     another slot when the incoming item is the worse trade against what is worn.
+11b. Auto-equip is career-relative: the same heavy coat is equipped on a knight
+    and left in the pack for a mage, the stride cost survives a save round-trip,
+    worn weight lowers `speed` down to the 1.2 m/s floor, and a hot wick
+    (`mpRegenMul`) recovers to 1 only after `MP_CALM` seconds of not casting.
 12. Every harness loads the same script list as `index.html`, in the same order —
     a screen that works in the browser and silently fails in the test rig (or the
     reverse) is the cheapest possible bug to prevent.

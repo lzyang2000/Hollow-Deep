@@ -17,7 +17,7 @@
         potions: { heal: 1, mana: 1 },
         gold: 0,
         aim: 0, facing: 0,
-        attackTimer: 0, swing: null, abilityCd: 0, shieldT: 0,
+        attackTimer: 0, swing: null, abilityCd: 0, shieldT: 0, castT: 99,
         invuln: 0, hurtT: 0, kx: 0, ky: 0,
         anim: 0, walk: 0, dead: false, deadT: 0,
         lastVx: 0, lastVy: 0,
@@ -32,7 +32,10 @@
       const c = p.cls;
       p.maxHp = Math.round(c.hp + p.bonusHp);
       p.maxMp = Math.round(c.mp + p.bonusMp);
-      p.speed = c.speed + p.bonusMove;
+      /* Worn steel has weight. Both slots drag, and the floor is there so no
+         combination of plate and two-hander can ever weld you to the floor. */
+      p.penalty = (p.weapon ? p.weapon.penalty || 0 : 0) + (p.armor ? p.armor.penalty || 0 : 0);
+      p.speed = Math.max(1.2, c.speed + p.bonusMove - p.penalty);
       p.def = c.def + p.bonusDef;
       p.atk = c.atk + p.bonusAtk;
       p.attackInterval = c.attackCd / (1 + p.bonusAtkSpeed);
@@ -49,6 +52,7 @@
       p.invuln = Math.max(0, p.invuln - dt);
       p.hurtT = Math.max(0, p.hurtT - dt);
       p.noManaT = Math.max(0, p.noManaT - dt);
+      p.castT += dt;
 
       /* --- move ----------------------------------------------------------- */
       let mx = input.moveX, my = input.moveY;
@@ -70,7 +74,12 @@
       if (p.swing) { p.swing.t -= dt; if (p.swing.t <= 0) p.swing = null; }
 
       /* --- resources ------------------------------------------------------ */
-      p.mp = Math.min(p.maxMp, p.mp + p.cls.mpRegen * dt);
+      /* A wick that has been burning hard does not refill at the rate of a cold
+         one. Regen ramps back over MP_CALM seconds of not casting, so holding
+         the trigger bleeds mana and a deliberate shot pays for itself. */
+      const heat = M.clamp(p.castT / DC.C.MP_CALM, DC.C.MP_HEAT_FLOOR, 1);
+      p.mpRegenMul = heat;
+      p.mp = Math.min(p.maxMp, p.mp + p.cls.mpRegen * heat * dt);
       /* Recovery is not a timer on the player, it is a property of the floor:
          calmT only runs while nothing on this level can see you and you have
          not been touched lately. Game.step owns that flag. */
@@ -87,8 +96,9 @@
     attack: function (world, p, game) {
       const c = p.cls;
       p.attackTimer = p.attackInterval;
+      p.castT = 0;
       if (c.attackKind === 'melee') {
-        p.swing = { t: 0.2, arc: c.arc, reach: c.reach, dir: p.aim, kind: 'swing' };
+        p.swing = { t: 0.2, dur: 0.2, arc: c.arc, reach: c.reach, dir: p.aim, kind: 'swing' };
         const hits = DC.Combat.sweep(world, { side: 'player', x: p.x, y: p.y, aim: p.aim },
           { arc: c.arc, reach: c.reach, dmg: p.atk, knock: c.knockback || 1.8 }, game);
         DC.Audio.play('swing', { pitch: 1.05 });
@@ -122,6 +132,7 @@
         if (p.noManaT <= 0) { p.noManaT = 1.0; DC.Audio.play('empty'); game.log('Not enough MP for ' + ab.name, '#6bb6ff'); }
         return false;
       }
+      p.castT = 0;
       if (ab.id === 'blink') {
         /* Blink folds through stone -- that is the whole point of the spell --
            but it has to arrive somewhere you can stand. Walk the aim line from
@@ -153,7 +164,7 @@
         p.abilityCd = ab.cd;
       }
       if (ab.id === 'whirlwind') {
-        p.swing = { t: 0.3, arc: 360, reach: p.cls.reach + 0.7, dir: p.aim, kind: 'whirl' };
+        p.swing = { t: 0.3, dur: 0.3, arc: 360, reach: p.cls.reach + 0.7, dir: p.aim, kind: 'whirl' };
         DC.Combat.sweep(world, { side: 'player', x: p.x, y: p.y, aim: p.aim },
           { arc: 360, reach: p.cls.reach + 0.7, dmg: p.atk * 1.5, knock: 2.6 }, game);
         DC.Props.ring(world, p.x, p.y, p.cls.reach + 0.9, { color: p.cls.color, life: 0.4, width: 4 });
