@@ -13,6 +13,13 @@
     };
   };
 
+  DC.Props.urn = function (x, y, rng, depth) {
+    return {
+      kind: 'urn', x, y, r: 0.55, broken: false, anim: rng.range(0, 6.28),
+      variant: rng.int(0, 2), depth,
+    };
+  };
+
   DC.Props.merchant = function (x, y, rng, depth) {
     return {
       kind: 'merchant', x, y, r: 0.95, anim: 0, bob: rng.range(0, 6.28),

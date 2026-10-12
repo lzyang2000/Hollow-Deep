@@ -352,6 +352,11 @@
             A.tone(t, 0.3, 0.22, 'square', 300 * p, 120 * p);
             A.noiseBurst(t, 0.14, 0.14, 'bandpass', 1200, 1.0);
             break;
+          case 'smash':
+            A.noiseBurst(t, 0.26, 0.2, 'bandpass', 1500 * p, 1.4, 700 * p);
+            A.tone(t, 0.14, 0.16, 'triangle', 420 * p, 180 * p);
+            [0, 1, 2].forEach(function (i) { A.tone(t + 0.01 * i, 0.07, 0.12, 'square', (900 + i * 260) * p, (500 + i * 120) * p); });
+            break;
           case 'chest':
             [0, 4, 7, 12].forEach(function (h, i) { A.bell(mtof(64 + h), t + i * 0.07, 0.1); });
             A.noiseBurst(t, 0.1, 0.2, 'bandpass', 2600, 1.6, 900);

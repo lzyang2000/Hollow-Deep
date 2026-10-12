@@ -46,6 +46,45 @@
       return game.applyItem(item);
     },
 
+    /* An urn is a small, common find: usually coin, sometimes a potion,
+       rarely something you can carry. */
+    goldFromUrn: function (depth, rng) {
+      return Math.max(1, Math.round((4 + 2.2 * depth) * rng.range(0.7, 1.6)));
+    },
+
+    onUrn: function (game, world, urn) {
+      const rng = game.rng;
+      const depth = world.depth;
+      const roll = rng.next();
+      let text, color;
+      if (roll < 0.14) {
+        const pot = DC.makePotion(rng.chance(0.7) ? 'heal' : 'mana');
+        game.addItem(pot);
+        text = 'Found ' + pot.name; color = pot.color;
+      } else if (roll < 0.21) {
+        const up = DC.makeUpgrade(rng);
+        text = game.applyUpgrade(up); color = up.color;
+      } else if (roll < 0.28) {
+        const ilvl = Math.max(1, depth);
+        const item = rng.chance(0.5) ? DC.makeWeapon(rng, ilvl) : DC.makeArmor(rng, ilvl);
+        const res = game.applyItem(item);
+        text = res.text; color = res.color;
+      } else if (roll < 0.78) {
+        const g = DC.Loot.goldFromUrn(depth, rng);
+        game.addGold(g);
+        text = '+' + g + ' coin'; color = '#ffd166';
+      } else {
+        text = 'Broken pottery'; color = 'rgba(210,220,235,0.4)';
+      }
+      game.log(text, color);
+      DC.Props.floater(world, urn.x, urn.y - 0.8, text, color, { life: 1.3, size: 12 });
+      DC.Props.burst(world, urn.x, urn.y, 14, {
+        color: ['#b98a5e', '#8c6242', '#d8b48a', '#6b4a33'],
+        spMin: 1.5, spMax: 6, lifeMin: 0.25, lifeMax: 0.7, grav: 6,
+      });
+      DC.Audio.play('smash');
+    },
+
     onChest: function (game, world, chest) {
       chest.opened = true;
       chest.lid = 0;
