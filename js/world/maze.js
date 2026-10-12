@@ -1,12 +1,17 @@
 /* Procedural level geometry.
 
-   Normal levels: a recursive-backtracker maze on a 29x29 cell lattice, then
-   braided (dead ends removed) and looped so it reads as a dungeon rather than
-   a hairball. Boss levels: one open arena with a few pillars.
+   Normal levels: a dungeon of rooms of assorted sizes joined by corridors,
+   with extra loops and alcoves off the corridors. This is deliberately not a
+   lattice maze: rooms sit at arbitrary positions, corridors run between their
+   centres, and some corridors are two tiles wide, so the map reads as built
+   space rather than a grid of identical cells.
 
-   Invariants enforced here and asserted by tmp/test_core.js:
+   Boss levels: one open arena with a few pillars.
+
+   Invariants enforced here and asserted by tmp/test_maze.js:
      - border ring is always solid
-     - every open tile is reachable from every other open tile
+     - every open tile is reachable from the returned start
+     - generate() returns { grid, rooms, start }
 */
 (function (global) {
   'use strict';
@@ -21,79 +26,163 @@
     return grid[y * C.GRID + x] === 1;
   }
 
-  /* --- normal maze ------------------------------------------------------ */
   DC.Maze = {};
+  DC.Maze.DIRS = DIRS;
+
+  /* Carve an axis-first-then-other L between two points, w tiles wide. */
+  function carveLine(grid, x0, y0, x1, y1, w) {
+    const G = C.GRID;
+    const carve = function (cx, cy) {
+      for (let oy = 0; oy < w; oy++) {
+        for (let ox = 0; ox < w; ox++) {
+          const px = cx + ox, py = cy + oy;
+          if (px > 0 && py > 0 && px < G - 1 && py < G - 1) open(grid, px, py);
+        }
+      }
+    };
+    let x = x0, y = y0;
+    const sx = x1 > x ? 1 : (x1 < x ? -1 : 0);
+    const sy = y1 > y ? 1 : (y1 < y ? -1 : 0);
+    while (x !== x1) { carve(x, y); x += sx; }
+    while (y !== y1) { carve(x, y); y += sy; }
+    carve(x, y);
+  }
+
+  /* One corridor between two rooms: an L with a jittered bend, sometimes a
+     second bend, so corridors never all share the same axes. */
+  function carveCorridor(grid, a, b, rng) {
+    const w = rng.chance(C.CORRIDOR_WIDE_CHANCE) ? 2 : 1;
+    let mx, my;
+    if (rng.chance(0.5)) { mx = b.cx; my = a.cy; } else { mx = a.cx; my = b.cy; }
+    if (rng.chance(0.6)) {
+      if (mx !== a.cx) mx = a.cx + rng.int(-3, 3); else my = a.cy + rng.int(-3, 3);
+    }
+    mx = Mclamp(mx, 1, C.GRID - 2); my = Mclamp(my, 1, C.GRID - 2);
+    carveLine(grid, a.cx, a.cy, mx, my, w);
+    carveLine(grid, mx, my, b.cx, b.cy, w);
+  }
+
+  function Mclamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+  /* Small nooks hanging off corridor tiles -- the "by the side of the road"
+     spots that chests, urns and sleeping demons sit in. */
+  function addAlcoves(grid, rooms, rng) {
+    const G = C.GRID;
+    const inRoom = function (x, y) {
+      for (let i = 0; i < rooms.length; i++) {
+        const r = rooms[i];
+        if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return true;
+      }
+      return false;
+    };
+    const cand = [];
+    for (let y = 1; y < G - 1; y++) {
+      for (let x = 1; x < G - 1; x++) {
+        if (grid[y * G + x] !== 1 || inRoom(x, y)) continue;
+        for (let i = 0; i < 4; i++) {
+          const dx = DIRS[i][0], dy = DIRS[i][1];
+          if (isOpen(grid, x + dx, y + dy)) continue;
+          if (isOpen(grid, x + dx * 2, y + dy * 2)) continue;
+          cand.push([x, y, dx, dy]);
+        }
+      }
+    }
+    rng.shuffle(cand);
+    const want = C.ALCOVE_MIN + rng.int(0, C.ALCOVE_MAX - C.ALCOVE_MIN);
+    let placed = 0;
+    for (let i = 0; i < cand.length && placed < want; i++) {
+      const x = cand[i][0], y = cand[i][1], dx = cand[i][2], dy = cand[i][3];
+      const len = rng.int(2, 4);
+      let cx = x + dx, cy = y + dy, ok = true;
+      for (let k = 0; k < len; k++) {
+        if (cx <= 0 || cy <= 0 || cx >= G - 1 || cy >= G - 1) { ok = false; break; }
+        open(grid, cx, cy);
+        cx += dx; cy += dy;
+      }
+      if (!ok) continue;
+      // Sometimes the stub opens into a little nook.
+      if (rng.chance(0.55)) {
+        const px = cx - dx, py = cy - dy;
+        for (let oy = -1; oy <= 1; oy++) {
+          for (let ox = -1; ox <= 1; ox++) {
+            const ax = px + ox, ay = py + oy;
+            if (ax > 0 && ay > 0 && ax < G - 1 && ay < G - 1) open(grid, ax, ay);
+          }
+        }
+      }
+      placed++;
+    }
+  }
 
   DC.Maze.generate = function (rng) {
     const G = C.GRID;
     const grid = new Uint8Array(G * G); // 0 = solid rock
-    const cells = Math.floor((G - 1) / 2); // 29 cells per axis (odd tiles 1..57)
-    const visited = new Uint8Array(cells * cells);
+    const rooms = [];
 
-    const stack = [[0, 0]];
-    visited[0] = 1;
-    open(grid, 1, 1);
-
-    while (stack.length) {
-      const cur = stack[stack.length - 1];
-      const cx = cur[0], cy = cur[1];
-      const opts = [];
-      for (let i = 0; i < 4; i++) {
-        const nx = cx + DIRS[i][0], ny = cy + DIRS[i][1];
-        if (nx >= 0 && ny >= 0 && nx < cells && ny < cells && !visited[ny * cells + nx]) opts.push([nx, ny]);
+    // 1. Rooms, assorted sizes, never touching (a tile of rock between them).
+    const want = C.ROOM_COUNT_MIN + rng.int(0, C.ROOM_COUNT_MAX - C.ROOM_COUNT_MIN);
+    let guard = 0;
+    while (rooms.length < want && guard++ < 1200) {
+      const w = rng.int(C.ROOM_MIN, C.ROOM_MAX), h = rng.int(C.ROOM_MIN, C.ROOM_MAX);
+      const x = rng.int(2, G - 3 - w), y = rng.int(2, G - 3 - h);
+      let ok = true;
+      for (let i = 0; i < rooms.length; i++) {
+        const r = rooms[i];
+        if (x < r.x + r.w + 2 && x + w + 2 > r.x && y < r.y + r.h + 2 && y + h + 2 > r.y) { ok = false; break; }
       }
-      if (!opts.length) { stack.pop(); continue; }
-      const n = rng.pick(opts);
-      visited[n[1] * cells + n[0]] = 1;
-      open(grid, n[0] * 2 + 1, n[1] * 2 + 1);
-      open(grid, cx + n[0] + 1, cy + n[1] + 1); // wall between the two cells
-      stack.push(n);
+      if (!ok) continue;
+      rooms.push({ x: x, y: y, w: w, h: h, cx: x + (w >> 1), cy: y + (h >> 1) });
+    }
+    for (let i = 0; i < rooms.length; i++) {
+      const r = rooms[i];
+      for (let y = r.y; y < r.y + r.h; y++)
+        for (let x = r.x; x < r.x + r.w; x++) open(grid, x, y);
     }
 
-    // Braid: punch through dead ends so the maze has loops and no traps.
-    for (let cy = 0; cy < cells; cy++) {
-      for (let cx = 0; cx < cells; cx++) {
-        let openDirs = 0;
-        for (let i = 0; i < 4; i++) {
-          if (isOpen(grid, cx * 2 + 1 + DIRS[i][0], cy * 2 + 1 + DIRS[i][1])) openDirs++;
-        }
-        if (openDirs > 1 || !rng.chance(0.72)) continue;
-        const cand = [];
-        for (let i = 0; i < 4; i++) {
-          const nx = cx + DIRS[i][0], ny = cy + DIRS[i][1];
-          if (nx < 0 || ny < 0 || nx >= cells || ny >= cells) continue;
-          const wx = cx * 2 + 1 + DIRS[i][0], wy = cy * 2 + 1 + DIRS[i][1];
-          if (grid[wy * G + wx] === 0) cand.push([wx, wy]);
-        }
-        if (cand.length) { const w = rng.pick(cand); open(grid, w[0], w[1]); }
+    // 2. Cheapest-link spanning tree over room centres: no islands, and the
+    //    links stay short so the level reads as a walkable plan.
+    const n = rooms.length;
+    const linked = new Uint8Array(n);
+    linked[0] = 1;
+    const d2 = function (a, b) { return Math.abs(a.cx - b.cx) + Math.abs(a.cy - b.cy); };
+    const edges = [];
+    const pushEdges = function (i) {
+      for (let j = 0; j < n; j++) if (!linked[j]) edges.push([i, j, d2(rooms[i], rooms[j])]);
+    };
+    pushEdges(0);
+    for (let count = 1; count < n; count++) {
+      let bi = -1;
+      for (let e = 0; e < edges.length; e++) {
+        if (linked[edges[e][1]]) continue;
+        if (bi < 0 || edges[e][2] < edges[bi][2]) bi = e;
       }
+      if (bi < 0) break;
+      const e = edges.splice(bi, 1)[0];
+      linked[e[1]] = 1;
+      carveCorridor(grid, rooms[e[0]], rooms[e[1]], rng);
+      pushEdges(e[1]);
     }
 
-    // Extra loops through the remaining cell-separating walls (~10%).
-    for (let y = 1; y < G - 1; y++) {
-      for (let x = 1; x < G - 1; x++) {
-        if (grid[y * G + x] !== 0) continue;
-        if ((x + y) % 2 === 0) continue; // pillar corner, keep it
-        let a, b;
-        if (x % 2 === 0) { a = [x - 1, y]; b = [x + 1, y]; }
-        else { a = [x, y - 1]; b = [x, y + 1]; }
-        if (!isOpen(grid, a[0], a[1]) || !isOpen(grid, b[0], b[1])) continue;
-        if (rng.chance(0.1)) open(grid, x, y);
-      }
+    // 3. Extra links between nearby rooms: loops, so the level is not a tree
+    //    of dead ends and a demon can come at you from two ways.
+    let extras = Math.round(n * C.ROOM_LOOP_CHANCE);
+    guard = 0;
+    while (extras > 0 && guard++ < 200) {
+      const a = rng.int(0, n - 1), b = rng.int(0, n - 1);
+      if (a === b) continue;
+      if (d2(rooms[a], rooms[b]) > C.ROOM_LOOP_MAX_DIST) continue;
+      carveCorridor(grid, rooms[a], rooms[b], rng);
+      extras--;
     }
 
-    // A handful of chambers so it is not corridors the whole way.
-    const rooms = 5 + rng.int(0, 4);
-    for (let i = 0; i < rooms; i++) {
-      const cx = rng.int(1, cells - 2), cy = rng.int(1, cells - 2);
-      const w = rng.int(1, 2) * 2 + 1, h = rng.int(1, 2) * 2 + 1; // 3 or 5 tiles
-      const tx = cx * 2 + 1, ty = cy * 2 + 1;
-      for (let y = ty - (h >> 1); y <= ty + (h >> 1); y++)
-        for (let x = tx - (w >> 1); x <= tx + (w >> 1); x++)
-          if (x > 0 && y > 0 && x < G - 1 && y < G - 1) open(grid, x, y);
-    }
+    // 4. Alcoves off the corridors.
+    addAlcoves(grid, rooms, rng);
 
-    return grid;
+    // 5. Start inside a random room, away from the border.
+    const home = rooms[rng.int(0, rooms.length - 1)];
+    const start = [home.cx, home.cy];
+
+    return { grid: grid, rooms: rooms, start: start };
   };
 
   /* --- boss arena ------------------------------------------------------- */
@@ -102,7 +191,7 @@
     const grid = new Uint8Array(G * G);
     for (let y = 0; y < G; y++)
       for (let x = 0; x < G; x++)
-        grid[y * G + x] = (x === 0 || y === 0 || x === G - 1 || y === G - 1) ? 0 : 1;
+        grid[y * C.GRID + x] = (x === 0 || y === 0 || x === G - 1 || y === G - 1) ? 0 : 1;
 
     // Pillars, kept clear of the spawn / boss / merchant zones.
     const avoid = keepOut || [];
@@ -138,7 +227,7 @@
     const G = C.GRID;
     const dist = new Int32Array(G * G).fill(-1);
     const order = [];
-    if (sx < 0 || sy < 0 || sx >= G || sy >= G || grid[sy * G + sx] !== 1) return { dist, order };
+    if (sx < 0 || sy < 0 || sx >= G || sy >= G || grid[sy * G + sx] !== 1) return { dist: dist, order: order };
     const q = new Int32Array(G * G);
     let head = 0, tail = 0;
     dist[sy * G + sx] = 0;
@@ -164,7 +253,7 @@
         q[tail++] = ni;
       }
     }
-    return { dist, order };
+    return { dist: dist, order: order };
   };
 
   /* True when every open tile is reachable from (sx, sy). */

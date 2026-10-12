@@ -34,17 +34,39 @@
     FLOW_INTERVAL: 0.3,
 
     // Level population.
-    ENEMY_BASE: 9,
-    ENEMY_PER_DEPTH: 1.15,
-    ENEMY_MAX: 46,
-    CHEST_BASE: 3,
-    CHEST_PER_DEPTH: 0.34,
-    CHEST_MAX: 9,
+    ENEMY_BASE: 14,
+    ENEMY_PER_DEPTH: 1.5,
+    ENEMY_MAX: 60,
+    CHEST_BASE: 6,
+    CHEST_PER_DEPTH: 0.5,
+    CHEST_MAX: 16,
+    URN_BASE: 9,
+    URN_PER_DEPTH: 0.7,
+    URN_MAX: 22,
     MIN_SPAWN_DIST: 26,   // metres from start before a demon may appear
 
     // Portal gate: a reachable tile this deep into the maze's walking
     // distance, not the absolute farthest one.
     PORTAL_MIN_TILES: 30,
     PORTAL_FRACTION: 0.5,
+
+    // Dungeon plan: rooms joined by corridors, not a lattice maze.
+    ROOM_COUNT_MIN: 12,
+    ROOM_COUNT_MAX: 18,
+    ROOM_MIN: 4,          // tiles
+    ROOM_MAX: 11,
+    CORRIDOR_WIDE_CHANCE: 0.28,
+    ROOM_LOOP_CHANCE: 0.4,      // extra links as a fraction of the room count
+    ROOM_LOOP_MAX_DIST: 24,     // Manhattan between room centres
+    ALCOVE_MIN: 10,
+    ALCOVE_MAX: 18,
+
+    // Aggro budget: how many demons may hunt at once. Levels are dense but
+    // the whole floor never comes with you, so a pack can always be pulled.
+    AGGRO_BASE: 4,
+    AGGRO_PER_DEPTH: 0.4,
+    AGGRO_MAX: 12,
+    LEASH_DIST: 30,      // metres -- beyond this a lost hunter gives up
+    LEASH_TIME: 3.5,     // seconds out of sight before it gives up
   };
 })(typeof window !== 'undefined' ? window : globalThis);

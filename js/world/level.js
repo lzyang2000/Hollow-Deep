@@ -83,6 +83,10 @@
       world = makeWorld(depth, grid, rng, isBoss);
       const s = openTileNear(grid, startTx, startTy, 6);
       world.start = { tx: s[0], ty: s[1], x: tileCenter(s[0]), y: tileCenter(s[1]) };
+      // The arena needs a real distance field too: spacedTiles filters by walk
+      // distance from the start, and a zero-filled field rejects every tile --
+      // which is why the boss room used to spawn no chests at all.
+      world.dist = DC.Maze.bfs(grid, s[0], s[1]).dist;
       const m = openTileNear(grid, startTx + rng.int(-4, 4), startTy - rng.int(2, 4), 6);
       world.merchant = DC.Props.merchant(tileCenter(m[0]), tileCenter(m[1]), rng, depth);
       const b = openTileNear(grid, G >> 1, G >> 1, 6);
@@ -94,20 +98,26 @@
         active: false, discovered: false, anim: 0,
       };
       // A couple of comfort chests in the arena, plus the merchant.
-      const chestTiles = spacedTiles(rng, world, 2, { minDistTiles: 4, minSep: 8 });
+      const chestTiles = spacedTiles(rng, world, 4, { minDistTiles: 4, minSep: 8 });
       for (let i = 0; i < chestTiles.length; i++) {
         const t = chestTiles[i];
         world.chests.push(DC.Props.chest(tileCenter(t % G), tileCenter((t - (t % G)) / G), rng, depth));
       }
+      const arenaUrns = spacedTiles(rng, world, 8, { minDistTiles: 3, minSep: 4 });
+      for (let i = 0; i < arenaUrns.length; i++) {
+        const t = arenaUrns[i];
+        world.urns.push(DC.Props.urn(tileCenter(t % G), tileCenter((t - (t % G)) / G), rng, depth));
+      }
     } else {
-      let grid, tries = 0, s;
+      let grid, s, gen, tries = 0;
       do {
-        grid = DC.Maze.generate(rng);
-        const cells = Math.floor((G - 1) / 2);
-        s = [rng.int(0, cells - 1) * 2 + 1, rng.int(0, cells - 1) * 2 + 1];
+        gen = DC.Maze.generate(rng);
+        grid = gen.grid;
+        s = gen.start;
         tries++;
       } while (!DC.Maze.allReachable(grid, s[0], s[1]) && tries < 12);
       world = makeWorld(depth, grid, rng, isBoss);
+      world.rooms = gen.rooms;
       world.start = { tx: s[0], ty: s[1], x: tileCenter(s[0]), y: tileCenter(s[1]) };
       world.dist = DC.Maze.bfs(grid, s[0], s[1]).dist;
 
@@ -159,6 +169,14 @@
         const t = cTiles[i];
         world.chests.push(DC.Props.chest(tileCenter(t % G), tileCenter((t - (t % G)) / G), rng, depth));
       }
+
+      // Urns line the route: smashable, and mostly hold a little coin.
+      const urnCount = Math.min(C.URN_MAX, Math.round(C.URN_BASE + C.URN_PER_DEPTH * depth));
+      const uTiles = spacedTiles(rng, world, urnCount, { minDistTiles: 2, minSep: 3, avoid: nearPortal });
+      for (let i = 0; i < uTiles.length; i++) {
+        const t = uTiles[i];
+        world.urns.push(DC.Props.urn(tileCenter(t % G), tileCenter((t - (t % G)) / G), rng, depth));
+      }
     }
 
     world.decor = buildDecor(world, rng);
@@ -173,9 +191,11 @@
       open: DC.Maze.openTiles(grid),
       dist: null,
       start: null, portal: null, merchant: null, boss: null,
-      demons: [], chests: [], projectiles: [], particles: [], floaters: [], drops: [],
+      demons: [], chests: [], urns: [], projectiles: [], particles: [], floaters: [], drops: [],
+      rooms: null,
       decor: [], seed: rng.s,
       flow: null, flowAt: 0,
+      awakeCount: 0,
       ambient: isBoss ? 'boss' : 'dungeon',
     };
     if (!isBoss) world.dist = new Int32Array(C.GRID * C.GRID).fill(0);
@@ -186,11 +206,14 @@
     return world;
   }
 
-  /* Visual-only clutter: rubble, bones, cracks, fallen lanterns, mushrooms. */
+  /* Visual-only clutter: rubble, bones, cracks, fallen lanterns, mushrooms,
+     cobwebs, skulls, braziers -- plus torches mounted on the walls that face
+     the corridors, which is what makes a big room read as a room. */
   function buildDecor(world, rng) {
     const out = [];
-    const kinds = ['rubble', 'rubble', 'bones', 'crack', 'lantern', 'mushroom', 'chain', 'stump'];
-    const want = world.isBoss ? 90 : 150;
+    const kinds = ['rubble', 'rubble', 'debris', 'bones', 'skull', 'crack', 'lantern',
+      'mushroom', 'chain', 'stump', 'web', 'web', 'brazier'];
+    const want = world.isBoss ? 170 : 300;
     for (let i = 0; i < want; i++) {
       const t = rng.pick(world.open);
       const tx = t % C.GRID, ty = (t - tx) / C.GRID;
@@ -200,6 +223,51 @@
         x, y, kind: rng.pick(kinds),
         rot: rng.range(0, Math.PI * 2), scale: rng.range(0.7, 1.4),
         tint: rng.next(),
+      });
+    }
+
+    // Room dressing: each chamber gets its own little pile of the dead, so a
+    // wide open space reads as a room even in torchlight.
+    if (world.rooms) {
+      const roomKinds = ['bones', 'skull', 'skull', 'brazier', 'chain', 'crack', 'mushroom', 'debris'];
+      for (let i = 0; i < world.rooms.length; i++) {
+        const rm = world.rooms[i];
+        const n = rng.int(3, 7);
+        for (let k = 0; k < n; k++) {
+          const x = rng.range(rm.x + 0.6, rm.x + rm.w - 0.6);
+          const y = rng.range(rm.y + 0.6, rm.y + rm.h - 0.6);
+          if (world.grid[Math.floor(y) * C.GRID + Math.floor(x)] !== 1) continue;
+          out.push({
+            x: x * C.TILE + rng.range(0.4, 1.6), y: y * C.TILE + rng.range(0.4, 1.6),
+            kind: rng.pick(roomKinds), rot: rng.range(0, Math.PI * 2),
+            scale: rng.range(0.8, 1.6), tint: rng.next(),
+          });
+        }
+      }
+    }
+
+    // Wall torches: a wall tile with open floor in front of it.
+    const G = C.GRID, disc = null;
+    const sconces = world.isBoss ? 26 : 44;
+    const cand = [];
+    for (let y = 1; y < G - 1; y++) {
+      for (let x = 1; x < G - 1; x++) {
+        if (world.grid[y * G + x] !== 0) continue;
+        for (let d = 0; d < 4; d++) {
+          const nx = x + DC.Maze.DIRS[d][0], ny = y + DC.Maze.DIRS[d][1];
+          if (nx > 0 && ny > 0 && nx < G - 1 && ny < G - 1 && world.grid[ny * G + nx] === 1) {
+            cand.push([x, y, d]);
+            break;
+          }
+        }
+      }
+    }
+    rng.shuffle(cand);
+    for (let i = 0; i < cand.length && i < sconces; i++) {
+      const x = cand[i][0], y = cand[i][1], d = cand[i][2];
+      out.push({
+        x: (x + 0.5) * C.TILE, y: (y + 0.5) * C.TILE, kind: 'sconce',
+        rot: 0, dir: d, scale: rng.range(0.9, 1.15), tint: rng.next(), wall: true,
       });
     }
     return out;
