@@ -28,10 +28,12 @@ bottom-left. Serve the folder from your Mac and open it on the phone's browser
     python3 -m http.server 8080    # then visit http://<mac-ip>:8080
 
 Add it to the home screen for a fullscreen, no-chrome run. Two thumbs is the
-comfortable way to fight: drag with the right thumb to walk and aim, and hold
-**ATTACK** with the left — the two fingers are tracked apart, so you swing while
-you move. One thumb is still enough: drag to walk and aim, then tap **ATTACK**
-(or tap the glass) for a swing.
+comfortable way to fight, and it works like a twin-stick shooter: the right thumb
+drags the field and **only walks**, while the left thumb holds the bottom-left
+pad to swing and **slides it to aim** — so you can walk north and hit east. One
+thumb is still enough: with nothing on the pad the fingertip goes back to being
+the reticle, so drag to walk and aim, then tap **ATTACK** (or tap the glass) for
+a swing.
 
 ## Hosting it on GitHub Pages
 
@@ -69,26 +71,31 @@ browser chrome.
 | `S` / `L` (while paused) | Save the run to a file / load one back |
 | `R` (while paused) | Abandon the run |
 
-In the merchant: click a row or press `1–7` to buy, `E`/`Esc` to leave.
+In the merchant: click a row or press `1–9` to buy, `E`/`Esc` to leave. A deep
+counter shelves ten things, so the last one is a click.
 
 ### Phone controls (one hand or two)
 
-The field finger does two jobs at once — the drag is a joystick that walks and
-the fingertip is a reticle that aims — and **ATTACK lives on a finger of its
-own**, so a second thumb can hold it while the first keeps walking. A swing is
-always a decision: nothing attacks just because a thumb is resting on the glass.
+Two thumbs, two sticks. The right thumb drags the field and that is a joystick
+and nothing else; the left thumb holds the wide **ATTACK** pad in the free
+corner, and that pad is a trigger *and* an aim stick — hold it to swing, slide it
+to point. Walking one way while hitting another is then one gesture per thumb,
+which a single fingertip can never manage: one point on the glass is only ever
+one direction. A swing is still always a decision — nothing attacks just because
+a thumb is resting on the glass.
 
 | Gesture | Action |
 | --- | --- |
-| Drag anywhere | Walk (the drag is a joystick from where the finger landed) **and** aim — the fingertip is the reticle, so the crosshair on the glass is exactly where the blow or bolt goes |
+| Drag anywhere | Walk — the drag is a joystick measured from where the finger landed. With nothing on the pad it **also** aims at the fingertip, so one thumb still points where it walks |
 | Tap | Interact — merchant, portal, urn; one swing **at the point you tapped** if there is nothing to talk to |
-| **ATTACK** (hold, either the right cluster or the left pad) | Swing. Held with the other thumb it swings *while you walk*; held alone it swings on the spot and aims itself at the nearest demon the torch is showing. Release to stop — the walk carries on |
-| **ATTACK pad** (bottom-left bar) | The same hold-button, placed where a second thumb already rests |
+| **ATTACK** circle (right cluster) | Swing, aimed for you at the nearest demon the torch is showing. It sits under the thumb that is already walking, so it stays a plain trigger |
+| **ATTACK pad** (bottom-left bar) | Hold to swing, **slide to aim**: the aim is the thumb's travel from where it landed, so the blow can go east while the other thumb walks north. Parked without a push, the swing aims itself |
 
-Two-handed is the way to fight a room full of demons: right thumb drags (and
-keeps its own aim), left thumb holds ATTACK. Lifting either finger affects only
-its own job. A second finger dropped on the field is ignored, so a stray thumb
-cannot steal your aim mid-stride.
+Two-handed is the way to fight a room full of demons: the right thumb runs the
+walk stick, the left thumb runs the trigger and the aim. Lifting either finger
+affects only its own job. While the pad is held a finger on the field cannot
+change the aim at all, and a second field finger is ignored, so a stray thumb
+cannot steal it mid-stride.
 | **WHIRL / BLINK / SHIELD** | Class ability |
 | **HEAL / MANA** | Drink a draught or wick oil |
 | **PACK** | Open the pack (bottom row: HEAL, MANA, SELL, CLOSE) |
@@ -98,9 +105,10 @@ A touch that barely moves is a rest, not a walk, so a thumb resting on the glass
 will not wander you into a demon. Buttons sit in the bottom-right corner, biggest
 and nearest the thumb first: ATTACK, ability, (TRADE / DOWN when something is in
 reach), HEAL, MANA, PACK, PAUSE — and the ATTACK pad sits in the opposite corner.
-Sliding a thumb across the ATTACK button neither walks nor re-aims. While a
-finger is on the field the aim ray leaves the body along the aim, so you can see
-where a swing will land before it lands.
+Sliding a thumb across the ATTACK **circle** neither walks nor re-aims; sliding
+across the **pad** is how you aim. The aim ray leaves the body along the aim, and
+a crosshair sits at its tip while the stick is pushed, so you can see where a
+swing will land before it lands.
 
 
 In the pack: `1–9`/`0` or the arrows pick a row, `E` wears it, `X` (or right
@@ -154,7 +162,11 @@ off. `I` or `Esc` closes it.
   you are already wearing, which is why a good coat is never traded away for a
   mediocre blade. Everything you carry can be sold for what it is worth.
 - Every **10th level** is a boss arena (no maze) with a merchant. The boss
-  sleeps until you strike it; the portal opens when it dies.
+  sleeps until you strike it; the portal opens when it dies. The counter's wares
+  improve as you descend — better item levels than the best chest on that floor,
+  never below *Fine*, and a longer shelf the deeper you go — and its prices grow
+  with the square of the depth, so a purchase stays worth saving for instead of
+  turning into free money by the third boss.
 - Enemy stats grow with your power, but on a **30 % shallower slope**, so a
   well-played run outpaces the dungeon.
 - **Save files.** Pausing offers *Carry this run out*, which downloads the run

@@ -94,11 +94,11 @@
       return acts;
     },
 
-    /* The cluster plus the left-hand ATTACK pad. The pad is what makes the
-       game playable with two thumbs: the right one drags on the field (walk +
-       aim) and the left one, which is already resting in the left corner, holds
-       ATTACK. One thumb still works -- the pad is only a second way to reach the
-       same hold-button, and a tap in the open remains a single swing. */
+    /* The cluster plus the left-hand aim stick, drawn as a wide ATTACK pad.
+       Two thumbs, two sticks: the right one drags the field and walks, the left
+       one rests on this pad, holds it to swing and slides it to point. One thumb
+       still works -- the pad is only a second way to reach the same hold-button,
+       and with nothing on it the field finger keeps aiming as it always did. */
     buttons: function (game) {
       const acts = L.actions(game);
       const out = [];
@@ -116,7 +116,7 @@
       }
       const pw = L.tiny ? 96 : 124, ph = 46;
       out.push({
-        id: 'attack', label: 'ATTACK', color: '#ffb347', pad: true,
+        id: 'attack', label: 'ATTACK', color: '#ffb347', pad: true, hint: 'drag to aim',
         x: L.pad + pw / 2, y: L.h - L.pad - ph / 2, w: pw, h: ph, r: ph / 2,
       });
       return out;
