@@ -1,0 +1,8 @@
+# local scratch / test output — never commit
+tmp/
+*.log
+.DS_Store
+node_modules/
+# editor
+.vscode/
+.idea/
