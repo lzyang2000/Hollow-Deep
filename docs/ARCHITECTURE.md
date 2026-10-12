@@ -39,5 +39,21 @@ js/90-game.js           state machine, fixed-step loop, level flow
 ```
 
 `tmp/` holds throwaway harnesses and is git-ignored:
-`tmp/test_core.js` (generation + scaling invariants) and
-`tmp/smoke.js` (headless DOM/canvas/WebAudio stubs driving thousands of frames).
+
+- `tmp/test_maze.js` — maze invariants (borders, reachability, braiding, arenas).
+- `tmp/smoke.js` — evaluates the real files under headless DOM/canvas/WebAudio
+  stubs and drives 9000 frames of play, asserting the sight gate, the sleeping
+  boss, the scaling ratio, the shop and the fog light map.
+- `tmp/balance.js` — a no-cheat difficulty bot (BFS pathing, real purchases,
+  real potions) across all three careers.
+- `tmp/shot.html` — drives one screen per query param and screenshots it with
+  headless Chrome; `&dump=1` prints game state and any `window.onerror` hits.
+
+Two ordering rules the harnesses exist to protect:
+
+- Aim is computed once per step into `DC.Input.aim` and handed to the actor
+  through the input frame. Anything that writes `player.aim` directly will be
+  overwritten by `Player.update`.
+- `Fog.discover` runs in `step()`, not `render()`. The minimap, the demon
+  sight gate and the sealed boss portal all read discovery, so it is
+  simulation state and must not depend on a frame being drawn.
