@@ -26,7 +26,7 @@
         if (MOVE_KEYS[code]) e.preventDefault();
         if (!self.keys[code]) self.justPressed[code] = true;
         self.keys[code] = true;
-        if (code === 'Space') e.preventDefault();
+        if (code === 'Space' || code === 'Tab') e.preventDefault();
       };
       const up = function (e) { self.keys[e.code] = false; };
       global.addEventListener('keydown', down);

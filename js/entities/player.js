@@ -13,6 +13,7 @@
         x: 0, y: 0, r: 0.7,
         bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMp: 0, bonusMove: 0, bonusAtkSpeed: 0,
         weapon: null, armor: null,
+        inv: [], invSize: DC.C.INV_SIZE,
         potions: { heal: 1, mana: 1 },
         gold: 0,
         aim: 0, facing: 0,

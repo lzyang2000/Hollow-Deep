@@ -23,14 +23,10 @@
 
     describe: function (item, p) {
       if (item.type === 'weapon') {
-        const cur = p.weapon ? p.weapon.atk : 0;
-        const d = item.atk - cur;
-        return '+' + item.atk + ' ATK' + (p.weapon ? '  (replaces ' + cur + ', ' + (d >= 0 ? '+' : '') + d + ')  melts for ' + item.value : '');
+        return '+' + item.atk + ' ATK   ' + DC.Inv.compare(p, item) + ' vs worn   worth ' + item.value + ' if you sell it';
       }
       if (item.type === 'armor') {
-        const cur = p.armor ? p.armor.def : 0;
-        const d = item.def - cur;
-        return '+' + item.def + ' DEF' + (p.armor ? '  (replaces ' + cur + ', ' + (d >= 0 ? '+' : '') + d + ')  melts for ' + item.value : '');
+        return '+' + item.def + ' DEF   ' + DC.Inv.compare(p, item) + ' vs worn   worth ' + item.value + ' if you sell it';
       }
       if (item.type === 'upgrade') {
         if (item.stat === 'attackSpeed') return '+' + Math.round(item.amount * 100) + '% attack speed';
@@ -99,7 +95,7 @@
 
       ctx.font = '600 11px ' + FONT;
       ctx.fillStyle = 'rgba(255,255,255,0.45)';
-      ctx.fillText('Click or press 1-' + stock.length + ' to buy \u00b7 E or ESC to leave \u00b7 potions go in slots 1 and 2',
+      ctx.fillText('Click or press 1-' + stock.length + ' to buy \u00b7 E or ESC to leave \u00b7 gear goes in the pack, open it with I',
         L.x + 20, L.y + L.h - 16);
     },
 

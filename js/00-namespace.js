@@ -78,5 +78,10 @@
     REGEN_DELAY: 5,      // seconds calm before it starts
     REGEN_FRAC: 0.014,   // fraction of max HP per second, once calm
     LEASH_TIME: 3.5,     // seconds out of sight before it gives up
+
+    // The pack. Loot lands in a bag instead of silently re-dressing you, and
+    // the finite number of rows is what turns every find into a decision:
+    // wear it, carry it, or sell it.
+    INV_SIZE: 10,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

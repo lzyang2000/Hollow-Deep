@@ -28,6 +28,7 @@ js/entities/props.js    chests, urns, portal, merchant, projectiles, particles, 
 js/systems/fog.js       light map, discovery memory, entity visibility
 js/systems/combat.js    damage, arcs, projectiles, knockback, drops
 js/systems/loot.js      drop table, equip/upgrade application, gold
+js/systems/inventory.js the pack: worn slots, bag triage, equip/stow/sell/sort
 js/systems/progression.js  the 30 %-shallower scaling curve
 js/systems/flowfield.js BFS distance field for demon pathing
 js/render/world.js      tiles, walls, props, light overlay
@@ -36,6 +37,7 @@ js/render/hud.js        bars, depth, gold, stats, toasts, banners
 js/render/minimap.js    45 m minimap, portal marker and off-screen arrow
 js/ui/screens.js        title, class select, lore, pause, death
 js/ui/shop.js           merchant shop
+js/ui/inventory.js      pack screen (worn rows, bag rows, potions, hover map)
 js/90-game.js           state machine, fixed-step loop, level flow
 ```
 
@@ -67,6 +69,17 @@ Two ordering rules the harnesses exist to protect:
   shake. If `follow` is ever dropped from the step, the actor walks out of the
   browser frame and nothing else in the code notices — `tmp/smoke.js` section
   [8] is the guard.
+- Equipment bonuses come from exactly one place: `DC.Inv.applyStats` reads the
+  two worn slots into `bonusAtk` / `bonusDef` and calls `Player.recalc`. Anything
+  that sets those fields directly will be silently overwritten the next time the
+  player changes gear, and the pack screen's "`vs worn`" column will disagree with
+  the numbers on the HUD.
+- `DC.Loot.onUrn` deliberately does **not** mark the urn broken; every caller has
+  to (`combat.js` smashes do, `Game.step` contact does). Forgetting it pays out
+  every frame you keep standing there.
+- `tmp/shot.html` carries its own script list because it is a separate page.
+  `tmp/smoke.js` section [0] fails if it ever drifts from `index.html` — the HUD
+  reading `DC.Inv` with the module missing is exactly that bug.
 - `world.awakeCount` is the aggro budget and is owned by `DC.Demons.wake` and
   `DC.Demons.calm`. Nothing else may set `d.hasSeen` directly: the counter and
   the flag have to move together, and `tmp/smoke.js` section [10] asserts they
