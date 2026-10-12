@@ -77,26 +77,38 @@
     if (!touch) {
       const bx = 16, by = H - 74;
       const cdFrac = M.clamp(1 - p.abilityCd / ab.cd, 0, 1);
+      const dFrac = M.clamp(1 - p.dodgeCd / DC.C.DODGE_CD, 0, 1);
       ctx.fillStyle = 'rgba(6,8,12,0.55)';
-      ctx.fillRect(bx - 6, by - 22, 300, 84);
-      ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.fillRect(bx, by, 46, 46);
-      ctx.fillStyle = cdFrac >= 1 ? p.cls.color : 'rgba(255,255,255,0.35)';
-      ctx.fillRect(bx, by + 46 * (1 - cdFrac), 46, 46 * cdFrac);
-      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-      ctx.strokeRect(bx + 0.5, by + 0.5, 45, 45);
-      ctx.font = '700 10px ' + FONT;
-      ctx.fillStyle = '#fff';
-      ctx.fillText('SPACE', bx + 8, by + 40);
+      ctx.fillRect(bx - 6, by - 22, 440, 84);
+      /* Two boxes, two keys: the career ability on SPACE, the dodge on SHIFT.
+         Both fill as they recharge, because the only question a cooldown ever
+         asks is "is it up yet". */
+      const boxes = [
+        { key: 'SPACE', frac: cdFrac, hot: cdFrac >= 1 && p.mp >= ab.mp, color: p.cls.color },
+        { key: 'SHIFT', frac: dFrac, hot: dFrac >= 1, color: '#8ef0c0' },
+      ];
+      for (let bi = 0; bi < boxes.length; bi++) {
+        const bb = boxes[bi], x0 = bx + bi * 56;
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.fillRect(x0, by, 46, 46);
+        ctx.fillStyle = bb.hot ? bb.color : 'rgba(255,255,255,0.35)';
+        ctx.fillRect(x0, by + 46 * (1 - bb.frac), 46, 46 * bb.frac);
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.strokeRect(x0 + 0.5, by + 0.5, 45, 45);
+        ctx.font = '700 10px ' + FONT;
+        ctx.fillStyle = '#fff';
+        ctx.fillText(bb.key, x0 + (bb.key.length > 5 ? 4 : 8), by + 40);
+      }
+      const tx = bx + 112;
       ctx.font = '700 12px ' + FONT;
       ctx.fillStyle = cdFrac >= 1 ? '#fff' : 'rgba(255,255,255,0.5)';
-      ctx.fillText(ab.name.toUpperCase(), bx + 58, by + 14);
+      ctx.fillText(ab.name.toUpperCase(), tx, by + 14);
       ctx.font = '600 10px ' + FONT;
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.fillText(ab.mp + ' MP' + (cdFrac < 1 ? '   ready in ' + Math.ceil(p.abilityCd) + 's' : '   ready'), bx + 58, by + 30);
+      ctx.fillText(ab.mp + ' MP' + (cdFrac < 1 ? '   ready in ' + Math.ceil(p.abilityCd) + 's' : '   ready'), tx, by + 30);
       ctx.fillStyle = 'rgba(255,255,255,0.38)';
       const desc = ab.desc;
-      ctx.fillText(desc.length > 46 ? desc.slice(0, 45) + '\u2026' : desc, bx + 58, by + 44);
+      ctx.fillText(desc.length > 40 ? desc.slice(0, 39) + '\u2026' : desc, tx, by + 44);
 
       ctx.font = '700 11px ' + FONT;
       const py = by + 56;
@@ -107,6 +119,8 @@
       const packFull = DC.Inv.isFull(p);
       ctx.fillStyle = packFull ? '#ffd166' : 'rgba(255,255,255,0.4)';
       ctx.fillText('[I] PACK ' + p.inv.length + '/' + p.invSize, bx + 214, py + 10);
+      ctx.fillStyle = p.dodgeCd <= 0 ? '#8ef0c0' : 'rgba(255,255,255,0.3)';
+      ctx.fillText('[SHIFT] DODGE' + (p.dodgeCd > 0 ? ' ' + Math.ceil(p.dodgeCd) + 's' : ''), bx + 330, py + 10);
     }
 
     /* ---- log, bottom centre (clear of the thumb cluster on a phone) ---- */
@@ -270,6 +284,10 @@
         const ready = p.abilityCd <= 0 && p.mp >= ab.mp;
         edge = ready ? p.cls.color : 'rgba(255,255,255,0.22)';
         text = ready ? '#fff' : 'rgba(255,255,255,0.45)';
+      } else if (b.id === 'dodge') {
+        const ready = p.dodgeCd <= 0;
+        edge = ready ? b.color : 'rgba(255,255,255,0.22)';
+        text = ready ? '#fff' : 'rgba(255,255,255,0.45)';
       } else if (b.id === 'heal' || b.id === 'mana') {
         if (!b.count) text = 'rgba(255,255,255,0.3)';
         else edge = b.color;
@@ -309,8 +327,10 @@
       ctx.fillStyle = fill; ctx.fill();
       ctx.strokeStyle = edge; ctx.lineWidth = 2; ctx.stroke();
 
-      if (b.id === 'ability') {
-        const frac = M.clamp(1 - p.abilityCd / ab.cd, 0, 1);
+      if (b.id === 'ability' || b.id === 'dodge') {
+        const frac = b.id === 'ability'
+          ? M.clamp(1 - p.abilityCd / ab.cd, 0, 1)
+          : M.clamp(1 - p.dodgeCd / DC.C.DODGE_CD, 0, 1);
         if (frac < 1) {
           ctx.beginPath();
           ctx.moveTo(b.x, b.y);
@@ -321,7 +341,7 @@
           ctx.font = '700 ' + DC.Layout.font(11, 10) + 'px ' + FONT;
           ctx.textAlign = 'center';
           ctx.fillStyle = 'rgba(255,255,255,0.5)';
-          ctx.fillText(Math.ceil(p.abilityCd) + 's', b.x, b.y - r + 14);
+          ctx.fillText(Math.ceil(b.id === 'ability' ? p.abilityCd : p.dodgeCd) + 's', b.x, b.y - r + 14);
         }
       }
 

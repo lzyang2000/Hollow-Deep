@@ -58,6 +58,16 @@
     // you and the gate but demons that had already been thinned out.
     BOSS_EVERY: 5,
 
+    // Dodge: a short, committed dash. SHIFT on a keyboard, the DODGE circle
+    // beside ATTACK on a phone. It is deliberately modest -- about a second of a
+    // mage's walking, no invulnerability anywhere in it, and it takes your
+    // balance out from under you: a swing already in the air is given up and the
+    // next one is late. That is what keeps it from becoming a second Blink.
+    DODGE_CD: 1.9,        // seconds between dashes
+    DODGE_TIME: 0.2,      // how long the dash itself lasts
+    DODGE_SPEED: 21,      // m/s while dashing -> about 4.2 m of ground
+    DODGE_RECOVERY: 0.18, // extra seconds before the next swing can start
+
     // Portal gate: a reachable tile this deep into the maze's walking
     // distance, not the absolute farthest one.
     PORTAL_MIN_TILES: 20,

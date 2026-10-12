@@ -387,6 +387,12 @@
           case 'drink':
             for (let i = 0; i < 4; i++) A.tone(t + i * 0.06, 0.12, 0.1, 'sine', 420 + i * 160, 620 + i * 180);
             break;
+          case 'dodge':
+            // A short breath of cloth and dust, not a spell: it should read as
+            // feet, and it should sit under the ability it shares a thumb with.
+            A.noiseBurst(t, 0.16, 0.18, 'bandpass', 1400, 1.2, 420);
+            A.tone(t, 0.07, 0.14, 'triangle', 320, 180);
+            break;
           case 'blink':
             A.tone(t, 0.2, 0.24, 'sine', 1500, 320);
             A.noiseBurst(t, 0.12, 0.2, 'bandpass', 3000, 2.0, 800);

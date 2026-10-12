@@ -49,6 +49,24 @@
       ctx.restore();
     }
 
+    /* A dash leaves a smear. The eye reads "moved fast" from a streak far better
+       than from a body that is suddenly somewhere else -- and the smear is the
+       tell that the dash is spent, which matters when the other side is reading
+       you too. */
+    if (p.dodgeT > 0) {
+      const k = M.clamp(p.dodgeT / C.DODGE_TIME, 0, 1);
+      ctx.save();
+      ctx.globalAlpha = 0.34 * k;
+      ctx.strokeStyle = cls.color;
+      ctx.lineWidth = r * 1.15;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x - Math.cos(p.dodgeDir) * 3.2 * s, y - Math.sin(p.dodgeDir) * 3.2 * s);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     DC.Render.actorShadow(ctx, x, y, r);
 
     /* --- the swing -----------------------------------------------------

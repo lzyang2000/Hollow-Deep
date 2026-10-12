@@ -83,6 +83,10 @@
       // Corner-most, because it is the one control a drag cannot replace: a
       // drag always walks, so this is how you swing without moving.
       acts.push({ id: 'attack', label: 'ATTACK', color: '#ffb347' });
+      // Beside ATTACK, because it is the other half of the same thought: one
+      // thumb, two circles, a swing and a step. Second from the corner, so the
+      // ability keeps the ring it has always had.
+      acts.push({ id: 'dodge', label: 'DODGE', color: '#8ef0c0' });
       acts.push({ id: 'ability', label: p.cls.ability.name.split(' ')[0].slice(0, 6).toUpperCase(), big: true });
       if (game.interactTarget) {
         acts.push({ id: 'interact', label: game.interactTarget.kind === 'merchant' ? 'TRADE' : 'DOWN', glow: true });

@@ -9,7 +9,8 @@ browser with no build step. The run ends on death; the score is depth reached.
 - Mouse move / drag — aim. Aim always tracks the cursor relative to the player;
   holding the button shows an aim guide.
 - Left click — attack. Holding repeats at the current attack rate.
-- `Space` — class ability (MP cost). `E` — interact. `Esc` — pause.
+- `Space` — class ability (MP cost). `Shift` — **dodge** (see 2b). `E` — interact.
+  `Esc` — pause.
   `V` — zoom. `M` — mute.
 - While paused: `Esc`/`Enter` resume, `I` pack, `S` **save to a file**,
   `L` **load a file**, `M` mute, `R` abandon the run.
@@ -19,7 +20,28 @@ browser with no build step. The run ends on death; the score is depth reached.
   `X`/`Backspace` sells it, `R` sorts it, `Q`/`F` drink, right-click sells the row
   under the cursor, and clicking a worn piece stows it.
 
-### 2b. Touch (one hand, or two)
+### 2b. Dodge
+
+A committed dash, deliberately modest, so that it stays a positioning tool and
+never becomes a second Blink or a get-out-of-jail card:
+
+- `C.DODGE_TIME` 0.2 s at `C.DODGE_SPEED` 21 m/s — about **4.2 m** of ground,
+  against Blink's 9 m. `C.DODGE_CD` 1.9 s between dashes (9x the dash itself).
+- **No invulnerability at any point in it.** A blow taken mid-dash lands for
+  exactly what it lands for standing still (`p.invuln` is never touched).
+- It costs your balance: an in-flight swing is dropped (`p.swing = null`) and
+  `attackTimer` is pushed to at least `DODGE_TIME + C.DODGE_RECOVERY` (0.18 s),
+  so no swing can start until the feet are planted. Spamming it trades damage for
+  distance.
+- Direction is the movement vector, else the current aim, so it never turns your
+  back by accident. The stick cannot steer it once it has started.
+- `DC.moveBody` resolves it, so rock stops it dead, leaves the body outside the
+  rock, and still spends the cooldown. A fizzle inside the cooldown says so
+  (floater + `empty` sfx) through the shared `noManaT` throttle.
+- Drawn as a career-coloured smear behind the body while `dodgeT > 0`, and heard
+  as the `dodge` sfx (bandpassed noise + a short falling triangle).
+
+### 2c. Touch (one hand, or two)
 
 Two thumbs, two sticks. The field finger is a joystick; the wide ATTACK pad in
 the free corner is a trigger *and* an aim stick. That split is the point: one
@@ -73,8 +95,14 @@ a thumb is resting on the glass.
 | Class | Style | HP | MP | Move | Attack | Ability |
 | --- | --- | --- | --- | --- | --- | --- |
 | Mage | Ranged | 60 | 130 | 4.6 m/s | Magic bolt, costs MP | Blink |
-| Swordsman | Melee, balanced | 95 | 95 | 5.0 m/s | Wide arc slash | Whirlwind |
-| Knight | Melee, slow tank | 145 | 70 | 3.5 m/s | Heavy arc, +3 def | Shield Wall |
+| Swordsman | Melee, balanced | 95 | 95 | 5.5 m/s | Wide arc slash | Whirlwind |
+| Knight | Melee, slow tank | 145 | 70 | 4.2 m/s | Heavy arc, +3 def | Shield Wall |
+
+The stride ladder is a rule, not a taste: a swordsman (5.5) outruns every demon
+in the game, a mage (4.6) can trade with a hunter but not walk away from one, and
+a knight (4.2) is quick enough to close on a shooter and disengage from a mistake
+while a Hellblade (4.7) still catches him — so being heavy still costs something
+real.
 
 ## 4. Levels
 - 200 m x 200 m, 40 x 40 tiles of 5 m. The tile is 5 m and every other metre
@@ -172,7 +200,7 @@ Demons mirror the three player careers, one tier weaker:
   rather than a minefield: you always see them first, and the harness asserts it.
 - **A shooter may never outrun the slowest career.** An Imp that can back away
   at your own stride is not a fight, it is a countdown. Imp stride is **2.6 m/s**
-  against a knight's 3.5, and a per-kind `speedCap` (1.18) stops depth scaling
+  against a knight's 4.2, and a per-kind `speedCap` (1.18) stops depth scaling
   from buying the legs back: an Imp tops out at **3.07 m/s**, not the 5.10 the
   old blanket 1.5x cap allowed. The mage sovereign obeys the same rule (2.9 m/s,
   3.42 while enraged). Melee mirrors stay allowed to be faster — a Hellblade at
@@ -297,6 +325,11 @@ title screen, class selection, depth milestones, boss antechambers and death.
   inside the frame; the HUD, shop, pack and menus all fold to fit.
 - Desktop behaviour is unchanged: a mouse-driven viewport is not `touch`, keeps
   the keyboard panels, three career cards and the original zoom levels.
+- The thumb cluster is eight circles — ATTACK, DODGE, ability, (TRADE / DOWN when
+  something is in reach), HEAL, MANA, PACK, PAUSE — plus the ATTACK pad in the
+  opposite corner. DODGE is placed immediately beside ATTACK so one thumb covers a
+  swing and a step, and the ability keeps the ring it always had. All eight fit a
+  390x844 portrait cluster (two columns) and an 844x390 single row.
 
 ## 14. Acceptance checks
 
@@ -385,4 +418,12 @@ title screen, class selection, depth milestones, boss antechambers and death.
 18. A desktop viewport is not `touch`: it keeps the keyboard panels, three
     career cards, one-column pack and the original zoom levels, and the mouse
     still aims and drags-attacks exactly as before.
+28. A dodge crosses about 4.2 m on open floor and stops dead against rock without
+    leaving the body inside it, spending the cooldown either way. It grants no
+    invulnerability — a hit taken mid-dash deals exactly what it deals standing
+    still. It drops a swing already in the air, blocks any new swing until the
+    feet are planted, cannot be re-triggered inside `C.DODGE_CD`, and cannot be
+    steered once started. `Shift` triggers it on a keyboard; on a phone the DODGE
+    circle sits beside ATTACK, is hit-testable, and shows a cooldown ring and a
+    countdown while it is spent.
 

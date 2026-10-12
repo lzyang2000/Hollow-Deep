@@ -567,6 +567,7 @@
         if (code === 'KeyI' || code === 'Tab') { G.openPack(); return; }
         if (code === 'KeyV') { DC.Camera.zoomCycle(); G.log('Zoom ' + DC.Camera.pxPerM + ' px/m', 'rgba(255,255,255,0.45)'); return; }
         if (code === 'Space') { DC.Player.ability(G.world, G.player, G); return; }
+        if (code === 'ShiftLeft' || code === 'ShiftRight') { DC.Player.dodge(G.world, G.player, G); return; }
         if (code === 'KeyE') { G.tryInteract(); return; }
         if (code === 'Digit1') { DC.Player.drink(G.world, G.player, 'heal', G); return; }
         if (code === 'Digit2') { DC.Player.drink(G.world, G.player, 'mana', G); return; }
