@@ -20,9 +20,11 @@ js/data/items.js        equipment, upgrades, potions, shop stock
 js/world/maze.js        rooms-and-corridors + arena generation, flood fill, BFS
 js/world/level.js       level assembly: start, portal, chests, urns, demons,
                         merchant, decor and wall torches
-js/core/input.js        keyboard + mouse (aim, drag, click)
-js/core/touch.js        one-handed pointer input: drag = walk+aim+attack, tap =
-                        interact-or-one-swing, button hit tests
+js/core/input.js        keyboard + mouse (aim, drag, click; swallows the
+                          compatibility mouse event iOS fires after a tap)
+js/core/touch.js        one-handed pointer input: drag = walk + aim-at-fingertip
+                        (never a swing), tap = interact-or-one-swing-where-tapped,
+                        ATTACK hold-button, button hit tests
 js/core/audio.js        procedural music engine + synthesised SFX
 js/core/camera.js       follow camera (never lets the actor leave frame), shake, zoom
 js/entities/player.js   careers, movement, attacks, abilities

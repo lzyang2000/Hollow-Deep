@@ -21,21 +21,31 @@ browser with no build step. The run ends on death; the score is depth reached.
 
 ### 2b. Touch (one-handed, phone)
 
-One thumb only. The drag is the whole locomotion-and-combat gesture, mirroring
-what drag already means with a mouse:
+One thumb only. The finger is a joystick and a reticle at the same time, and
+attacking stays a decision: nothing swings just because a thumb is resting on
+the glass.
 
-- **Drag** anywhere on the play field: walk in the direction of the finger, aim
-  along it, and keep attacking. The aim stays where the finger left it
-  (`Input.aimHold`) instead of snapping back to a phantom cursor.
+- **Drag** anywhere on the play field: walk along the drag (a joystick measured
+  from where the finger landed) **and** aim at the fingertip itself — the aim is
+  the line from the player's own screen position to the finger, so the crosshair
+  you can see and the blow you get are the same thing. It does not attack.
 - **Tap** (short, under 14 px of travel, under 0.4 s): interact with whatever is
-  in reach; if nothing is, one swing (`Input.tapFrames` releases the attack a
-  few frames later so a tap is never a permanent hold).
+  in reach; if nothing is, one swing **at the point tapped** (`Input.tapFrames`
+  releases the attack a few frames later so a tap is never a permanent hold).
 - **ATTACK** is the one hold-button: pressing it sets `Input.firing` and keeps it
   set until the finger lifts, and it neither walks nor re-aims, so you can hold
-  your ground and trade. It exists because a drag always walks. A press that
-  never reached a simulation step still gets one swing rather than being
+  your ground and trade. With no fingertip on the field to aim with it aims
+  itself at the nearest demon the torch is showing (`Game.aimAssist`). A press
+  that never reached a simulation step still gets one swing rather than being
   swallowed.
 - A touch that never crosses the dead zone walks nobody and attacks nothing.
+- The HUD draws the three parts separately: a crosshair under the fingertip, the
+  aim as a ray leaving the body, and the walk-stick from where the finger landed
+  to where it is.
+- A mouse event that arrives just after a touch is the same finger arriving
+  twice, so `Input.mouseBlocked` swallows it. Taken for a mouse it starts a drag
+  that no mouse button ever releases: the player swings forever and the reticle
+  freezes at the tap point.
 - Buttons are laid out by `DC.Layout.buttons()` in the bottom-right corner,
   each at least 44 px across, and hit-tested before the drag starts.
 - Menus are tap-only: every screen has a real button for leaving it, and the
@@ -222,15 +232,21 @@ title screen, class selection, depth milestones, boss antechambers and death.
 15. On a 390x844 viewport the layout reports `touch`, the minimap fits across the
     screen, the torch diameter fits inside the frame, and every thumb button is
     on screen and at least 44 px across.
-16. A drag walks, aims and attacks with no mouse involved; lifting the finger
-    stops both; a touch that barely moves does neither; a tap descends a portal
-    when one is in reach and swings once when nothing is.
+16. A drag walks and aims at the fingertip with no mouse involved, and does not
+    swing on its own; lifting the finger stops the walk; a touch that barely
+    moves does neither; a tap descends a portal when one is in reach and, when
+    nothing is, swings once aimed at the point that was tapped.
 17. The pause menu, the pack, the career card and the merchant's leave button all
     fit a portrait phone and a landscape phone.
 19. The ATTACK button attacks without walking, keeps attacking while held, stops
-    on release, and is unmoved by a thumb that slides across it; the whole
+    on release, and is unmoved by a thumb that slides across it; with nothing
+    under it, it aims at the nearest demon the torch is showing; the whole
     cluster, seven buttons deep when an interact prompt is up, stays inside a
     portrait and a landscape phone frame.
+20. A compatibility mouse event fired within 900 ms of a touch is ignored, and a
+    real mouse is not: `Input.mouseBlocked` is true right after a tap and false
+    once the touch has aged out.
 18. A desktop viewport is not `touch`: it keeps the keyboard panels, three
-    career cards, one-column pack and the original zoom levels.
+    career cards, one-column pack and the original zoom levels, and the mouse
+    still aims and drags-attacks exactly as before.
 
