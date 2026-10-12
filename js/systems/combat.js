@@ -20,8 +20,7 @@
     const dmg = Math.max(1, Math.round(amount));
     d.hp -= dmg;
     d.hitFlash = 0.14;
-    d.hasSeen = true;           // being hit counts as seeing the player
-    d.state = 'hunt';
+    DC.Demons.wake(world, d, game, { silent: true });  // being hit counts as seeing
     DC.Props.floater(world, d.x + 0.3, d.y - d.r, String(dmg), opts.color || '#ffe9b0', { life: 0.8, size: 12 });
     DC.Props.burst(world, d.x, d.y, 6, { color: ['#ff6b5a', '#c9342b', '#ffd166'], spMin: 2, spMax: 6, lifeMin: 0.15, lifeMax: 0.4 });
     if (opts.knock) DC.Combat.knockback(d, opts.fromX == null ? d.x : opts.fromX, opts.fromY == null ? d.y : opts.fromY, opts.knock);
@@ -32,6 +31,7 @@
 
   DC.Combat.killDemon = function (world, d, game) {
     if (d.dead) return;
+    DC.Demons.calm(world, d);     // give the aggro slot back
     d.dead = true;
     d.deadT = 0;
     DC.Audio.play('demonDeath', { pitch: d.def.id === 'gorewarden' ? 0.6 : d.def.id === 'imp' ? 1.35 : 1.0 });
@@ -112,6 +112,7 @@
       }
       hits++;
     }
+    if (attacker.side === 'player') DC.Combat.smashUrnsArc(world, attacker, o, game);
     // Boss is a target for the player too.
     if (attacker.side === 'player' && world.boss && !world.boss.dead) {
       const b = world.boss;
@@ -122,6 +123,31 @@
       }
     }
     return hits;
+  };
+
+  /* Pottery breaks: melee arcs sweep the alcoves, impacts shatter what is
+     nearby. Urns never block anything, they just sit there being breakable. */
+  DC.Combat.smashUrnsArc = function (world, attacker, o, game) {
+    const half = o.arc / 2;
+    for (let i = 0; i < world.urns.length; i++) {
+      const u = world.urns[i];
+      if (u.broken) continue;
+      const dx = u.x - attacker.x, dy = u.y - attacker.y;
+      if (Math.hypot(dx, dy) > o.reach + u.r + 0.4) continue;
+      if (o.arc < 359 && Math.abs(M.angleDiff(attacker.aim, Math.atan2(dy, dx))) > half) continue;
+      u.broken = true;
+      DC.Loot.onUrn(game, world, u);
+    }
+  };
+
+  DC.Combat.smashUrnsAt = function (world, x, y, r, game) {
+    for (let i = 0; i < world.urns.length; i++) {
+      const u = world.urns[i];
+      if (u.broken) continue;
+      if (Math.hypot(u.x - x, u.y - y) > r + u.r) continue;
+      u.broken = true;
+      DC.Loot.onUrn(game, world, u);
+    }
   };
 
   DC.Combat.projectileHit = function (world, pr, target, game) {
@@ -146,6 +172,7 @@
         pr.y += pr.vy * dt / steps;
         if (DC.isSolidAt(world, pr.x, pr.y)) {
           DC.Props.burst(world, pr.x, pr.y, 5, { color: [pr.color, '#ffffff'], spMin: 1, spMax: 4, lifeMin: 0.1, lifeMax: 0.3 });
+          DC.Combat.smashUrnsAt(world, pr.x, pr.y, pr.splash || 1.2, game);
           if (pr.splash) DC.Combat.splash(world, pr, game);
           list.splice(i, 1); removed = true; break;
         }
@@ -156,6 +183,7 @@
             if (Math.hypot(d.x - pr.x, d.y - pr.y) > d.r + pr.r) continue;
             if (pr.hitIds && pr.hitIds.indexOf(d.uid) >= 0) continue;
             DC.Combat.projectileHit(world, pr, d, game);
+            DC.Combat.smashUrnsAt(world, pr.x, pr.y, pr.splash || 1.0, game);
             if (!pr.hitIds) pr.hitIds = [];
             pr.hitIds.push(d.uid);
             if (pr.pierce <= 0) { if (pr.splash) DC.Combat.splash(world, pr, game); list.splice(i, 1); removed = true; }
