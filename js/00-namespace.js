@@ -15,8 +15,8 @@
     // Information fog.
     REVEAL: 15,          // metres of torchlight
     REVEAL_NEAR: 5.5,    // fully lit out to here
-    MEMORY_LIGHT: 0.085, // how much of already-seen terrain survives
-    LIGHT_STEP: 1.0,     // metres between light-map samples
+    MEMORY_LIGHT: 0.13,  // how much of already-seen terrain survives
+    LIGHT_STEP: 0.7,     // metres between light-map samples
 
     // Minimap: a 45 m square centred on the player, upper right.
     MINIMAP_M: 45,
