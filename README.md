@@ -166,7 +166,10 @@ off. `I` or `Esc` closes it.
   slice the little map is looking at. Anything the torch has not seen stays
   black, and demons, chests and urns still only appear while they are actually
   in the light. The floor stops while the map is up — a map read mid-fight is an
-  obituary. Click, tap, or press N / ESC / ENTER to close it.
+  obituary. Click, tap, or press N / ESC / ENTER to close it. One press opens
+  it and the next press closes it — the `click` a browser fires after a tap is
+  the tail of the same gesture and never counts twice, which is why a tap on a
+  phone no longer opened the map and closed it again a third of a second later.
 - Demons **do not attack until they have seen you**. All three mirrors walk every
   floor — imps are commonest early, the heavier Gorewarden and Hellblade get
   relatively more common as you go down — and each one sees *slightly* less far

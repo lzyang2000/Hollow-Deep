@@ -387,12 +387,11 @@
     /* ---------------- interaction ---------------- */
     onClick: function (mx, my) {
       DC.Audio.resume();
-      if (G.state === 'playing') {
-        // A click on the map panel is a request to see the floor, not a swing.
-        if (G.onMinimap(mx, my)) G.toggleMap();
-        return;
-      }
-      if (G.state === 'map') { G.toggleMap(); return; }
+      // The map opens and closes on the press (see core/input.js, core/touch.js).
+      // A click is the same gesture arriving twice, so it gets no vote here --
+      // and a drag that happens to end on the panel is not a request to look at
+      // the floor either.
+      if (G.state === 'playing' || G.state === 'map') return;
       if (G.state === 'title') {
         const tb = DC.UI.titleButtons(G);
         for (let i = 0; i < tb.length; i++) {
