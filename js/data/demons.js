@@ -6,8 +6,10 @@
 
   DC.DEMONS = {
     imp: {
+      // Skittish but not a sprinter: an imp keeps its distance by backing off
+      // to keepRange, not by outrunning a knight forever.
       id: 'imp', mirrors: 'mage', name: 'Imp',
-      hp: 26, atk: 8, def: 0, speed: 3.9, r: 0.62,
+      hp: 26, atk: 8, def: 0, speed: 3.4, r: 0.62,
       attackKind: 'ranged', attackCd: 1.5, sight: 15, keepRange: 9,
       projSpeed: 15, projLife: 2.0,
       powerFactor: 0.62, color: '#ff7a59', accent: '#8f2f22', xp: 1,
