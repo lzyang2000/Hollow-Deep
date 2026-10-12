@@ -145,7 +145,16 @@ off. `I` or `Esc` closes it.
   and only a handful of demons hunt at once (the aggro budget), so you can always
   pull a pack.
 - The portal sits about **half the maze's own walking span** from the stair —
-  a real journey each level, never a 700 m slog.
+  a real journey each level, never a 700 m slog (measured: 110 / 145 / 200 m at
+  the 10th / 50th / 90th percentile).
+- The gate **stands in the open**: always inside a room, never in a corridor, a
+  doorway or an alcove, with at least 2 tiles (10 m) of clear floor all the way
+  round it — 99.7% of levels get the full 2, the rest relax to 1 rather than
+  lose the gate.
+- **Walking onto it does nothing.** Going down is a decision, not a misstep:
+  stand in the ring and press `E` (or the **DOWN** button, or tap). Once per run
+  the game says so out loud. This also means you can stand in the gate, look
+  around, and go back for that chest.
 - Torchlight reveals **15 m** of the dungeon. Everything else is fogged, and
   what you have already seen stays dimly remembered.
 - The **minimap** (upper right) is a 45 m square centred on you and shows the

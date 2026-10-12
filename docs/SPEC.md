@@ -100,10 +100,21 @@ a thumb is resting on the glass.
 - Boss level (every 10th): open arena, no maze, a handful of pillars.
 - Portal: a reachable tile about **half the level's own farthest walk** from
   the stair (never closer than 20 tiles), chosen with random tie-breaking. It
-  measures 20-44 tiles of corridor (100-220 m) in the harness, ~145 m average:
-  always reachable and always worth travelling to, without the 700 m slog the
-  absolute farthest tile used to turn a level into. On a boss level it only
-  materialises after the boss dies.
+  measures 20-65 tiles of corridor in the harness (p10/p50/p90 = 110/145/200 m
+  of corridor): always reachable and always worth travelling to, without the
+  700 m slog the absolute farthest tile used to turn a level into. On a boss
+  level it only materialises after the boss dies.
+- The portal tile must be **inside a room** and have `PORTAL_CLEAR_TILES` (2)
+  tiles of open floor in every direction, so it never lands in a corridor, a
+  doorway or an alcove. Candidates are scored on distance-to-target with a
+  bonus for the widest open patch; if nothing qualifies the requirement relaxes
+  in order (drop the room test, then radius 1, then radius 0) rather than
+  leaving a level with no gate. Measured over 1600 levels: 100% in a room,
+  100% at radius >= 1, 99.7% at radius 2.
+- **No auto-enter.** Standing on the ring only sets the interact prompt (4.2 m);
+  descending requires `E`, the thumb `DOWN` button, or a tap. `descend()` is
+  guarded by the transition, so a double-press cannot start two floors. Once per
+  run the first prompt also logs the verb.
 
 ## 5. Fog of war / information fog
 - Torchlight radius 15 m, line-of-sight aware, with torch flicker.
@@ -323,6 +334,11 @@ title screen, class selection, depth milestones, boss antechambers and death.
     other. Lifting the walk finger stops the walk only; lifting the pad stops the
     swing and keeps the direction. With nothing on the pad, the fingertip is the
     reticle again.
+25. Over 240 generated levels the portal is always inside a room, always has
+    open floor all the way round it, is always reachable, and stays a journey
+    rather than a slog. Standing in the portal for 150 frames descends nothing
+    and offers a prompt instead; a thumb on the ring gets a `DOWN` button;
+    `tryInteract` then descends.
 24. The minimap clips before it paints any terrain, on desktop and on a phone,
     even though its tile window genuinely overflows the panel. Clicking, tapping
     or pressing `N` on the minimap opens the whole-floor map, which paints only

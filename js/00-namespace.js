@@ -55,6 +55,9 @@
     // distance, not the absolute farthest one.
     PORTAL_MIN_TILES: 20,
     PORTAL_FRACTION: 0.5,
+    // The portal is a thing you walk *up to and decide about*, so it needs
+    // room around it: this many tiles of open floor in every direction.
+    PORTAL_CLEAR_TILES: 2,
 
     // Dungeon plan: rooms joined by corridors, not a lattice maze.
     ROOM_COUNT_MIN: 9,
