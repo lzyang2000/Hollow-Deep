@@ -417,6 +417,9 @@
       p.aim = DC.Input.aim;
 
       DC.Player.update(w, p, DC.Input, dt, G);
+      // The camera follows the actor every step, not every frame, so it stays
+      // in lockstep with the simulation whatever the display refresh does.
+      DC.Camera.follow(p, dt);
       // What the torch reveals is simulation state (the minimap, the demon
       // sight gate and the shop all read it), so it advances with the step.
       DC.Fog.discover(w, p);

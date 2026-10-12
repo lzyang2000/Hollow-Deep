@@ -24,23 +24,35 @@
 
     snap: function (t) {
       this.x = t.x; this.y = t.y;
-      this.clampToBounds();
+      this.clampToBounds(t);
     },
 
     follow: function (t, dt) {
-      const k = 1 - Math.pow(0.0001, dt);
+      const k = 1 - Math.pow(0.00006, dt);
       this.x = M.lerp(this.x, t.x, k);
       this.y = M.lerp(this.y, t.y, k);
-      this.clampToBounds();
+      // A long jump (Blink, a knockback, a level change) should not let the
+      // camera lag behind the actor: close any big gap outright.
+      const hw = this.viewW / 2, hh = this.viewH / 2;
+      if (Math.abs(t.x - this.x) > hw * 0.7) this.x = t.x;
+      if (Math.abs(t.y - this.y) > hh * 0.7) this.y = t.y;
+      this.clampToBounds(t);
     },
 
-    clampToBounds: function () {
+    clampToBounds: function (t) {
       const W = DC.C.WORLD_M;
       const hw = this.viewW / 2, hh = this.viewH / 2;
       if (W >= this.viewW) this.x = M.clamp(this.x, hw, W - hw);
       else this.x = W / 2;
       if (W >= this.viewH) this.y = M.clamp(this.y, hh, W - hh);
       else this.y = W / 2;
+      // The world-edge clamp can pin the camera while the actor keeps walking.
+      // Keep the actor inside the frame no matter what: the camera gives way.
+      if (t) {
+        const mx = hw * 0.82, my = hh * 0.82;
+        if (t.x - this.x > mx) this.x = t.x - mx; else if (this.x - t.x > mx) this.x = t.x + mx;
+        if (t.y - this.y > my) this.y = t.y - my; else if (this.y - t.y > my) this.y = t.y + my;
+      }
     },
 
     addShake: function (amount) { this.shake = Math.min(2.2, this.shake + amount); },
