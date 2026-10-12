@@ -11,20 +11,35 @@
       const W = game.cam.w, H = game.cam.h, L = DC.Layout;
       const narrow = L.narrow;
       const w = Math.min(760, W - (narrow ? 16 : 60));
-      const h = Math.min(520, H - (narrow ? 16 : 80));
+      // Ten rows will not live inside 520 px on a phone lying on its side, so a
+      // small screen lets the panel take the whole height it is offered.
+      const h = narrow ? Math.min(560, H - 12) : Math.min(520, H - 80);
       const x = (W - w) / 2, y = (H - h) / 2;
-      const stock = game.shop.stock;
-      const headH = narrow ? 74 : 92;
-      const footH = L.touch ? 52 : 26;
-      const rowH = M.clamp((h - headH - footH) / Math.max(1, stock.length), 26, 46);
+      const n = Math.max(1, game.shop.stock.length);
+      const backH = L.touch ? 44 : 0;   // no ESC key on a phone: LEAVE has to be visible
+      const footH = L.touch ? 8 : 26;   // desktop spends the foot on a keyboard hint
+      const gap = backH ? 4 : 0;
+      let headH = narrow ? (h < 470 ? 62 : 74) : 92;
+      const rowH = M.clamp((h - headH - footH - backH - gap) / n, 24, 46);
+      // If even the shallowest honest row overflows, the head gives way first:
+      // a shorter quote is unreadable, a clipped row is unbuyable.
+      if (headH + n * rowH + gap + backH + footH > h) {
+        headH = Math.max(44, h - footH - backH - gap - n * rowH);
+      }
       const rows = [];
-      for (let i = 0; i < stock.length; i++) {
+      for (let i = 0; i < n; i++) {
         rows.push({ x: x + 20, y: y + headH + i * rowH, w: w - 40, h: rowH - (narrow ? 3 : 6), i });
       }
-      // No ESC key on a phone, so leaving the counter has to be something you
-      // can see and hit.
-      const back = L.touch ? { x: x + 20, y: y + headH + stock.length * rowH + 4, w: w - 40, h: 44 } : null;
-      return { x, y, w, h, rows, rowH, back, narrow: narrow };
+      const back = L.touch ? { x: x + 20, y: y + headH + n * rowH + gap, w: w - 40, h: backH } : null;
+      // Two comfortable lines need about 30 px of row. Below that the row folds
+      // to one tight pair instead of letting the second line escape the box.
+      const two = rowH >= 30;
+      return {
+        x, y, w, h, rows, rowH, back, headH, narrow: narrow,
+        nameDy: two ? (narrow ? 15 : 19) : Math.round(rowH * 0.46),
+        descDy: two ? (narrow ? 28 : 35) : rowH - 4,
+        priceDy: two ? (narrow ? Math.min(26, rowH - 4) : 27) : Math.round(rowH * 0.5) + 1,
+      };
     },
 
     describe: function (item, p, short) {
@@ -92,15 +107,15 @@
         const it = entry.item;
         ctx.font = '700 ' + DC.Layout.font(13, 11) + 'px ' + FONT;
         ctx.fillStyle = entry.sold ? 'rgba(255,255,255,0.3)' : (it.color || '#fff');
-        ctx.fillText((i + 1) + '. ' + it.name + (it.qualityName && !L.narrow ? ' \u00b7 ' + it.qualityName : ''), r.x + 12, r.y + (L.narrow ? 15 : 19));
+        ctx.fillText((i + 1) + '. ' + it.name + (it.qualityName && !L.narrow ? ' \u00b7 ' + it.qualityName : ''), r.x + 12, r.y + L.nameDy);
         ctx.font = '500 ' + DC.Layout.font(11, 10) + 'px ' + FONT;
         ctx.fillStyle = entry.sold ? 'rgba(255,255,255,0.25)' : 'rgba(210,220,235,0.65)';
-        ctx.fillText(DC.Shop.describe(it, p, L.narrow), r.x + 12, r.y + (L.narrow ? 28 : 35));
+        ctx.fillText(DC.Shop.describe(it, p, L.narrow), r.x + 12, r.y + L.descDy);
 
         ctx.textAlign = 'right';
         ctx.font = '700 ' + DC.Layout.font(13, 11) + 'px ' + FONT;
         ctx.fillStyle = entry.sold ? 'rgba(255,255,255,0.25)' : afford ? '#ffd166' : '#ff5c5c';
-        ctx.fillText(entry.sold ? 'SOLD' : entry.price + (L.narrow ? '' : ' coin'), r.x + r.w - 12, r.y + (L.narrow ? Math.min(26, r.h - 4) : 27));
+        ctx.fillText(entry.sold ? 'SOLD' : entry.price + (L.narrow ? '' : ' coin'), r.x + r.w - 12, r.y + L.priceDy);
         ctx.textAlign = 'left';
       }
 
@@ -109,7 +124,7 @@
       } else {
         ctx.font = '600 11px ' + FONT;
         ctx.fillStyle = 'rgba(255,255,255,0.45)';
-        ctx.fillText('Click or press 1-' + stock.length + ' to buy \u00b7 E or ESC to leave \u00b7 gear goes in the pack, open it with I',
+        ctx.fillText('Click or press 1-' + Math.min(9, stock.length) + ' to buy \u00b7 E or ESC to leave \u00b7 gear goes in the pack, open it with I',
           L.x + 20, L.y + L.h - 16);
       }
     },

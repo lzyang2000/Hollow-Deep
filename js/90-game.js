@@ -496,7 +496,7 @@
       if (G.state === 'shop') {
         if (code === 'Escape' || code === 'KeyE') { G.setState('playing'); DC.Audio.play('uiSelect'); return; }
         const n = parseInt(code.replace('Digit', ''), 10);
-        if (!isNaN(n) && n >= 1 && n <= G.shop.stock.length) G.buy(n - 1);
+        if (!isNaN(n) && n >= 1 && n <= Math.min(9, G.shop.stock.length)) G.buy(n - 1);
         return;
       }
       if (G.state === 'inventory') {
