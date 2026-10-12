@@ -12,7 +12,10 @@
   const FORMAT = 'hollowdeep-save';
   // 2: the level is 40x40 tiles now, so an old save's seed builds a different
   // floor and its stored demon coordinates no longer mean anything.
-  const VERSION = 2;
+  // 3: the gate is chosen from room-interior tiles, which draws the rng a
+  // different number of times -- the same seed now builds a different floor
+  // behind the player, so a version-2 file cannot be dropped back in.
+  const VERSION = 3;
 
   function num(v, min, max, dflt) {
     const n = typeof v === 'number' ? v : Number(v);

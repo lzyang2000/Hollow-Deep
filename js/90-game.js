@@ -212,6 +212,7 @@
       G.logs = [];
       G.invSel = 0;
       G.invHover = null;
+      G.taughtGate = false;
       G.addItem(DC.makePotion('heal'));
       G.startLevel(G.depth, true);
       G.setState('playing');
@@ -774,7 +775,16 @@
       if (pt && pt.active) {
         const d = Math.hypot(pt.x - p.x, pt.y - p.y);
         if (d < 4.2 && !G.interactTarget) G.interactTarget = { kind: 'portal', x: pt.x, y: pt.y };
-        if (d < 1.4 && !G.transition) G.descend();
+        // No auto-enter. Going down is a decision, not a misstep: walking
+        // across the ring used to drop you a level mid-fight, with no way back
+        // for the chest you left in the dark. Stand in it, then say so -- E,
+        // the DOWN button, or a tap. Once per run, say that out loud.
+        if (G.interactTarget && G.interactTarget.kind === 'portal' && !G.taughtGate) {
+          G.taughtGate = true;
+          G.log(DC.Layout.touch
+            ? 'The gate takes a decision, not a step: press DOWN to go deeper.'
+            : 'The gate takes a decision, not a step: press E to go deeper.', '#8ef0c0');
+        }
       }
 
       // heartbeat warning

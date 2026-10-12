@@ -123,20 +123,69 @@
 
       // Portal placement: a reachable tile deep in the maze, but not the
       // absolute farthest one. A perfect maze's farthest tile is a 700m+
-      // corridor slog; we take a tile around the 62nd percentile of walking
+      // corridor slog; we take a tile around the 50th percentile of walking
       // distance instead, so every level is a real journey without being a
       // chore. Ties are broken at random so the gate sits somewhere different
       // each time.
+      //
+      // And it stands in the open. A portal wedged in a corridor, a doorway or
+      // an alcove reads as scenery, is hard to see coming, and (with no
+      // auto-enter) is easy to miss entirely -- so the tile must sit inside a
+      // room with PORTAL_CLEAR_TILES of open floor all the way round. Wider
+      // patches win the near-ties, because a gate in the middle of a room is
+      // the one you can actually approach.
       let far = 0;
       for (let i = 0; i < world.open.length; i++) far = Math.max(far, world.dist[world.open[i]]);
       const target = Math.max(C.PORTAL_MIN_TILES, Math.round(far * C.PORTAL_FRACTION));
+
+      const inRoom = function (tx, ty) {
+        for (let i = 0; i < world.rooms.length; i++) {
+          const r = world.rooms[i];
+          if (tx >= r.x && tx < r.x + r.w && ty >= r.y && ty < r.y + r.h) return true;
+        }
+        return false;
+      };
+      // The largest r such that the (2r+1)^2 block around the tile is all
+      // open floor and clear of the rock border. Corridors (1-2 tiles wide),
+      // doorways and alcoves all stop at r = 0 or 1.
+      const openRadius = function (tx, ty, maxR) {
+        for (let r = 1; r <= maxR; r++) {
+          for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
+              if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;   // only the new ring
+              const X = tx + dx, Y = ty + dy;
+              if (X < 1 || Y < 1 || X > G - 2 || Y > G - 2) return r - 1;
+              if (grid[Y * G + X] !== 1) return r - 1;   // 1 = open floor, 0 = rock
+            }
+          }
+        }
+        return maxR;
+      };
+
       let best = -1, bestT = -1, bestScore = Infinity;
-      for (let i = 0; i < world.open.length; i++) {
-        const t = world.open[i];
-        const d = world.dist[t];
-        if (d < C.PORTAL_MIN_TILES) continue;
-        const score = Math.abs(d - target) + rng.next() * 3;
-        if (score < bestScore) { bestScore = score; bestT = t; best = d; }
+      const pick = function (needRadius, mustRoom) {
+        let t0 = -1, d0 = -1, s0 = Infinity;
+        for (let i = 0; i < world.open.length; i++) {
+          const t = world.open[i];
+          const d = world.dist[t];
+          if (d < C.PORTAL_MIN_TILES) continue;
+          const tx = t % G, ty = (t - tx) / G;
+          if (mustRoom && !inRoom(tx, ty)) continue;
+          const rad = openRadius(tx, ty, needRadius);
+          if (rad < needRadius) continue;
+          const score = Math.abs(d - target) + rng.next() * 3 - rad * 0.4;
+          if (score < s0) { s0 = score; t0 = t; d0 = d; }
+        }
+        return { t: t0, d: d0 };
+      };
+      // Relax in order, never past the point where a level would have no gate.
+      const relax = [
+        [C.PORTAL_CLEAR_TILES, true], [C.PORTAL_CLEAR_TILES, false],
+        [1, true], [1, false], [0, false],
+      ];
+      for (let i = 0; i < relax.length && bestT < 0; i++) {
+        const got = pick(relax[i][0], relax[i][1]);
+        bestT = got.t; best = got.d;
       }
       if (bestT < 0) {
         for (let i = 0; i < world.open.length; i++) {
