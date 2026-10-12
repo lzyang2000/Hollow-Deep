@@ -239,13 +239,19 @@
 
       if (world.isBoss) {
         G.banner = { title: world.boss.name, sub: world.boss.line, life: 4.2, maxLife: 4.2, color: '#ffd166' };
+        G.log('This floor is ' + world.name + '.', 'rgba(210,220,235,0.62)');
         G.log('A merchant sits at the edge of this room, unbothered.', '#ffd166');
       } else {
-        G.banner = { title: DC.levelName(depth), sub: first ? 'Find the portal. Stay lit.' : DC.LORE.portalLine, life: 3.0, maxLife: 3.0, color: '#e8eef8' };
+        G.banner = {
+          title: world.name,
+          sub: 'Depth ' + depth + ' \u00b7 ' + world.band + (first ? ' \u00b7 Find the portal. Stay lit.' : ''),
+          life: 3.0, maxLife: 3.0, color: '#e8eef8',
+        };
+        G.log('You step into ' + world.name + '.', 'rgba(210,220,235,0.62)');
       }
 
       const frag = DC.LORE.fragments.filter(function (f) { return f.depth === depth; })[0];
-      if (frag) G.loreCard = { depth: depth, text: frag.text };
+      if (frag) G.loreCard = { depth: depth, name: world.name, band: world.band, text: frag.text };
     },
 
     descend: function () {

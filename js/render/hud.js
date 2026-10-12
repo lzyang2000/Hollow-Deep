@@ -149,7 +149,11 @@
       const a = Math.min(1, k * 3) * Math.min(1, (1 - k) * 6 + 0.2);
       ctx.globalAlpha = M.clamp(a, 0, 1);
       ctx.textAlign = 'center';
-      ctx.font = '700 ' + L.font(26, 18) + 'px ' + FONT;
+      let bf = L.font(26, 18);
+      ctx.font = '700 ' + bf + 'px ' + FONT;
+      while (bf > 12 && ctx.measureText(bn.title).width > W - 30) {
+        bf -= 1; ctx.font = '700 ' + bf + 'px ' + FONT;
+      }
       ctx.fillStyle = 'rgba(0,0,0,0.7)';
       ctx.fillText(bn.title, W / 2 + 2, H * 0.26 + 2);
       ctx.fillStyle = bn.color || '#fff';

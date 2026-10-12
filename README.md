@@ -134,6 +134,14 @@ off. `I` or `Esc` closes it.
   tile is reachable. It is built space, not a hedge puzzle. About a third of
   the square is walkable (~13,800 m^2), and the stair down is ~145 m of
   corridor away — a knight crosses it in about a minute of walking.
+- **Every floor has a name.** *The Drowned Undercroft*, *Weeping Colonnade*,
+  *Ember Shaft* — composed from a seeded word list and remembered for the rest of
+  the run, so depth 7 is the same place every time you take that run back up and a
+  different run gives it a different name. No two floors in one run share a name,
+  and a throne room is named out of a separate register (Throne, Vessel, Marrow
+  Hall) so you always know which kind of room you have walked into. The name rides
+  on the entry banner, the lore card, the pause line, the death screen and the big
+  map, and shrinks to fit when it is too long for them.
 - The **camera follows you**. It eases toward the actor, snaps across big
   jumps, and gives way at the world edge so you can never walk out of frame.
 - Levels are crowded: from the first floor there are **30+ demons, 11+ chests and
@@ -194,8 +202,11 @@ off. `I` or `Esc` closes it.
   `vs worn` is scored in **stats minus stride**, at the rate your career values
   stride — a mage pays 6 ATK per m/s, a knight 2.5. That is why the same coat is
   auto-equipped on a knight and left on the floor for a mage.
-- Every **10th level** is a boss arena (no maze) with a merchant. The boss
-  sleeps until you strike it; the portal opens when it dies. The counter's wares
+- Every **5th level** is a boss arena (no maze) with a merchant. The boss
+  sleeps until you strike it; the portal opens when it dies. Halving the cadence
+  did not halve the danger: a sovereign's strength is anchored to its own depth,
+  so the thing waiting for you on depth 20 is exactly as nasty as a depth-20 boss
+  always was — there are just twice as many of them between you and the bottom. The counter's wares
   improve as you descend — better item levels than the best chest on that floor,
   never below *Fine*, and a longer shelf the deeper you go — and its prices grow
   with the square of the depth, so a purchase stays worth saving for instead of

@@ -7,7 +7,7 @@
   DC.Boss = {
     create: function (kind, x, y, depth, rng, player, entry) {
       const base = DC.BOSS[kind];
-      const tier = Math.max(1, Math.round(depth / 10));
+      const tier = DC.bossTier(depth);
       const roster = DC.LORE.bosses.length;
       const cycle = Math.floor((tier - 1) / roster);
       const e = entry || DC.LORE.bosses[(tier - 1) % roster];
@@ -15,7 +15,16 @@
       if (cycle > 0) name = DC.LORE.echoPrefixes[(cycle - 1) % DC.LORE.echoPrefixes.length].toUpperCase() + ' ' + name;
 
       const mult = DC.Progression.enemyMult(player || { bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMp: 0 }, depth);
-      const tierMul = 1 + 0.35 * (tier - 1);
+      /* The slope is per sovereign, not per depth. They stand in the way twice
+         as often now, so the per-sovereign slope halved with the cadence -- and
+         0.65 + 0.175 * tier is then the very number the old 1 + 0.35 * (tier-1)
+         produced at the same depth (depth 40 is x2.05 either way). So a
+         Sovereign waiting on depth 40 is exactly as dangerous as it always was;
+         there are simply twice as many of them between the surface and you.
+         Halving the slope the other way (1 + 0.18 * (tier - 1)) made the deep
+         ones ~10% beefier and the depth-5 throne killed 9 bot runs out of 48
+         instead of 4, so the parity version is the one that stays. */
+      const tierMul = 0.65 + 0.175 * tier;
       const hp = Math.round(base.hp * tierMul * mult);
       return {
         kind: 'boss', uid: 'boss', bossKind: kind, tier, name, line: e.line,

@@ -129,9 +129,12 @@
      which lands near a tenth of what a careful delver has saved by the time it
      reaches the counter, at every depth. */
   DC.shopStock = function (rng, depth) {
-    const t = Math.max(1, Math.round(depth / 10));
+    const t = DC.bossTier(depth);
     const ilvl = depth + 4 + t;
-    const minQuality = Math.min(DC.QUALITY.length - 1, 2 + Math.floor(t / 2));
+    /* Quality still climbs one step per two *old* tiers. The tiers came twice
+       as often, so the divisor doubled with them -- otherwise every counter
+       would be selling Seal-forged by depth 30. */
+    const minQuality = Math.min(DC.QUALITY.length - 1, 2 + Math.floor(t / 4));
     const gear = Math.max(180, Math.round(13 * depth * depth - 58 * depth + 150));
     const price = (frac) => Math.max(20, Math.round(gear * frac));
     const fine = { minQuality };

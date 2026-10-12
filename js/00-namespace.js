@@ -51,6 +51,13 @@
     URN_MAX: 39,
     MIN_SPAWN_DIST: 26,   // metres from start before a demon may appear
 
+    // Descent cadence: every Nth floor is a boss arena with a merchant in it.
+    // It used to be 10. At 200 m a floor is a short, dense sweep, and a
+    // counter only every tenth floor meant nine floors of hoarding coin with
+    // nothing to spend it on -- and nine floors with nothing standing between
+    // you and the gate but demons that had already been thinned out.
+    BOSS_EVERY: 5,
+
     // Portal gate: a reachable tile this deep into the maze's walking
     // distance, not the absolute farthest one.
     PORTAL_MIN_TILES: 20,

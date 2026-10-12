@@ -15,7 +15,10 @@
   // 3: the gate is chosen from room-interior tiles, which draws the rng a
   // different number of times -- the same seed now builds a different floor
   // behind the player, so a version-2 file cannot be dropped back in.
-  const VERSION = 3;
+  // 4: a boss arena now sits on every 5th floor instead of every 10th, and
+  // floors have names. A version-3 file would drop a delver who stopped on
+  // depth 15 into an arena they never fought their way into.
+  const VERSION = 4;
 
   function num(v, min, max, dflt) {
     const n = typeof v === 'number' ? v : Number(v);
