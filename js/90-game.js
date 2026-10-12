@@ -406,15 +406,20 @@
       G.stats.time += dt;
 
       DC.Input.poll();
-      // aim from the cursor
+      // Aim comes from the cursor, in world terms, and is handed to the actor
+      // through the input frame so attacks and the drawn aim always agree.
       if (DC.Input.hasMouse) {
         const sx = DC.Camera.worldToScreenX(p.x), sy = DC.Camera.worldToScreenY(p.y);
-        p.aim = Math.atan2(DC.Input.my - sy, DC.Input.mx - sx);
+        DC.Input.aim = Math.atan2(DC.Input.my - sy, DC.Input.mx - sx);
       } else if (DC.Input.moveX || DC.Input.moveY) {
-        p.aim = Math.atan2(DC.Input.moveY, DC.Input.moveX);
+        DC.Input.aim = Math.atan2(DC.Input.moveY, DC.Input.moveX);
       }
+      p.aim = DC.Input.aim;
 
       DC.Player.update(w, p, DC.Input, dt, G);
+      // What the torch reveals is simulation state (the minimap, the demon
+      // sight gate and the shop all read it), so it advances with the step.
+      DC.Fog.discover(w, p);
       DC.Flow.refresh(w, dt);
       for (let i = 0; i < w.demons.length; i++) DC.Demons.update(w, w.demons[i], dt, G);
       if (w.boss) DC.Boss.update(w, w.boss, dt, G);
@@ -507,7 +512,6 @@
       const ctx = G.ctx, cam = DC.Camera;
       ctx.save();
       if (G.world && G.player) {
-        DC.Fog.discover(G.world, G.player);
         DC.Fog.update(G.world, G.player, cam, 0.016);
         DC.Render.world(ctx, G.world, cam);
         DC.Render.props(ctx, G.world, cam, DC.Fog);
