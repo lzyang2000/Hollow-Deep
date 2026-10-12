@@ -73,7 +73,6 @@
 
     classIntros: {
       mage: 'You are Ysolde the Wick-Keeper. You kept the ninth taper lit for eleven years with your own body heat. The Order called it a miracle; you called it a shift. You go down because a flame that never leaves a room learns nothing about the dark.',
-      swordsman: 'You are Corvin Sixfingers, choirsword, discharged. You were supposed to hold the stair at Aetherfall\u2019s gate and you were the only one who did not. You go down because the stair is still there and you never finished holding it.',
       knight: 'You are Brann Hollowshield, and the shield is hollow because the thing that broke it is still inside it. You go slowly. You go anyway. That has always been the whole technique.',
     },
 

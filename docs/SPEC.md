@@ -95,14 +95,28 @@ a thumb is resting on the glass.
 | Class | Style | HP | MP | Move | Attack | Ability |
 | --- | --- | --- | --- | --- | --- | --- |
 | Mage | Ranged | 60 | 130 | 4.6 m/s | Magic bolt, costs MP | Blink |
-| Swordsman | Melee, balanced | 95 | 95 | 5.5 m/s | Wide arc slash | Whirlwind |
 | Knight | Melee, slow tank | 145 | 70 | 4.2 m/s | Heavy arc, +3 def | Shield Wall |
 
-The stride ladder is a rule, not a taste: a swordsman (5.5) outruns every demon
-in the game, a mage (4.6) can trade with a hunter but not walk away from one, and
-a knight (4.2) is quick enough to close on a shooter and disengage from a mistake
-while a Hellblade (4.7) still catches him — so being heavy still costs something
-real.
+There used to be a third row — Swordsman (95 / 95, 5.5 m/s, Whirlwind). A mage
+owns the reach and a knight owns the brawl and nothing was left in between, so
+the career is retired: `DC.CLASS_ORDER` is `['mage','knight']` and
+`DC.CLASSES` has exactly those two keys.
+
+Retiring a career must not delete anybody's run, so `DC.CLASS_ALIAS = {
+swordsman: 'knight' }` resolves the name everywhere it can arrive from — a save
+file (`DC.Save.classId`), a stale bookmark, an `?auto=swordsman` link
+(`DC.Player.create` walks the same table, so it can never build a body with no
+stats on it). The run keeps its depth, coin, gear, pack and fog memory, its
+pools are re-derived from the knight, and the log says out loud that the hands
+are not the ones it saved with. An unknown name (`paladin`) is still refused.
+
+The demons never had a career to be, and they keep his shape: the Hellblade and
+the blade-shaped sovereigns are still there. The stride ladder is still a rule,
+not a taste — a mage (4.6) is the quicker of the two because distance is her
+whole defence, and a knight (4.2) is quick enough to close on a shooter and
+disengage from a mistake — but the Hellblade (4.7) is quicker than either, so
+nothing down there can simply be walked away from and being heavy still costs
+something real.
 
 ## 4. Levels
 - 200 m x 200 m, 40 x 40 tiles of 5 m. The tile is 5 m and every other metre
@@ -181,11 +195,13 @@ real.
   request to see the floor either, so `onClick` has no say in the map at all.
 
 ## 6. Enemies
-Demons mirror the three player careers, one tier weaker:
-| Demon | Mirrors | Behaviour |
+Demons echo three shapes, one tier weaker than the career each one answers to.
+The shapes outlive the careers — the middle one is a Swordsman nobody can play
+any more, and it is still the fastest thing in the dark:
+| Demon | Echoes | Behaviour |
 | --- | --- | --- |
 | Imp | Mage | Keeps distance, firebolts (skittish, and deliberately slower than you) |
-| Hellblade | Swordsman | Fast rusher, quick slashes |
+| Hellblade | Swordsman (retired) | Fast rusher, quick slashes |
 | Gorewarden | Knight | Slow, tanky, heavy overhead slam |
 
 - **All three mirrors walk every floor**, whatever career you picked. The mix
@@ -307,7 +323,8 @@ title screen, class selection, depth milestones, boss antechambers and death.
 - Every value read from a file is treated as hostile: numbers are clamped to
   sane ranges, indices out of range are dropped rather than wrapped, unknown
   careers and wrong versions are refused, and a boss portal cannot be marked
-  open before the boss is dead.
+  open before the boss is dead. A career that has been retired is not unknown:
+  it resolves through `DC.CLASS_ALIAS` and keeps its run.
 - `localStorage` is not used: the run leaves the browser as a file and can be
   moved between machines.
 
@@ -324,7 +341,7 @@ title screen, class selection, depth milestones, boss antechambers and death.
 - The minimap shrinks to `clamp(min(w*0.30, h*0.42), 104, 300)` px and stays
   inside the frame; the HUD, shop, pack and menus all fold to fit.
 - Desktop behaviour is unchanged: a mouse-driven viewport is not `touch`, keeps
-  the keyboard panels, three career cards and the original zoom levels.
+  the keyboard panels, a card for every career and the original zoom levels.
 - The thumb cluster is eight circles — ATTACK, DODGE, ability, (TRADE / DOWN when
   something is in reach), HEAL, MANA, PACK, PAUSE — plus the ATTACK pad in the
   opposite corner and a **second DODGE circle one gap to the right of that pad**.
@@ -370,7 +387,9 @@ title screen, class selection, depth milestones, boss antechambers and death.
     floor come back identical from the JSON file.
 14. A hand-edited or corrupt file cannot cheat: wrong version or unknown career
     is refused, absurd numbers are clamped, out-of-range indices are dropped, and
-    a boss portal cannot be pre-opened.
+    a boss portal cannot be pre-opened. A career that has since been retired is
+    the one exception: it resolves through `CLASS_ALIAS`, keeps its depth, coin
+    and gear, gets the new career's pools, and the swap is announced in the log.
 15. On a 390x844 viewport the layout reports `touch`, the minimap fits across the
     screen, the torch diameter fits inside the frame, and every thumb button is
     on screen and at least 44 px across.
@@ -422,9 +441,10 @@ title screen, class selection, depth milestones, boss antechambers and death.
     and every name fits its banner, lore card and map title. A sovereign stands
     on every fifth depth (`depth % C.BOSS_EVERY === 0`) and is no stronger at its
     own depth than it was before.
-18. A desktop viewport is not `touch`: it keeps the keyboard panels, three
-    career cards, one-column pack and the original zoom levels, and the mouse
-    still aims and drags-attacks exactly as before.
+18. A desktop viewport is not `touch`: it keeps the keyboard panels, one career
+    card per career (two, wider than the three narrow ones they replaced),
+    one-column pack and the original zoom levels, and the mouse still aims and
+    drags-attacks exactly as before.
 28. A dodge crosses about 4.2 m on open floor and stops dead against rock without
     leaving the body inside it, spending the cooldown either way. It grants no
     invulnerability — a hit taken mid-dash deals exactly what it deals standing

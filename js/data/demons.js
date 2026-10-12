@@ -1,5 +1,8 @@
-/* Demons mirror the three careers, one tier weaker. powerFactor < 1 keeps the
-   run winnable: they are the same shape of enemy as you, just dimmer. */
+/* Three demon shapes, one tier weaker than the career they echo. powerFactor <
+   1 keeps the run winnable: they are the same shape of enemy as you, just
+   dimmer. The shapes are not the careers -- a Hellblade wears the shape of the
+   Swordsman nobody can play any more, and it is still the fastest thing in the
+   dark, so the deep keeps three bodies while the surface offers two. */
 (function (global) {
   'use strict';
   const DC = global.DC;

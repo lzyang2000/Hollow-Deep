@@ -134,13 +134,19 @@ off. `I` or `Esc` closes it.
   `Space` blinks 9 m along your aim. A mage lives on distance, so heavy plate is
   priced accordingly: the stride a coat costs a mage is worth more than the
   defence it buys.
-- **Swordsman** — a 135° arc at sword reach, balanced HP and MP, and the longest
-  stride of the three at **5.5 m/s**: nothing down there can run a swordsman
-  down, which is the whole career. `Space` whirlwinds everything around you.
 - **Knight** — heavy, highest HP and free defence, longest reach and knockback,
   `Space` raises a shield wall. **4.2 m/s** is slow for a big man but no longer
   helpless: he can walk an Imp down and back away from a mistake, while a
   Hellblade (4.7 m/s) still catches him if he is standing where he should not be.
+
+There used to be a third — **Swordsman**, fastest feet, widest arc, a whirlwind
+for an ability. A mage owns the reach and a knight owns the brawl, and there was
+nothing left in between for him to be, so he is gone. The demons never had a
+career to mirror, so the deep kept his shape anyway: a Hellblade still walks
+every floor and the blade-shaped sovereigns still sit on their thrones every
+fifth depth. A save file that names him is not thrown away either — it comes
+back as a knight, with its depth, coin, gear and fog memory, and the log tells
+you the hands changed.
 
 ## The rules that matter
 
@@ -253,7 +259,7 @@ off. `I` or `Esc` closes it.
 
     node tmp/test_maze.js    # maze invariants: reachability, borders, arenas
     node tmp/smoke.js        # loads the real files, 9000 frames of headless play
-    node tmp/balance.js      # no-cheat difficulty bot across the three careers
+    node tmp/balance.js      # no-cheat difficulty bot across both careers
     node tmp/duel.js         # worst-case stand-and-trade fights, career vs demon
     node tmp/perf.js         # cost of a full 180-demon floor, and level generation
     sh tmp/dump.sh           # every screen, desktop + iPhone portrait + landscape,

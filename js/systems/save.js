@@ -73,9 +73,19 @@
     return out;
   }
 
+  /* Resolve a career name from a file to one this build actually has. */
+  function classId(v) {
+    if (DC.CLASSES[v]) return v;
+    const alias = DC.CLASS_ALIAS && DC.CLASS_ALIAS[v];
+    return alias && DC.CLASSES[alias] ? alias : null;
+  }
+
   DC.Save = {
     FORMAT: FORMAT,
     VERSION: VERSION,
+
+    /* Exported so the UI and the tests can ask the same question. */
+    classId: classId,
 
     fileName: function (game) {
       return 'hollowdeep-' + (game.player ? game.player.classId : 'run') +
@@ -142,7 +152,7 @@
       if (!obj || typeof obj !== 'object') return false;
       if (obj.format !== FORMAT) return false;
       if (obj.version !== VERSION) return false;
-      if (!obj.player || !DC.CLASSES[obj.player.classId]) return false;
+      if (!obj.player || !classId(obj.player.classId)) return false;
       if (typeof obj.seed !== 'number' || !isFinite(obj.seed)) return false;
       if (typeof obj.depth !== 'number' || !isFinite(obj.depth) || obj.depth < 1) return false;
       return true;
@@ -154,7 +164,7 @@
     restore: function (game, obj) {
       if (!DC.Save.valid(obj)) return { ok: false, error: 'That file is not a Hollow Deep save.' };
 
-      const cls = DC.CLASSES[obj.player.classId];
+      const wantCls = classId(obj.player.classId);
       const depth = int(obj.depth, 1, 100000, 1);
 
       game.best = game.loadBest();
@@ -162,7 +172,7 @@
       game.rng = new DC.RNG(game.seed);
       if (typeof obj.rngState === 'number' && isFinite(obj.rngState)) game.rng.s = obj.rngState >>> 0;
 
-      const p = DC.Player.create(obj.player.classId);
+      const p = DC.Player.create(wantCls);
       p.bonusAtk = num(obj.player.bonusAtk, 0, 100000, 0);
       p.bonusDef = num(obj.player.bonusDef, 0, 100000, 0);
       p.bonusHp = num(obj.player.bonusHp, 0, 100000, 0);
@@ -271,6 +281,12 @@
 
       game.banner = { title: 'DEPTH ' + depth, sub: 'Picked back up where you left it.', life: 2.6, maxLife: 2.6, color: '#8ef0c0' };
       game.log('You take hold of the taper again. Depth ' + depth + '.', '#8ef0c0');
+      // Say it out loud: the career they saved with is not the one they are
+      // holding, and a knight moves and hits differently from what they left.
+      if (wantCls !== obj.player.classId) {
+        game.log('The hands you come back in are not the ones you saved with. You stand as a '
+          + DC.CLASSES[wantCls].name + '.', '#ffd166');
+      }
       return { ok: true, depth: depth, classId: p.classId };
     },
 
