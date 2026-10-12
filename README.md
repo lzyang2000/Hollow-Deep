@@ -128,18 +128,22 @@ off. `I` or `Esc` closes it.
 
 ## The rules that matter
 
-- Every level is a **300 m x 300 m** procedurally generated dungeon: 12-18
+- Every level is a **200 m x 200 m** procedurally generated dungeon: 9-13
   rooms of assorted sizes joined by corridors that bend, occasionally run two
   tiles wide, and are looped and alcoved so nothing is a dead end. Every open
-  tile is reachable. It is built space, not a hedge puzzle.
+  tile is reachable. It is built space, not a hedge puzzle. About a third of
+  the square is walkable (~13,800 m^2), and the stair down is ~145 m of
+  corridor away — a knight crosses it in about a minute of walking.
 - The **camera follows you**. It eases toward the actor, snaps across big
   jumps, and gives way at the world edge so you can never walk out of frame.
-- Levels are crowded: from the first floor there are **42+ demons, 18+ chests and
-  27+ urns** on a level (growing to 180 / 48 / 66 deep down), plus rubble, bones,
+- Levels are crowded: from the first floor there are **30+ demons, 11+ chests and
+  16+ urns** on a level (growing to 120 / 26 / 39 deep down), plus rubble, bones,
   cobwebs, braziers and **wall torches** whose warm glow marks the rooms. Urns
-  shatter when you walk into them and are the potion supply. Nothing spawns within
-  40 m of the stair, and only a handful of demons hunt at once (the aggro budget),
-  so you can always pull a pack.
+  shatter when you walk into them and are the potion supply. The floor shrank
+  44% and the population did not shrink with it, so a corridor holds about 25%
+  more demons per metre than it used to. Nothing spawns within 26 m of the stair,
+  and only a handful of demons hunt at once (the aggro budget), so you can always
+  pull a pack.
 - The portal sits about **half the maze's own walking span** from the stair —
   a real journey each level, never a 700 m slog.
 - Torchlight reveals **15 m** of the dungeon. Everything else is fogged, and

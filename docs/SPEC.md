@@ -77,24 +77,32 @@ a thumb is resting on the glass.
 | Knight | Melee, slow tank | 145 | 70 | 3.5 m/s | Heavy arc, +3 def | Shield Wall |
 
 ## 4. Levels
-- 300 m x 300 m, 60 x 60 tiles of 5 m.
-- Normal level: **rooms and corridors**. 12-18 rooms of assorted sizes
-  (4-11 tiles) are placed without touching, joined by a minimum spanning tree
-  of L-shaped corridors with jittered bends; 28 % of corridors are two tiles
+- 200 m x 200 m, 40 x 40 tiles of 5 m. The tile is 5 m and every other metre
+  figure (torch 15, minimap 45, reach, sight, leash) is absolute, so shrinking
+  the level changes only how much dungeon there is, never what a metre means.
+  Measured across 18 floors: ~553 walkable tiles (~13,800 m^2, 34.5 % of the
+  square), 11.1 rooms, 0.4 % dead ends.
+- Normal level: **rooms and corridors**. 9-13 rooms of assorted sizes
+  (4-9 tiles) are placed without touching, joined by a minimum spanning tree
+  of L-shaped corridors with jittered bends; 30 % of corridors are two tiles
   wide. Extra links between nearby rooms add loops, and alcoves are carved off
   the corridors. This is deliberately not a lattice maze: the level reads as
   built space, and the harness asserts it holds a lot of open 2x2 floor.
 - **Every open tile must be reachable** — verified by flood fill at generation.
 - Population, and it is deliberately thick from the first floor:
-  `ENEMY_BASE 42` (+4.5/depth, cap 180), `CHEST_BASE 18` (+1.5, cap 48),
-  `URN_BASE 27` (+2.1, cap 66). Nothing spawns closer than `MIN_SPAWN_DIST`
-  (40 m of **walking** distance, measured on the flow field) off the stair, and
+  `ENEMY_BASE 30` (+3.2/depth, cap 120), `CHEST_BASE 11` (+0.9, cap 26),
+  `URN_BASE 16` (+1.2, cap 39). These are density figures: the level lost 44 %
+  of its area and the population lost less, so a floor is about 25 % more
+  crowded per metre of corridor than the 300 m version was (0.0585 demons per
+  walkable tile against 0.0467). Nothing spawns closer than `MIN_SPAWN_DIST`
+  (26 m of **walking** distance, measured on the flow field) off the stair, and
   nothing within 20 m in a straight line either.
 - Boss level (every 10th): open arena, no maze, a handful of pillars.
 - Portal: a reachable tile about **half the level's own farthest walk** from
-  the stair (never closer than 30 tiles), chosen with random tie-breaking. It
-  is always reachable and always worth travelling to, without the 700 m slog
-  that the absolute farthest tile turns a level into. On a boss level it only
+  the stair (never closer than 20 tiles), chosen with random tie-breaking. It
+  measures 20-44 tiles of corridor (100-220 m) in the harness, ~145 m average:
+  always reachable and always worth travelling to, without the 700 m slog the
+  absolute farthest tile used to turn a level into. On a boss level it only
   materialises after the boss dies.
 
 ## 5. Fog of war / information fog
