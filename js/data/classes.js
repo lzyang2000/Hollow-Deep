@@ -10,7 +10,7 @@
       attackKind: 'ranged', attackCd: 0.5, mpCost: 5,
       projSpeed: 30, projLife: 1.35, pierce: 2, splash: 1.3,
       mpRegen: 8, power: 1.0,
-      ability: { id: 'blink', name: 'Blink', mp: 18, cd: 6, desc: 'Teleport 9 m along your aim, phasing through walls.' },
+      ability: { id: 'blink', name: 'Blink', mp: 18, cd: 6, desc: 'Fold 9 m along your aim through stone. You always land in open ground.' },
       color: '#7fd0ff', accent: '#2b6ea8', robe: '#243b57',
       blurb: 'Fragile, far-reaching, and out of mana at exactly the wrong moment.',
     },

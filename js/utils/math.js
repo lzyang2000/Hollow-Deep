@@ -44,6 +44,21 @@
     return DC.isSolid(world, Math.floor(x / T), Math.floor(y / T));
   };
 
+  /* True when a body of radius r centred at (x, y) lies wholly in open tiles.
+     A point test is not enough: tiles are 5 m across and the delver is 0.7 m
+     wide, so a teleport can land a body inside a wall while its centre sits in
+     an open tile. This uses the same square-vs-tile scan as moveBody, so a
+     spot that fitsAt is never shoved by the collision solver afterwards. */
+  DC.fitsAt = function (world, x, y, r) {
+    const T = DC.C.TILE, rad = r || 0;
+    const x0 = Math.floor((x - rad) / T), x1 = Math.floor((x + rad) / T);
+    const y0 = Math.floor((y - rad) / T), y1 = Math.floor((y + rad) / T);
+    for (let ty = y0; ty <= y1; ty++)
+      for (let tx = x0; tx <= x1; tx++)
+        if (DC.isSolid(world, tx, ty)) return false;
+    return true;
+  };
+
   /* Amanatides & Woo voxel walk. Returns true if the segment crosses a solid
      tile before it reaches the end tile. */
   DC.lineBlocked = function (world, x0, y0, x1, y1) {
