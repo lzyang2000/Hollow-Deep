@@ -30,14 +30,21 @@
 
   DC.DEMON_ORDER = ['imp', 'hellblade', 'gorewarden'];
 
-  // Which mirrors show up at which depth, so early levels are not a wall of
-  // tanks and late levels are not only imps.
+  /* The mix of mirrors on a floor.
+
+     All three walk every level from the first stair -- the deep does not care
+     which career you chose, and a mage has to be able to survive a Gorewarden
+     standing in its doorway. Depth shifts the *proportions*, never the roster:
+     imps are the common sight early, and by the middle floors the three are
+     near equal with the heavier bodies edging ahead. Weights are capped so a
+     very deep run never turns into nothing but warden walls. */
   DC.demonMix = function (depth) {
-    const mix = [['imp', 1], ['hellblade', 0.2]];
-    if (depth >= 3) mix.push(['gorewarden', 0.25]);
-    if (depth >= 6) { mix[1][1] = 0.9; mix[2][1] = 0.7; }
-    if (depth >= 12) { mix[0][1] = 0.8; mix[1][1] = 1.3; mix[2][1] = 1.1; }
-    return mix;
+    const d = Math.min(depth || 1, 24);
+    return [
+      ['imp', 1.05 + 0.02 * d],
+      ['hellblade', 0.7 + 0.035 * d],
+      ['gorewarden', 0.45 + 0.04 * d],
+    ];
   };
 
   DC.BOSS = {
