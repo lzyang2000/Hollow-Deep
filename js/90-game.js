@@ -92,7 +92,7 @@
       const el = global.document && global.document.getElementById('hint');
       if (!el) return;
       if (DC.Layout.touch) {
-        el.textContent = 'Drag anywhere to move, aim and attack \u00b7 tap a button for the ability, potions and pack \u00b7 tap the merchant or the portal';
+        el.textContent = 'Drag to walk \u00b7 point the finger to aim \u00b7 hold ATTACK to swing \u00b7 tap to interact or strike \u00b7 buttons for potions, pack and pause';
       } else {
         el.textContent = 'WASD move \u00b7 mouse aim \u00b7 click attack \u00b7 SPACE ability \u00b7 E interact \u00b7 1/2 potions \u00b7 I pack \u00b7 V zoom \u00b7 M mute \u00b7 ESC pause \u00b7 S/L save and load in the pause menu';
       }
@@ -637,6 +637,29 @@
       G.log(res.text, res.color);
     },
 
+    /* The closest demon the torch is actually showing, within reach of the
+       weapon in hand. Only the one-handed ATTACK button asks for it: it has no
+       fingertip on the field to aim with, and a swing that misses everything
+       is not a fight. */
+    aimAssist: function (p) {
+      const w = G.world;
+      if (!w) return null;
+      const c = p.cls;
+      const range = c.attackKind === 'melee' ? c.reach + 1.2
+        : Math.min(c.projSpeed * c.projLife, 24);
+      let best = null, bd = range;
+      const consider = function (d) {
+        if (!d || d.dead) return;
+        const dist = Math.hypot(d.x - p.x, d.y - p.y);
+        if (dist >= bd) return;
+        if (!DC.Fog.visible(w, p, d.x, d.y, 0)) return;
+        best = d; bd = dist;
+      };
+      for (let i = 0; i < w.demons.length; i++) consider(w.demons[i]);
+      consider(w.boss);
+      return best;
+    },
+
     /* ---------------- simulation ---------------- */
     step: function (dt) {
       const w = G.world, p = G.player;
@@ -652,6 +675,13 @@
         DC.Input.aim = Math.atan2(DC.Input.my - sy, DC.Input.mx - sx);
       } else if (DC.Input.moveX || DC.Input.moveY) {
         DC.Input.aim = Math.atan2(DC.Input.moveY, DC.Input.moveX);
+      }
+      // One-handed assist: while the ATTACK button is held there is no finger
+      // on the field to aim with, so the swing finds the nearest demon in view.
+      // A drag or a tap still aims for itself, and a mouse always wins.
+      if (DC.Input.firing && DC.Touch && DC.Touch.attack && !DC.Input.hasMouse) {
+        const t = G.aimAssist(p);
+        if (t) DC.Input.aim = Math.atan2(t.y - p.y, t.x - p.x);
       }
       p.aim = DC.Input.aim;
 

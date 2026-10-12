@@ -42,6 +42,7 @@
       });
 
       canvas.addEventListener('mousemove', function (e) {
+        if (self.mouseBlocked()) return;
         const r = canvas.getBoundingClientRect();
         self.mx = e.clientX - r.left;
         self.my = e.clientY - r.top;
@@ -49,6 +50,11 @@
       });
       canvas.addEventListener('mousedown', function (e) {
         if (e.button !== 0) return;
+        // iOS (and some Android browsers) fire a compatibility mouse event a
+        // few hundred ms after a tap. It is the same finger arriving twice:
+        // taken for a mouse it leaves a drag that no mouse button ever releases
+        // -- the player swings forever and the reticle freezes at the tap.
+        if (self.mouseBlocked()) return;
         e.preventDefault();
         self.firing = true; self.dragging = true;
         const r = canvas.getBoundingClientRect();
@@ -89,6 +95,14 @@
         this.tapFrames--;
         if (this.tapFrames === 0 && !this.dragging) this.firing = false;
       }
+    },
+
+    /* True when a mouse event is really the tail of a touch. */
+    mouseBlocked: function () {
+      const T = DC.Touch;
+      if (!T || !T.lastTouch) return false;
+      const now = (global.performance && global.performance.now) ? global.performance.now() : Date.now();
+      return now - T.lastTouch < 900;
     },
 
     pressed: function (code) { return !!this.justPressed[code]; },

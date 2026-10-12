@@ -188,15 +188,48 @@
       ctx.moveTo(rx, ry + 9); ctx.lineTo(rx, ry + 12);
       ctx.stroke();
     } else if (DC.Touch && DC.Touch.active) {
+      /* On a phone the fingertip IS the cursor, so the drawing has to say so in
+         three parts: a crosshair under the thumb, the aim ray leaving the body
+         along the aim the swing will use, and -- only while the joystick is
+         actually pulling -- the stick from where the finger landed to where it
+         is now. The ray and the crosshair can never disagree, because the aim
+         is measured from the body to exactly that point on the glass. */
       const px = cam.worldToScreenX(p.x), py = cam.worldToScreenY(p.y);
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      const fx = DC.Touch.cx, fy = DC.Touch.cy;
+      const aiming = !DC.Touch.attack;   // a thumb on ATTACK has no reticle
+
+      if (DC.Input.touchX || DC.Input.touchY) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(DC.Touch.ox, DC.Touch.oy); ctx.lineTo(fx, fy); ctx.stroke();
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(DC.Touch.ox, DC.Touch.oy, 20, 0, Math.PI * 2); ctx.stroke();
+      }
+
+      const body = p.r * cam.pxPerM;
+      const reach = p.cls.attackKind === 'melee'
+        ? (p.cls.reach + 0.5) * cam.pxPerM
+        : Math.min(11 * cam.pxPerM, 170);
+      ctx.strokeStyle = 'rgba(255,179,71,' + (DC.Input.firing ? '0.62)' : '0.38)');
       ctx.lineWidth = 1.5;
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(DC.Touch.cx, DC.Touch.cy); ctx.stroke();
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath();
+      ctx.moveTo(px + Math.cos(p.aim) * body, py + Math.sin(p.aim) * body);
+      ctx.lineTo(px + Math.cos(p.aim) * (body + reach), py + Math.sin(p.aim) * (body + reach));
+      ctx.stroke();
       ctx.setLineDash([]);
-      ctx.beginPath(); ctx.arc(DC.Touch.cx, DC.Touch.cy, 12, 0, Math.PI * 2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(DC.Touch.ox, DC.Touch.oy, 16, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.stroke();
+
+      if (aiming) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.62)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(fx, fy, 9, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(fx - 15, fy); ctx.lineTo(fx - 11, fy);
+        ctx.moveTo(fx + 11, fy); ctx.lineTo(fx + 15, fy);
+        ctx.moveTo(fx, fy - 15); ctx.lineTo(fx, fy - 11);
+        ctx.moveTo(fx, fy + 11); ctx.lineTo(fx, fy + 15);
+        ctx.stroke();
+      }
     }
 
     if (touch) DC.Render.actions(ctx, game, cam);

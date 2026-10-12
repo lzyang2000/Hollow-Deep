@@ -26,8 +26,9 @@ open it on the phone's browser (same Wi-Fi):
 
     python3 -m http.server 8080    # then visit http://<mac-ip>:8080
 
-Add it to the home screen for a fullscreen, no-chrome run. Drag anywhere with a
-thumb to walk, aim and swing at once; the buttons handle the rest.
+Add it to the home screen for a fullscreen, no-chrome run. Drag with your thumb
+to walk, put the fingertip where you want to hit to aim, and hold **ATTACK** to
+swing; the buttons handle the rest.
 
 ## Hosting it on GitHub Pages
 
@@ -69,13 +70,15 @@ In the merchant: click a row or press `1–7` to buy, `E`/`Esc` to leave.
 
 ### One-handed on a phone
 
-There is no second thumb, so the drag does all three jobs at once:
+There is no second thumb, so the finger does two jobs and the buttons do the
+third. A swing is always a decision: nothing attacks just because a thumb is
+resting on the glass.
 
 | Gesture | Action |
 | --- | --- |
-| Drag anywhere | Walk, aim **and** attack (the finger is the reticle and stays put) |
-| Tap | Interact — merchant, portal, urn; one swing if there is nothing to talk to |
-| **ATTACK** (hold) | Swing without moving. A drag always walks, so this is how you stand your ground and trade; release to stop |
+| Drag anywhere | Walk (the drag is a joystick from where the finger landed) **and** aim — the fingertip is the reticle, so the crosshair on the glass is exactly where the blow or bolt goes |
+| Tap | Interact — merchant, portal, urn; one swing **at the point you tapped** if there is nothing to talk to |
+| **ATTACK** (hold) | Swing without moving. With no fingertip on the field it aims at the nearest demon the torch is showing; release to stop |
 | **WHIRL / BLINK / SHIELD** | Class ability |
 | **HEAL / MANA** | Drink a draught or wick oil |
 | **PACK** | Open the pack (bottom row: HEAL, MANA, SELL, CLOSE) |
@@ -86,7 +89,8 @@ will not wander you into a demon. Buttons sit in the bottom-right corner, bigges
 and nearest the thumb first: ATTACK, ability, (TRADE / DOWN when something is in
 reach), HEAL, MANA, PACK, PAUSE. ATTACK is the only hold-button — press and keep
 swinging, let go and stop — and sliding your thumb across it neither walks nor
-re-aims.
+re-aims. While a finger is on the field the aim ray leaves the body along the
+aim, so you can see where a swing will land before it lands.
 
 
 In the pack: `1–9`/`0` or the arrows pick a row, `E` wears it, `X` (or right
