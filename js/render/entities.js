@@ -10,6 +10,21 @@
     ctx.beginPath(); ctx.ellipse(x, y + r * 0.75, r * 1.05, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
   };
 
+  /* A sword drawn along +x: a tapered blade that comes to a point, tinted by
+     the steel you actually found. Everything else about a swing -- the arc, the
+     ghost, the lean -- is drawn around this. */
+  function bladePath(ctx, r, bl, bw, color) {
+    ctx.fillStyle = color || '#cfd6e4';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.7, -bw * 0.62);
+    ctx.lineTo(bl - r * 0.18, -bw * 0.5);
+    ctx.lineTo(bl, 0);
+    ctx.lineTo(bl - r * 0.18, bw * 0.5);
+    ctx.lineTo(r * 0.7, bw * 0.62);
+    ctx.closePath();
+    ctx.fill();
+  }
+
   DC.Render.player = function (ctx, p, cam, input) {
     const s = cam.pxPerM;
     const x = cam.worldToScreenX(p.x), y = cam.worldToScreenY(p.y);
@@ -36,25 +51,85 @@
 
     DC.Render.actorShadow(ctx, x, y, r);
 
-    // swing arc
-    if (p.swing) {
+    /* --- the swing -----------------------------------------------------
+       A melee blow is not a hitbox that appears for a fifth of a second. It is
+       a blade that has to travel: it cocks back, crosses the arc, and
+       overshoots past the point where the hit actually landed. The damage is
+       already resolved the instant the attack starts, so this is pure tell --
+       which is exactly what makes a swing readable at a glance. */
+    let bladeAng = p.aim, sk = 0, swinging = null;
+    if (p.swing && cls.attackKind === 'melee') {
       const sw = p.swing;
-      const k = 1 - sw.t / 0.2;
-      const a0 = sw.dir - (sw.arc * Math.PI / 360), a1 = sw.dir + (sw.arc * Math.PI / 360);
+      const dur = sw.dur || 0.2;
+      sk = M.clamp(1 - sw.t / dur, 0, 1);
+      const half = sw.arc * Math.PI / 360;
+      if (sw.kind === 'whirl') {
+        bladeAng = sw.dir + sk * Math.PI * 2;
+      } else {
+        const wind = 0.24;                    // the catch before the cast
+        if (sk < wind) bladeAng = sw.dir - half * 1.3 * (sk / wind);
+        else {
+          const u = (sk - wind) / (1 - wind);
+          const e = 1 - (1 - u) * (1 - u);    // out fast, off slow
+          bladeAng = sw.dir + half * (-1.3 + 2.4 * e);
+        }
+      }
+      swinging = p.swing;
+    }
+
+    /* The trail sits behind the edge, so the arc you can see is the arc you
+       could have hit with: a filled wedge for the swept steel and a bright
+       hairline for the edge itself. */
+    if (swinging) {
+      const half = swinging.arc * Math.PI / 360;
+      const rad = swinging.reach * s * (0.72 + sk * 0.3);
+      /* A trail, not a fan: the sweep is capped a little over a radian behind
+         the edge, so it reads as steel in motion instead of a hit-zone decal
+         painted over the whole arc. */
+      const cock = swinging.dir - half * 1.3;
+      let from;
+      if (swinging.kind === 'whirl') {
+        from = bladeAng - Math.min(sk * Math.PI * 2, Math.PI * 1.4);
+      } else if (sk < 0.24) {
+        from = bladeAng;                 // winding back: nothing has been swept yet
+      } else {
+        from = Math.max(bladeAng - 1.15, cock);
+      }
       ctx.save();
       ctx.translate(x, y);
-      ctx.globalAlpha = 0.75 * (1 - k);
+      ctx.globalAlpha = 0.3 * (1 - sk * 0.5);
+      ctx.fillStyle = cls.color;
+      ctx.beginPath(); ctx.moveTo(0, 0);
+      ctx.arc(0, 0, rad, from, bladeAng);
+      ctx.closePath(); ctx.fill();
+      // the swept edge: a wide soft band in the career's colour, and a bright
+      // hairline down the middle of it for the steel itself
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.5 * (1 - sk);
       ctx.strokeStyle = cls.color;
-      ctx.lineWidth = Math.max(2, s * 0.28);
-      ctx.beginPath();
-      ctx.arc(0, 0, sw.reach * s * (0.75 + k * 0.35), a0 + k * 0.9, a1 - (a1 - a0) * k * 0.55);
-      ctx.stroke();
+      ctx.lineWidth = Math.max(3, s * 0.24);
+      ctx.beginPath(); ctx.arc(0, 0, rad, from, bladeAng); ctx.stroke();
+      ctx.globalAlpha = 0.9 * (1 - sk);
+      ctx.strokeStyle = '#f2f6ff';
+      ctx.lineWidth = Math.max(1, s * 0.08);
+      ctx.beginPath(); ctx.arc(0, 0, rad, from, bladeAng); ctx.stroke();
+      ctx.lineCap = 'butt';
       ctx.globalAlpha = 1;
       ctx.restore();
     }
 
     ctx.save();
     ctx.translate(x, y);
+    if (swinging) {
+      // The body goes with the blade: a lean into the swing, a short lunge on
+      // the strike, and a whole turn for a whirlwind.
+      const lean = swinging.kind === 'whirl'
+        ? bladeAng - p.aim
+        : M.clamp(bladeAng - p.aim, -1.2, 1.2) * 0.2;
+      ctx.rotate(lean);
+      const lunge = Math.sin(sk * Math.PI) * r * 0.18;
+      ctx.translate(Math.cos(p.aim) * lunge, Math.sin(p.aim) * lunge);
+    }
     if (p.invuln > 0 && Math.floor(p.invuln * 24) % 2 === 0) ctx.globalAlpha = 0.55;
 
     const bob = Math.sin(p.walk) * r * 0.08;
@@ -77,14 +152,37 @@
     ctx.beginPath(); ctx.arc(0, -r * 0.5 + bob, r * 0.12, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
 
-    // weapon along the aim
+    /* The weapon. At rest it lies along the aim, because the aim is the one
+       thing on screen that has to stay readable. Mid-swing it belongs to the
+       swing instead, and it is drawn as a sword rather than a grey bar: grip,
+       crossguard, and a blade that tapers to a point and is tinted by the
+       steel you actually found. */
     ctx.save();
-    ctx.rotate(p.aim);
+    ctx.rotate(swinging ? bladeAng : p.aim);
     if (cls.attackKind === 'melee') {
-      ctx.fillStyle = '#cfd6e4';
-      ctx.fillRect(r * 0.5, -r * 0.12, r * 1.5, r * 0.24);
-      ctx.fillStyle = '#8a6a3f';
-      ctx.fillRect(r * 0.35, -r * 0.16, r * 0.3, r * 0.32);
+      const twoHanded = !!(p.weapon && p.weapon.weight === 2);
+      const steel = (p.weapon && p.weapon.color) || '#cfd6e4';
+      const bl = r * (twoHanded ? 2.05 : 1.72);
+      const bw = r * (twoHanded ? 0.3 : 0.23);
+      /* A blade a half-beat behind the blade: at 20 px per metre a swinging
+         sword is otherwise a single thin line that the eye cannot follow. */
+      if (swinging && sk > 0.2 && sk < 0.9) {
+        ctx.save();
+        ctx.globalAlpha = 0.28 * (1 - sk);
+        ctx.rotate(-0.5);
+        bladePath(ctx, r, bl, bw, steel);
+        ctx.restore();
+      }
+      ctx.fillStyle = '#5d4a30';
+      ctx.fillRect(r * 0.24, -bw * 0.5, r * 0.36, bw);
+      ctx.fillStyle = '#454d5e';
+      ctx.fillRect(r * 0.56, -r * 0.3, r * 0.16, r * 0.6);
+      bladePath(ctx, r, bl, bw, steel);
+      // the fuller: light running down the middle of the edge
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(r * 0.78, -bw * 0.16, bl - r * 0.96, bw * 0.3);
+      ctx.globalAlpha = 1;
     } else {
       ctx.fillStyle = '#8a6a3f';
       ctx.fillRect(r * 0.4, -r * 0.1, r * 1.1, r * 0.2);
