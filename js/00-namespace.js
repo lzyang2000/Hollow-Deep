@@ -50,13 +50,13 @@
     // ~450 tiles when the level shrank, so the counts came down with it and a
     // corridor still holds the same number of demons per torch.
     //
-    // A quarter again the crowd on top of that. A 150 m floor is about 450
-    // walkable tiles, so 85 demons is still one per five and a half tiles, and
-    // the spawner's 2 tile spacing is what decides whether a floor can hold them
-    // all -- see the crowded-floor section of the smoke test.
-    ENEMY_BASE: 26,
-    ENEMY_PER_DEPTH: 2.75,
-    ENEMY_MAX: 85,         // what the spawner can actually place on a 150 m floor
+    // A tenth again the crowd on top of that. A 150 m floor is about 450 walkable
+    // tiles, so 75 demons is still one per six tiles, and the spawner's 2 tile
+    // spacing is what decides whether a floor can hold them all -- see the
+    // crowded-floor section of the smoke test.
+    ENEMY_BASE: 23,
+    ENEMY_PER_DEPTH: 2.42,
+    ENEMY_MAX: 75,         // what the spawner can actually place on a 150 m floor
     CHEST_BASE: 10,
     CHEST_PER_DEPTH: 0.6,
     CHEST_MAX: 18,
@@ -65,15 +65,15 @@
     URN_MAX: 32,
     MIN_SPAWN_DIST: 22,   // metres from start before a demon may appear
 
-    // Demon strength. Every shape hits a quarter as hard again, swings a quarter
-    // as often again and covers ground a quarter as fast again. The windup is deliberately
+    // Demon strength. Every shape hits a tenth as hard again, swings a tenth as
+    // often again and covers ground a tenth as fast again. The windup is deliberately
     // left alone: the cooldown is how often a blow arrives, the windup is the
     // tell you dodge by, and shortening both at once takes away the only thing
     // that made a faster demon fair. The stride rule still holds -- see the
     // speedCap on the ranged shapes in data/demons.js.
-    DEMON_ATK_MULT: 1.25,
-    DEMON_RATE_MULT: 1.25,    // attacks per second, so cooldowns divide by it
-    DEMON_SPEED_MULT: 1.25,
+    DEMON_ATK_MULT: 1.1,
+    DEMON_RATE_MULT: 1.1,     // attacks per second, so cooldowns divide by it
+    DEMON_SPEED_MULT: 1.1,
 
     // Descent cadence: every Nth floor is a boss arena with a merchant in it.
     // It used to be 10. At 200 m a floor is a short, dense sweep, and a
@@ -115,9 +115,9 @@
     // the whole floor never comes with you, so a pack can always be pulled.
     // The waking budget follows the crowd. More demons on a floor without this
     // would only mean more demons asleep in the dark.
-    AGGRO_BASE: 4,
-    AGGRO_PER_DEPTH: 1.0,
-    AGGRO_MAX: 14,
+    AGGRO_BASE: 3.3,
+    AGGRO_PER_DEPTH: 0.88,
+    AGGRO_MAX: 12,
     LEASH_DIST: 26,      // metres -- beyond this a lost hunter gives up
     SIGHT_CULL: 38,      // metres -- no line-of-sight test is paid for beyond this
 
