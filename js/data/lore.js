@@ -50,19 +50,41 @@
     // ninth. It is twelve deep because the cadence doubled -- the named
     // sovereigns now run out at depth 60 instead of depth 600. Beyond the
     // list, names are prefixed with an echo marker.
+    //
+    // Each entry also carries its own score, which is what plays the moment
+    // the throne room door opens: `bpm` and `key` (semitones off the depth's
+    // own root), `prog` (which chord progression), `mode` (the mood -- see
+    // MODES in js/core/audio.js), `motif` (the eight scale degrees its melody
+    // walks), `lead` (plucked string, bell, bowed saw, or a pair of reeds),
+    // `drums` (march / war / pulse / triplet / slow / still) and `accent` (the
+    // one instrument that belongs only to it: an anvil, a choir, a roar, a
+    // bow, a bell). Twelve Sovereigns, twelve tempos, no two alike -- and an
+    // echo of a Sovereign comes back wearing the music it had.
     bosses: [
-      { name: 'VAURN, THE ASH HERALD', kind: 'knight', line: 'It wears the gatehouse like armour. Every step carries a door it swallowed.' },
-      { name: 'SARNAEL THE NINE-VOICE', kind: 'mage', line: 'It speaks in the choir it ate. Each syllable is a different throat.' },
-      { name: 'KESSILADE, BLADE OF THE CHOIR', kind: 'swordsman', line: 'Six hands, six swords, one very patient grudge against the living.' },
-      { name: 'MORVAX, THE HOLLOW CROWN', kind: 'knight', line: 'The crown is fused to it. It is still, technically, a king.' },
-      { name: 'THE TAPER THAT WEEPS', kind: 'mage', line: 'A lantern the size of a horse, and the wax is not wax. It has been burning something since before you were born.' },
-      { name: 'GRIMM OF THE NINE DOORS', kind: 'swordsman', line: 'Nine doors, nine oaths, one mouth left to break them with. It counts you as the tenth.' },
-      { name: 'THE CHOIR BELOW', kind: 'mage', line: 'It has no throat of its own. It borrows yours, briefly, and sings the note you were about to sing.' },
-      { name: 'ASHVANE, THE SECOND HERALD', kind: 'swordsman', line: 'Vaurn had a sister. She kept the gatehouse ledger, and she has come to balance it.' },
-      { name: 'THE NINTH SEAL, UNMADE', kind: 'swordsman', line: 'The last taper, inverted. It does not want the light out \u2014 it wants the light to agree.' },
-      { name: 'SEVRIC, THE FIRST SOVEREIGN', kind: 'mage', line: 'The Archon. Still bargaining. Still willing to pay with somebody else.' },
-      { name: 'THE UNMADE VESSEL', kind: 'knight', line: 'A reliquary with nothing inside but habit. It fights the way it lived: on command.' },
-      { name: 'THE DEEP THAT REMEMBERS', kind: 'knight', line: 'It is wearing the last delver. Not his armour \u2014 him, folded into the shape of armour.' },
+      { name: 'VAURN, THE ASH HERALD', kind: 'knight', line: 'It wears the gatehouse like armour. Every step carries a door it swallowed.',
+        music: { bpm: 84, key: -3, prog: 0, mode: 'phrygian', motif: [0, 0, 3, 2, 0, -1, 0, 3], lead: 'saw', drums: 'march', accent: 'anvil' } },
+      { name: 'SARNAEL THE NINE-VOICE', kind: 'mage', line: 'It speaks in the choir it ate. Each syllable is a different throat.',
+        music: { bpm: 126, key: 5, prog: 1, mode: 'harmonic', motif: [0, 2, 4, 6, 4, 2, 7, 4], lead: 'bell', drums: 'pulse', accent: 'choir' } },
+      { name: 'KESSILADE, BLADE OF THE CHOIR', kind: 'swordsman', line: 'Six hands, six swords, one very patient grudge against the living.',
+        music: { bpm: 108, key: 2, prog: 3, mode: 'minor', motif: [0, 3, 2, 5, 4, 2, 6, 0], lead: 'pluck', drums: 'triplet', accent: 'strings' } },
+      { name: 'MORVAX, THE HOLLOW CROWN', kind: 'knight', line: 'The crown is fused to it. It is still, technically, a king.',
+        music: { bpm: 92, key: -5, prog: 2, mode: 'dorian', motif: [0, 4, 3, 0, 5, 4, 2, 0], lead: 'reeds', drums: 'march', accent: 'roar' } },
+      { name: 'THE TAPER THAT WEEPS', kind: 'mage', line: 'A lantern the size of a horse, and the wax is not wax. It has been burning something since before you were born.',
+        music: { bpm: 76, key: 7, prog: 1, mode: 'phrygian', motif: [0, -1, 3, 2, 0, 4, 3, 0], lead: 'bell', drums: 'slow', accent: 'choir' } },
+      { name: 'GRIMM OF THE NINE DOORS', kind: 'swordsman', line: 'Nine doors, nine oaths, one mouth left to break them with. It counts you as the tenth.',
+        music: { bpm: 100, key: 0, prog: 0, mode: 'minor', motif: [0, 2, 3, 5, 3, 2, 0, -2], lead: 'pluck', drums: 'war', accent: 'anvil' } },
+      { name: 'THE CHOIR BELOW', kind: 'mage', line: 'It has no throat of its own. It borrows yours, briefly, and sings the note you were about to sing.',
+        music: { bpm: 118, key: 9, prog: 2, mode: 'harmonic', motif: [6, 4, 2, 0, 2, 4, 6, 7], lead: 'reeds', drums: 'triplet', accent: 'choir' } },
+      { name: 'ASHVANE, THE SECOND HERALD', kind: 'swordsman', line: 'Vaurn had a sister. She kept the gatehouse ledger, and she has come to balance it.',
+        music: { bpm: 112, key: -1, prog: 3, mode: 'dorian', motif: [0, 0, 4, 2, 6, 4, 2, 2], lead: 'saw', drums: 'pulse', accent: 'strings' } },
+      { name: 'THE NINTH SEAL, UNMADE', kind: 'swordsman', line: 'The last taper, inverted. It does not want the light out \u2014 it wants the light to agree.',
+        music: { bpm: 96, key: 4, prog: 2, mode: 'harmonic', motif: [0, 1, 3, 2, 0, -1, 1, 0], lead: 'bell', drums: 'war', accent: 'roar' } },
+      { name: 'SEVRIC, THE FIRST SOVEREIGN', kind: 'mage', line: 'The Archon. Still bargaining. Still willing to pay with somebody else.',
+        music: { bpm: 120, key: 3, prog: 1, mode: 'harmonic', motif: [0, 4, 2, 6, 4, 7, 6, 4], lead: 'saw', drums: 'pulse', accent: 'choir' } },
+      { name: 'THE UNMADE VESSEL', kind: 'knight', line: 'A reliquary with nothing inside but habit. It fights the way it lived: on command.',
+        music: { bpm: 88, key: -4, prog: 0, mode: 'phrygian', motif: [0, 0, 0, 3, 0, 0, 5, 3], lead: 'reeds', drums: 'march', accent: 'anvil' } },
+      { name: 'THE DEEP THAT REMEMBERS', kind: 'knight', line: 'It is wearing the last delver. Not his armour \u2014 him, folded into the shape of armour.',
+        music: { bpm: 72, key: -2, prog: 3, mode: 'locrian', motif: [0, 3, 1, 4, 3, 1, 0, -1], lead: 'bell', drums: 'still', accent: 'roar' } },
     ],
 
     echoPrefixes: ['Echo of', 'Second', 'Hollow', 'Ashen', 'Unquiet', 'Last'],
