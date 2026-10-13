@@ -92,10 +92,20 @@
     return dmg;
   };
 
-  /* Melee arc. attacker.side decides who gets hit. */
+  /* Melee arc. attacker.side decides who gets hit.
+
+     Arcs are authored in DEGREES -- that is how they read in the data files
+     and how the wedge on the floor is drawn -- but M.angleDiff answers in
+     RADIANS. Dividing the degrees by two and comparing that against a radian
+     angle meant the reject could never fire: half was 55 or 75 where the
+     largest possible angle difference is 3.14. So every melee hit in the game
+     was a full circle, and the wedge on the floor was a lie. A Gorewarden's
+     "150 degree" slam and a Hellblade's "110 degree" cut both landed on
+     anything within reach, all the way round, which is exactly the thing the
+     telegraph tells you to step out of. */
   DC.Combat.sweep = function (world, attacker, o, game) {
     const arc = o.arc, reach = o.reach, dmg = o.dmg;
-    const half = arc / 2;
+    const half = (arc * Math.PI) / 360;
     let hits = 0;
     const targets = attacker.side === 'player' ? world.demons : [world.actor];
     for (let i = 0; i < targets.length; i++) {
@@ -134,7 +144,7 @@
   /* Pottery breaks: melee arcs sweep the alcoves, impacts shatter what is
      nearby. Urns never block anything, they just sit there being breakable. */
   DC.Combat.smashUrnsArc = function (world, attacker, o, game) {
-    const half = o.arc / 2;
+    const half = (o.arc * Math.PI) / 360;
     for (let i = 0; i < world.urns.length; i++) {
       const u = world.urns[i];
       if (u.broken) continue;
