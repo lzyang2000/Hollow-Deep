@@ -5,13 +5,27 @@
   const C = DC.C;
   const M = DC.M;
 
-  const PALETTES = [
-    { floor: '#3d4757', floor2: '#353f4d', wall: '#0a0d13', wallTop: '#1b222d', edge: '#6f8199', glow: '#6ea8ff', rim: 'rgba(150,190,255,0.16)' },
-    { floor: '#4a3e3a', floor2: '#403633', wall: '#0f0b0c', wallTop: '#271f1d', edge: '#8a7060', glow: '#ffb37a', rim: 'rgba(255,179,122,0.16)' },
-    { floor: '#354550', floor2: '#2d3c47', wall: '#080e12', wallTop: '#1d2c36', edge: '#5d7c8f', glow: '#7fe0d0', rim: 'rgba(127,224,208,0.15)' },
-    { floor: '#443b54', floor2: '#3a3149', wall: '#0e0a15', wallTop: '#251e35', edge: '#75658f', glow: '#c79bff', rim: 'rgba(199,155,255,0.16)' },
-    { floor: '#4f443d', floor2: '#443a34', wall: '#110c0a', wallTop: '#2c231e', edge: '#8b7355', glow: '#ffd166', rim: 'rgba(255,209,102,0.17)' },
-  ];
+  /* Palette plumbing. A theme (see js/data/lore.js) holds a region's base
+     stone plus three tonal variants; a palette is what one specific floor ends
+     up wearing, so the renderer never has to know anything about regions. */
+  function hexRgb(hex) {
+    let h = String(hex).replace('#', '');
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    const n = parseInt(h, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function rgbaOf(hex, a) {
+    const c = hexRgb(hex);
+    return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
+  }
+  /* Lightness without hue drift: scale the channels, never mix towards white or
+     black, or every variant of a region turns into the same grey soup. */
+  function shade(hex, k) {
+    const c = hexRgb(hex);
+    const f = function (v) { return Math.max(0, Math.min(255, Math.round(v * k))); };
+    return '#' + [f(c[0]), f(c[1]), f(c[2])]
+      .map((v) => (v < 16 ? '0' : '') + v.toString(16)).join('');
+  }
 
   /* The straight line where a wall meets the floor is the single biggest
      tell that a level is a tilemap. Break it: every edge gets a rock lip of
@@ -75,16 +89,35 @@
   }
 
   DC.Render = DC.Render || {};
-  DC.Render.palette = PALETTES[0];
+  DC.Render.rgbaOf = rgbaOf;
+  DC.Render.palette = null;
+  DC.Render.theme = null;
+  DC.Render.fogDark = [3, 4, 9];
 
-  DC.Render.pickPalette = function (depth) {
-    DC.Render.palette = PALETTES[Math.min(PALETTES.length - 1, Math.floor((depth - 1) / 7))];
+  DC.Render.pickPalette = function (world) {
+    const th = (world && world.theme) || DC.THEMES[0];
+    const v = th.variants[((world && world.variant) || 0) % th.variants.length];
+    DC.Render.theme = th;
+    DC.Render.fogDark = th.fog;
+    DC.Render.palette = {
+      floor: shade(th.base.floor, v.d),
+      floor2: shade(th.base.floor2, v.d),
+      wall: th.base.wall,
+      wallTop: shade(th.base.wallTop, v.d),
+      edge: shade(th.base.edge, v.d),
+      glow: v.glow,
+      flame: v.flame,
+      rim: rgbaOf(v.glow, 0.16),
+      night: th.night,
+    };
+    return DC.Render.palette;
   };
+  DC.Render.pickPalette(null);
 
   DC.Render.world = function (ctx, world, cam) {
     const P = DC.Render.palette;
     const T = C.TILE, G = C.GRID;
-    ctx.fillStyle = '#04060a';
+    ctx.fillStyle = P.night || '#04060a';
     ctx.fillRect(0, 0, cam.w, cam.h);
 
     const b = cam.viewBounds();
@@ -291,6 +324,85 @@
           ctx.fillRect(Math.cos(a) * s * 0.28, Math.sin(a) * s * 0.24, rr, rr * 0.6);
         }
         break;
+      case 'ashpile':
+        // A collapsed hearth, or a delver's last breath of dust.
+        ctx.fillStyle = 'rgba(198,192,180,' + (0.09 + 0.09 * tint) + ')';
+        ctx.beginPath(); ctx.ellipse(0, 0, s * 0.44, s * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(120,116,110,0.16)';
+        ctx.beginPath(); ctx.ellipse(-s * 0.12, -s * 0.05, s * 0.19, s * 0.11, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(232,228,218,0.10)';
+        for (let i = 0; i < 3; i++) {
+          const aa = i * 2.1 + d.tint * 4;
+          ctx.fillRect(Math.cos(aa) * s * 0.3, Math.sin(aa) * s * 0.2, Math.max(1, s * 0.05), Math.max(1, s * 0.05));
+        }
+        break;
+      case 'puddle': {
+        // Standing water is the one floor prop that answers to the room: it
+        // catches the region's own light, so a weeping gate glitters teal.
+        const PL = DC.Render.palette;
+        ctx.fillStyle = 'rgba(8,12,20,0.40)';
+        ctx.beginPath(); ctx.ellipse(0, 0, s * 0.46, s * 0.26, d.tint * 0.8, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = rgbaOf(PL.glow, 0.10 + 0.10 * tint);
+        ctx.lineWidth = Math.max(1, s * 0.04);
+        ctx.beginPath(); ctx.ellipse(-s * 0.05, -s * 0.02, s * 0.3, s * 0.15, d.tint * 0.8, 0, Math.PI * 2); ctx.stroke();
+        break;
+      }
+      case 'banner': {
+        // A hanging thing that fell. The cloth keeps its sigil colour long
+        // after the pole has been firewood for somebody else's fire.
+        const PL = DC.Render.palette;
+        ctx.fillStyle = rgbaOf(PL.glow, 0.10 + 0.10 * tint);
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.3, -s * 0.36); ctx.lineTo(s * 0.26, -s * 0.3);
+        ctx.lineTo(s * 0.2, s * 0.18); ctx.lineTo(0, s * 0.36);
+        ctx.lineTo(-s * 0.26, s * 0.14); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.32)';
+        ctx.lineWidth = Math.max(1, s * 0.04);
+        ctx.stroke();
+        ctx.strokeStyle = rgbaOf(PL.edge, 0.30);
+        ctx.beginPath(); ctx.moveTo(-s * 0.1, -s * 0.2); ctx.lineTo(s * 0.06, s * 0.06); ctx.stroke();
+        break;
+      }
+      case 'rune': {
+        // Scratched into the slab, still faintly lit. Somebody meant this to
+        // keep working, and down here it mostly does.
+        const PL = DC.Render.palette;
+        ctx.strokeStyle = rgbaOf(PL.glow, 0.16 + 0.16 * tint);
+        ctx.lineWidth = Math.max(1, s * 0.055);
+        ctx.beginPath(); ctx.arc(0, 0, s * 0.3, 0.25, 5.1); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-s * 0.22, s * 0.1); ctx.lineTo(s * 0.22, -s * 0.12); ctx.stroke();
+        break;
+      }
+      case 'crystal': {
+        // The seal grew out of the floor rather than being put there.
+        const PL = DC.Render.palette;
+        ctx.fillStyle = rgbaOf(PL.glow, 0.13 + 0.07 * tint);
+        ctx.strokeStyle = rgbaOf(PL.glow, 0.30);
+        ctx.lineWidth = Math.max(1, s * 0.035);
+        for (let i = 0; i < 3; i++) {
+          const a = -0.5 + i * 0.55 + d.tint;
+          const hgt = s * (0.28 + ((i * 17) % 7) / 22);
+          const bx = Math.cos(a) * s * 0.2;
+          ctx.beginPath();
+          ctx.moveTo(bx - s * 0.05, s * 0.12);
+          ctx.lineTo(bx + s * 0.05, s * 0.12);
+          ctx.lineTo(bx + Math.sin(a) * s * 0.06, s * 0.12 - hgt);
+          ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+        break;
+      }
+      case 'ribcage':
+        // Something big died here. Ribs curve the same way at any depth.
+        ctx.strokeStyle = 'rgba(222,216,196,0.30)';
+        ctx.lineWidth = Math.max(1, s * 0.05);
+        ctx.beginPath(); ctx.moveTo(-s * 0.5, 0); ctx.lineTo(s * 0.42, s * 0.06); ctx.stroke();
+        for (let i = 0; i < 4; i++) {
+          const rx = -s * 0.36 + i * s * 0.22;
+          ctx.beginPath(); ctx.arc(rx, 0, s * 0.16, -1.15, 1.15); ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(216,214,196,0.40)';
+        ctx.beginPath(); ctx.arc(-s * 0.56, -s * 0.02, s * 0.1, 0, Math.PI * 2); ctx.fill();
+        break;
       case 'sconce': {
         // Wall-mounted torch: bracket, flame and a warm wash down the wall.
         const px = cam.pxPerM;
@@ -299,15 +411,16 @@
         const wx = cam.worldToScreenX(d.x), wy = cam.worldToScreenY(d.y);
         const nx = DC.Maze.DIRS[d.dir][0], ny = DC.Maze.DIRS[d.dir][1];
         const fx = wx + nx * px * 0.42, fy = wy + ny * px * 0.42;
+        const FL = DC.Render.palette.flame || '#ff9e42';
         const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, px * 2.6);
-        g.addColorStop(0, 'rgba(255,170,80,0.20)');
-        g.addColorStop(1, 'rgba(255,170,80,0)');
+        g.addColorStop(0, rgbaOf(FL, 0.20));
+        g.addColorStop(1, rgbaOf(FL, 0));
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(fx, fy, px * 2.6, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = 'rgba(46,38,32,0.9)';
         ctx.fillRect(wx - px * 0.08, wy - px * 0.08, px * 0.16, px * 0.34);
         const fl = 0.8 + 0.2 * Math.sin(d.tint * 30 + performance.now() * 0.004);
-        ctx.fillStyle = 'rgba(255,158,66,0.75)';
+        ctx.fillStyle = rgbaOf(FL, 0.75);
         ctx.beginPath(); ctx.ellipse(fx, fy - px * 0.1, px * 0.11, px * 0.2 * fl, 0, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = 'rgba(255,232,170,0.8)';
         ctx.beginPath(); ctx.ellipse(fx, fy - px * 0.14, px * 0.05, px * 0.1 * fl, 0, 0, Math.PI * 2); ctx.fill();

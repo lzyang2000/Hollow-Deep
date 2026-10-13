@@ -8,7 +8,7 @@
 
   DC.Fog = {
     canvas: null, ctx: null, img: null, nx: 0, ny: 0,
-    time: 0, reveal: C.REVEAL,
+    time: 0, reveal: C.REVEAL, revealMax: C.REVEAL,
     visCache: null,
 
     init: function (doc) {
@@ -71,7 +71,19 @@
     update: function (world, p, cam, dt) {
       cam = cam || DC.Camera;
       this.time += dt;
-      this.reveal = C.REVEAL * (1 + 0.028 * Math.sin(this.time * 6.1) + 0.018 * Math.sin(this.time * 13.7 + 1.2));
+      /* The torch breathes: two sines at unrelated rates so it never settles
+         into a metronome. That is atmosphere on the light overlay, where it is
+         worth about 6% of alpha at the edge of the ring.
+
+         It must NOT be worth anything to the visibility test. A chest parked 14
+         metres out used to sit inside the ring and then outside it twice a
+         second, so the furniture blinked in and out with the pulse -- which
+         reads as a bug in the game, not a flicker in the flame. So the cull
+         uses the widest the ring ever gets, and the breathing stays exactly
+         where it was always meant to be: in the light. */
+      const PULSE_A = 0.028, PULSE_B = 0.018;
+      this.reveal = C.REVEAL * (1 + PULSE_A * Math.sin(this.time * 6.1) + PULSE_B * Math.sin(this.time * 13.7 + 1.2));
+      this.revealMax = C.REVEAL * (1 + PULSE_A + PULSE_B);
 
       const step = C.LIGHT_STEP;
       const nx = Math.ceil(cam.viewW / step) + 2;
@@ -123,7 +135,10 @@
         for (let i = 0; i < nx; i++) al[jc + i] = (tmp[jm + i] + 2 * tmp[jc + i] + tmp[jp + i]) * 0.25;
       }
       for (let q = 0, k = 0; q < n; q++, k += 4) {
-        data[k] = 3; data[k + 1] = 4; data[k + 2] = 9; data[k + 3] = al[q];
+        // The dark is not black -- it is this region's own dark, so a violet
+        // floor stays violet at the edge of the torch instead of going grey.
+        const dk = DC.Render.fogDark;
+        data[k] = dk[0]; data[k + 1] = dk[1]; data[k + 2] = dk[2]; data[k + 3] = al[q];
       }
       this.ctx.putImageData(this.img, 0, 0);
     },
@@ -135,7 +150,7 @@
       if (tx < 0 || ty < 0 || tx >= G || ty >= G) return false;
       if (!world.discovered[ty * G + tx]) return false;
       const d = Math.hypot(x - p.x, y - p.y);
-      if (d > this.reveal + (pad || 0)) return false;
+      if (d > this.revealMax + (pad || 0)) return false;
       return !DC.lineBlocked(world, p.x, p.y, x, y);
     },
 

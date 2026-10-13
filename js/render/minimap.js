@@ -62,7 +62,9 @@
         const sx = x0 + (tx * T - wx0) * sc;
         const sy = y0 + (ty * T - wy0) * sc;
         const w = run * T * sc + 0.6;
-        ctx.fillStyle = kind === 1 ? 'rgba(120,140,175,0.28)' : 'rgba(20,26,36,0.95)';
+        // The plan is drawn in the region's own stone, so the corner of the
+        // screen says which country you are in before the banner does.
+        ctx.fillStyle = kind === 1 ? DC.Render.rgbaOf(pal.edge, 0.30) : 'rgba(20,26,36,0.95)';
         ctx.fillRect(sx, sy, w, T * sc + 0.6);
         if (kind === 1) {
           // faint mottling so a big room is not one flat slab
@@ -70,7 +72,7 @@
             const j = ty * G + tx + k;
             const h = DC.hash2(tx + k, ty, world.seed);
             if (h < 0.45) continue;
-            ctx.fillStyle = 'rgba(150,175,215,' + (0.04 + (h - 0.45) * 0.07).toFixed(3) + ')';
+            ctx.fillStyle = DC.Render.rgbaOf(pal.glow, (0.04 + (h - 0.45) * 0.07).toFixed(3));
             ctx.fillRect(x0 + ((tx + k) * T - wx0) * sc, sy, T * sc + 0.6, T * sc + 0.6);
           }
         }
@@ -196,7 +198,7 @@
      while something is chewing on you is not a map, it is an obituary. */
   DC.Render.fullMap = function (ctx, game, cam) {
     const world = game.world, p = game.player, L = DC.Layout;
-    const T = C.TILE, G = C.GRID;
+    const T = C.TILE, G = C.GRID, pal = DC.Render.palette;
     const f = function (px, lo) { return ((L && L.font(px, lo)) || px) + 'px ui-monospace, Menlo, monospace'; };
 
     ctx.save();
@@ -231,7 +233,10 @@
       cam.w / 2, by - 6);
 
     // the unlit square, then the explored floor on top of it
-    ctx.fillStyle = 'rgba(9,12,18,0.95)';
+    // The unexplored half of the board is the region's own dark, not a
+    // generic black: the map you have not finished is the same country as the
+    // map you have.
+    ctx.fillStyle = DC.Render.rgbaOf(pal.night, 0.95);
     ctx.fillRect(bx, by, avail, avail);
 
     const toMap = function (x, y) { return { x: bx + x * sc, y: by + y * sc }; };
@@ -248,7 +253,7 @@
           if (!world.discovered[j] || world.grid[j] !== kind) break;
           run++;
         }
-        ctx.fillStyle = kind === 1 ? 'rgba(150,175,215,0.62)' : 'rgba(33,43,60,1)';
+        ctx.fillStyle = kind === 1 ? DC.Render.rgbaOf(pal.edge, 0.62) : 'rgba(33,43,60,1)';
         ctx.fillRect(bx + tx * T * sc, by + ty * T * sc, run * T * sc + 0.5, T * sc + 0.5);
         tx += run;
       }

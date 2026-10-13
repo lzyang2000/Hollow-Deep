@@ -93,4 +93,155 @@
 
     portalLine: 'The portal smells like the inside of a bell.',
   };
+
+  /* Nine regions, one per ten depths, in the order of DC.DEPTH_BANDS. A region
+     is a look as well as a name: the stone, the colour of the dark, the colour
+     every torch on the floor burns, and the litter underfoot all come out of
+     the same entry, so Bone Tidal is never a violet room.
+
+     A band is ten floors long, so each region carries three tonal variants and
+     the variant walks in order with depth: two neighbouring floors never wear
+     the same one, and the country stays recognisable. `motifs` is the same
+     idea one level finer -- one signature prop, scattered through the whole
+     level, that the next level does not have.
+
+     Everything is a pure function of depth, so a save file rebuilds the floor
+     it was wearing when it was written. */
+  DC.THEMES = [
+    {
+      id: 'spill', label: 'The Spill',
+      night: '#04060a', fog: [3, 4, 9],
+      base: { floor: '#3d4757', floor2: '#353f4d', wall: '#0a0d13', wallTop: '#1b222d', edge: '#6f8199' },
+      variants: [
+        { d: 1.00, glow: '#6ea8ff', flame: '#ff9e42' },
+        { d: 1.12, glow: '#8ecbff', flame: '#9ed2ff' },
+        { d: 0.88, glow: '#5b8ad0', flame: '#ffcf8a' },
+      ],
+      decor: ['rubble', 'rubble', 'debris', 'bones', 'skull', 'crack', 'lantern', 'puddle', 'puddle', 'chain', 'mushroom', 'web'],
+      room: ['bones', 'skull', 'skull', 'puddle', 'chain', 'crack', 'mushroom', 'debris'],
+      motifs: ['puddle', 'chain', 'lantern'],
+      adj: ['Weeping', 'Drowned', 'Salt', 'Wicking', 'Taper', 'Gatehouse'],
+      noun: ['Stair', 'Cistern', 'Undercroft', 'Landing', 'Shaft', 'Colonnade'],
+    },
+    {
+      id: 'ash', label: 'Ash Stair',
+      night: '#0a0806', fog: [6, 5, 4],
+      base: { floor: '#4a4442', floor2: '#403a38', wall: '#100d0c', wallTop: '#2a2523', edge: '#8a7f72' },
+      variants: [
+        { d: 1.00, glow: '#ffc48a', flame: '#ffb066' },
+        { d: 1.10, glow: '#e8e0d0', flame: '#ffd9a0' },
+        { d: 0.86, glow: '#d99a5e', flame: '#ff8f4a' },
+      ],
+      decor: ['ashpile', 'ashpile', 'ashpile', 'rubble', 'debris', 'bones', 'skull', 'crack', 'stump', 'lantern', 'web', 'mushroom'],
+      room: ['ashpile', 'ashpile', 'bones', 'skull', 'stump', 'crack', 'debris', 'rubble'],
+      motifs: ['ashpile', 'stump', 'bones'],
+      adj: ['Ash', 'Cinder', 'Unquiet', 'Wounded', 'Gravesong', 'Ember'],
+      noun: ['Stair', 'Warren', 'Undercroft', 'Refectory', 'Scriptorium', 'Landing'],
+    },
+    {
+      id: 'lantern', label: 'Lantern Warrens',
+      night: '#0b0703', fog: [8, 5, 2],
+      base: { floor: '#4a3e34', floor2: '#403630', wall: '#0f0b0a', wallTop: '#271f18', edge: '#a2825a' },
+      variants: [
+        { d: 1.00, glow: '#ffd166', flame: '#ffb347' },
+        { d: 1.10, glow: '#ffe9a8', flame: '#ffd166' },
+        { d: 0.87, glow: '#e0a63f', flame: '#ff8c2e' },
+      ],
+      decor: ['lantern', 'lantern', 'lantern', 'brazier', 'debris', 'rubble', 'crack', 'bones', 'chain', 'ashpile', 'web', 'skull'],
+      room: ['lantern', 'lantern', 'brazier', 'chain', 'crack', 'skull', 'debris', 'ashpile'],
+      motifs: ['lantern', 'brazier', 'chain'],
+      adj: ['Lantern', 'Taper', 'Wicking', 'Nine-Voice', 'Mournful', 'Ember'],
+      noun: ['Warren', 'Belfry', 'Cloister', 'Refectory', 'Antechamber', 'Landing'],
+    },
+    {
+      id: 'gate', label: 'The Weeping Gate',
+      night: '#03080a', fog: [2, 6, 7],
+      base: { floor: '#354550', floor2: '#2d3c47', wall: '#080e12', wallTop: '#1d2c36', edge: '#5d7c8f' },
+      variants: [
+        { d: 1.00, glow: '#7fe0d0', flame: '#7fe0d0' },
+        { d: 1.12, glow: '#a8f0e6', flame: '#9ee8ff' },
+        { d: 0.86, glow: '#5cb8ad', flame: '#66c8ff' },
+      ],
+      decor: ['puddle', 'puddle', 'puddle', 'chain', 'chain', 'crack', 'rubble', 'bones', 'skull', 'mushroom', 'web', 'debris'],
+      room: ['puddle', 'puddle', 'chain', 'chain', 'crack', 'bones', 'skull', 'debris'],
+      motifs: ['chain', 'puddle', 'crack'],
+      adj: ['Weeping', 'Inverted', 'Salt', 'Drowned', 'Wounded', 'Gatehouse'],
+      noun: ['Gate', 'Colonnade', 'Cistern', 'Shaft', 'Undercroft', 'Antechamber'],
+    },
+    {
+      id: 'choir', label: 'Choir Hollow',
+      night: '#08040e', fog: [5, 3, 9],
+      base: { floor: '#443b54', floor2: '#3a3149', wall: '#0e0a15', wallTop: '#251e35', edge: '#75658f' },
+      variants: [
+        { d: 1.00, glow: '#c79bff', flame: '#c79bff' },
+        { d: 1.10, glow: '#e0c4ff', flame: '#ffb3e6' },
+        { d: 0.87, glow: '#9a72d6', flame: '#a98cff' },
+      ],
+      decor: ['rune', 'rune', 'rune', 'banner', 'crack', 'bones', 'skull', 'web', 'lantern', 'debris', 'rubble', 'mushroom'],
+      room: ['rune', 'rune', 'banner', 'web', 'skull', 'crack', 'bones', 'lantern'],
+      motifs: ['rune', 'banner', 'web'],
+      adj: ['Choir', 'Nine-Voice', 'Whispering', 'Pale', 'Mourning', 'Hollow'],
+      noun: ['Choir', 'Cloister', 'Scriptorium', 'Belfry', 'Reliquary', 'Colonnade'],
+    },
+    {
+      id: 'bone', label: 'Bone Tidal',
+      night: '#0a0906', fog: [6, 6, 4],
+      base: { floor: '#4f4a3f', floor2: '#453f36', wall: '#12100c', wallTop: '#2e2a22', edge: '#9b9276' },
+      variants: [
+        { d: 1.00, glow: '#eae4c8', flame: '#ffe6a8' },
+        { d: 1.08, glow: '#f6f0dc', flame: '#ffd166' },
+        { d: 0.88, glow: '#c9bf9c', flame: '#e8b878' },
+      ],
+      decor: ['ribcage', 'ribcage', 'skull', 'skull', 'bones', 'bones', 'crack', 'rubble', 'ashpile', 'stump', 'web', 'debris'],
+      room: ['ribcage', 'skull', 'skull', 'bones', 'bones', 'crack', 'ashpile', 'stump'],
+      motifs: ['ribcage', 'skull', 'bones'],
+      adj: ['Bone', 'Gravesong', 'Pale', 'Unquiet', 'Salt', 'Wounded'],
+      noun: ['Ossuary', 'Cistern', 'Vault', 'Undercroft', 'Reliquary', 'Landing'],
+    },
+    {
+      id: 'swallow', label: 'The Long Swallow',
+      night: '#0e0404', fog: [8, 2, 2],
+      base: { floor: '#4a3a3a', floor2: '#403232', wall: '#130a0a', wallTop: '#2c1c1c', edge: '#8f6058' },
+      variants: [
+        { d: 1.00, glow: '#ff7a6a', flame: '#ff6a4a' },
+        { d: 1.10, glow: '#ffa892', flame: '#ff9466' },
+        { d: 0.86, glow: '#d9564a', flame: '#e8503a' },
+      ],
+      decor: ['banner', 'banner', 'crack', 'crack', 'bones', 'skull', 'debris', 'rubble', 'brazier', 'chain', 'ashpile', 'web'],
+      room: ['banner', 'banner', 'brazier', 'crack', 'crack', 'bones', 'skull', 'chain'],
+      motifs: ['banner', 'brazier', 'crack'],
+      adj: ['Long', 'Rusted', 'Inverted', 'Ember', 'Unquiet', 'Swallowing'],
+      noun: ['Passage', 'Shaft', 'Vault', 'Antechamber', 'Foundry', 'Colonnade'],
+    },
+    {
+      id: 'foothold', label: 'Sevric\u2019s Foothold',
+      night: '#05060a', fog: [4, 4, 6],
+      base: { floor: '#3f4046', floor2: '#36373d', wall: '#0b0c10', wallTop: '#22242a', edge: '#7d828c' },
+      variants: [
+        { d: 1.00, glow: '#ff9440', flame: '#ff7a2e' },
+        { d: 1.10, glow: '#c8d0dc', flame: '#ffb066' },
+        { d: 0.87, glow: '#e07a2a', flame: '#ff5f2a' },
+      ],
+      decor: ['debris', 'debris', 'debris', 'rubble', 'rubble', 'crack', 'brazier', 'chain', 'banner', 'ashpile', 'bones', 'skull'],
+      room: ['debris', 'debris', 'brazier', 'banner', 'chain', 'crack', 'rubble', 'bones'],
+      motifs: ['debris', 'brazier', 'banner'],
+      adj: ['Rusted', 'Wounded', 'Iron', 'Waking', 'Ember', 'Gatehouse'],
+      noun: ['Foundry', 'Assay', 'Colonnade', 'Vault', 'Gate', 'Scriptorium'],
+    },
+    {
+      id: 'seal', label: 'The Unmade Seal',
+      night: '#020a09', fog: [2, 6, 6],
+      base: { floor: '#334248', floor2: '#2b393e', wall: '#060b0d', wallTop: '#18262b', edge: '#58858f' },
+      variants: [
+        { d: 1.00, glow: '#8ef0c0', flame: '#8ef0c0' },
+        { d: 1.12, glow: '#c0ffe4', flame: '#a8ffd8' },
+        { d: 0.86, glow: '#5fc49c', flame: '#66d8b0' },
+      ],
+      decor: ['crystal', 'crystal', 'crystal', 'rune', 'rune', 'crack', 'crack', 'bones', 'skull', 'debris', 'puddle', 'web'],
+      room: ['crystal', 'crystal', 'rune', 'rune', 'crack', 'puddle', 'bones', 'skull'],
+      motifs: ['crystal', 'rune', 'puddle'],
+      adj: ['Unmade', 'Inverted', 'Nine-Voice', 'Hollow', 'Pale', 'Last'],
+      noun: ['Seal', 'Chancel', 'Reliquary', 'Scriptorium', 'Cloister', 'Shaft'],
+    },
+  ];
 })(typeof window !== 'undefined' ? window : globalThis);

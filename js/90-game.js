@@ -232,7 +232,7 @@
       G.player.y = world.start.y;
       G.player.kx = 0; G.player.ky = 0;
       G.interactTarget = null;
-      DC.Render.pickPalette(depth);
+      DC.Render.pickPalette(world);
       DC.Camera.snap(G.player);
       DC.Audio.setDepth(depth);
       DC.Audio.setScene(world.isBoss ? 'boss' : 'dungeon');

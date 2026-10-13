@@ -127,7 +127,16 @@
      boss tier is free money by depth 20: a 53,769 coin purse looking at a 416
      coin weapon is not a decision. Gear is therefore priced off depth squared,
      which lands near a tenth of what a careful delver has saved by the time it
-     reaches the counter, at every depth. */
+     reaches the counter, at every depth.
+
+     Then the whole counter is multiplied up. The measured economy kept saying
+     the same thing at every depth: a careful delver arrived at the throne room
+     with several times what the shelf asked for, so buying the weapon was not
+     a decision, it was a formality -- and the coin left over went nowhere. A
+     single constant on every price is the honest way to fix that: it keeps the
+     shape of the curve (depth squared, one tier above the chests) and moves the
+     whole shelf from "affordable" to "one big choice per throne room". */
+  DC.SHOP_MARKUP = 5;
   DC.shopStock = function (rng, depth) {
     const t = DC.bossTier(depth);
     const ilvl = depth + 4 + t;
@@ -135,8 +144,8 @@
        as often, so the divisor doubled with them -- otherwise every counter
        would be selling Seal-forged by depth 30. */
     const minQuality = Math.min(DC.QUALITY.length - 1, 2 + Math.floor(t / 4));
-    const gear = Math.max(180, Math.round(13 * depth * depth - 58 * depth + 150));
-    const price = (frac) => Math.max(20, Math.round(gear * frac));
+    const gear = DC.SHOP_MARKUP * Math.max(180, Math.round(13 * depth * depth - 58 * depth + 150));
+    const price = (frac) => Math.max(20 * DC.SHOP_MARKUP, Math.round(gear * frac));
     const fine = { minQuality };
 
     const stock = [];
