@@ -148,6 +148,16 @@ fifth depth. A save file that names him is not thrown away either — it comes
 back as a knight, with its depth, coin, gear and fog memory, and the log tells
 you the hands changed.
 
+Both careers are drawn as vectors, with no image files anywhere in the project,
+and each is a different *shape* rather than the same shape in a different
+colour: a mage is tall, narrow, legless and hovers with a torn hem and a
+flickering staff flame; a knight is wide and low, with pauldrons that stick out
+past his own body, two stepping legs, and a rust crest that trails the way he
+came from. At the smallest phone zoom (9.1 pixels per metre) that is about all
+that survives, which is the point -- pale steel against pale stone is a blob, so
+the knight's cloak and helm are dark and only the crest, the two points behind
+his visor and the edge of his blade are bright.
+
 ## The rules that matter
 
 - Every level is a **200 m x 200 m** procedurally generated dungeon: 9-13

@@ -6,8 +6,8 @@
   const M = DC.M;
 
   DC.Render.actorShadow = function (ctx, x, y, r) {
-    ctx.fillStyle = 'rgba(0,0,0,0.42)';
-    ctx.beginPath(); ctx.ellipse(x, y + r * 0.75, r * 1.05, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.34)';
+    ctx.beginPath(); ctx.ellipse(x, y + r * 0.72, r * 0.96, r * 0.37, 0, 0, Math.PI * 2); ctx.fill();
   };
 
   /* A sword drawn along +x: a tapered blade that comes to a point, tinted by
@@ -23,6 +23,194 @@
     ctx.lineTo(r * 0.7, bw * 0.62);
     ctx.closePath();
     ctx.fill();
+  }
+
+  /* The two delvers, drawn as two shapes rather than one shape in two
+     colours. Up to now a mage and a knight were the same teardrop with a
+     different fill, which is exactly why at the edge of the torch they read as
+     the same sprite. Silhouette first: a knight is wide, low, and has pauldrons
+     that stick out past his own body plus two legs that alternate; a mage is
+     tall, narrow, has no legs at all, hovers, and trails a torn hem the way she
+     is *not* going. Both look where they are going, which is the cheapest
+     direction there is in a top-down game. */
+  /* --- the two delvers -------------------------------------------------
+     Two shapes, not one shape in two colours. A mage and a knight used to be
+     the same teardrop with a different fill, which is exactly why at the edge
+     of the torch they read as the same sprite. Silhouette first: a knight is
+     wide, low, and has pauldrons that stick out past his own body plus two
+     legs that alternate; a mage is tall, narrow, has no legs at all, hovers,
+     and trails a torn hem the way she is *not* going. Both look where they are
+     going, which is the cheapest direction there is in a top-down game.
+
+     The second rule is value, not shape: the floor here is pale stone, so
+     anything light is already half-lost against it. The knight's cloak and
+     helm are dark and only the plate edge, the crest and the two points
+     behind his visor are bright. A gradient object per actor per frame is not
+     free either, so every "glow" on these two is two flat translucent layers.
+     ----------------------------------------------------------------------- */
+  function mageBody(ctx, p, r) {
+    const cls = p.cls;
+    const hover = Math.sin(p.anim * 2.4) * r * 0.07;
+    const fx = Math.cos(p.facing), fy = Math.sin(p.facing);
+    const sway = Math.sin(p.walk) * r * 0.09;
+    // Cloth lags the body, so the hem points the way she came from.
+    const dx = -fx * r * 0.22, dy = -fy * r * 0.15;
+    const top = -r * 1.14 + hover;
+
+    // Her own light on the floor.
+    ctx.fillStyle = DC.rgba(cls.color, 0.08);
+    ctx.beginPath(); ctx.ellipse(0, r * 0.72, r * 0.98, r * 0.36, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = DC.rgba(cls.color, 0.12);
+    ctx.beginPath(); ctx.ellipse(0, r * 0.72, r * 0.56, r * 0.21, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Robe: narrow at the shoulder, long, and torn along the hem. The hem sits
+    // low enough to clear the shadow ellipse, otherwise the tears just read as
+    // a dark skirt.
+    const hemY = r * 0.94 + sway;
+    ctx.fillStyle = cls.robe;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.42, top + r * 0.3);
+    ctx.quadraticCurveTo(-r * 0.7, top + r * 1.25, -r * 0.82 + dx, hemY + dy);
+    for (let i = 1; i <= 6; i++) {
+      const u = i / 6;
+      ctx.lineTo(-r * 0.82 + r * 1.64 * u + dx, hemY + dy - (i % 2 ? r * 0.16 : 0));
+    }
+    ctx.quadraticCurveTo(r * 0.7, top + r * 1.25, r * 0.42, top + r * 0.3);
+    ctx.closePath();
+    ctx.fill();
+
+    // The front band of the robe, the cord that holds it, and one fold of
+    // light down the left -- three flat shapes that keep a nine-pixel figure
+    // from becoming a flat blue triangle.
+    ctx.fillStyle = cls.accent;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.15, top + r * 0.44);
+    ctx.lineTo(r * 0.15, top + r * 0.44);
+    ctx.lineTo(r * 0.11 + dx * 0.5, r * 0.72 + hemY * 0.25);
+    ctx.lineTo(-r * 0.11 + dx * 0.5, r * 0.72 + hemY * 0.25);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = DC.rgba(cls.color, 0.5);
+    ctx.beginPath(); ctx.arc(dx * 0.3, top + r * 0.62, r * 0.07, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = DC.rgba(cls.color, 0.14);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.36, top + r * 0.5);
+    ctx.lineTo(-r * 0.24, top + r * 0.52);
+    ctx.lineTo(-r * 0.5 + dx * 0.7, hemY + dy - r * 0.2);
+    ctx.lineTo(-r * 0.66 + dx * 0.7, hemY + dy - r * 0.24);
+    ctx.closePath(); ctx.fill();
+
+    // Cowl, peaked at the crown so the outline is not a perfect dome. The
+    // opening sits toward where she is looking, which is what makes the head
+    // read as turned rather than painted on.
+    const hy = top + r * 0.16;
+    ctx.fillStyle = cls.accent;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.44, hy + r * 0.36);
+    ctx.quadraticCurveTo(-r * 0.5, hy - r * 0.4, -r * 0.06, hy - r * 0.56);
+    ctx.lineTo(r * 0.06, hy - r * 0.54);
+    ctx.quadraticCurveTo(r * 0.5, hy - r * 0.4, r * 0.44, hy + r * 0.36);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#0b0e14';
+    ctx.beginPath();
+    ctx.ellipse(fx * r * 0.12, hy + fy * r * 0.1 + r * 0.04, r * 0.25, r * 0.21, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Two eyes rather than one dot: the difference between a blob and a face.
+    ctx.fillStyle = cls.color;
+    const ox = -fy * r * 0.11, oy = fx * r * 0.11;
+    const ex = fx * r * 0.13, ey = hy + fy * r * 0.11 + r * 0.04;
+    ctx.beginPath(); ctx.arc(ex + ox, ey + oy, r * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ex - ox, ey - oy, r * 0.06, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function knightBody(ctx, p, r) {
+    const cls = p.cls;
+    const fx = Math.cos(p.facing), fy = Math.sin(p.facing);
+    const px = -fy, py = fx;
+    const step = Math.sin(p.walk) * r * 0.28;
+    const bob = Math.abs(Math.sin(p.walk)) * r * 0.05;
+    const top = -r * 1.0 - bob;
+
+    // Cloak, drawn first so the plate sits over it. It is dark on purpose: on
+    // pale stone a pale cloak turns the whole figure into one washed blob. It
+    // bulges away from the way he is going, which is the whole of the "he is
+    // walking" cue.
+    ctx.fillStyle = '#252a35';
+    ctx.beginPath();
+    ctx.ellipse(-fx * r * 0.46, -fy * r * 0.4 + r * 0.06, r * 0.74, r * 0.62, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = DC.rgba(cls.accent, 0.4);
+    ctx.beginPath();
+    ctx.ellipse(-fx * r * 0.6, -fy * r * 0.52 + r * 0.06, r * 0.36, r * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Legs. Neither career used to have any at all.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#2b3140';
+      ctx.beginPath();
+      ctx.ellipse(px * r * 0.28 * side + fx * step * side,
+        py * r * 0.28 * side + fy * step * side + r * 0.62, r * 0.23, r * 0.19, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Breastplate: a barrel wider than it is tall. That is the silhouette.
+    ctx.fillStyle = cls.robe;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.58, top + r * 0.34);
+    ctx.quadraticCurveTo(-r * 0.72, top + r * 0.9, -r * 0.52, top + r * 1.24);
+    ctx.lineTo(r * 0.52, top + r * 1.24);
+    ctx.quadraticCurveTo(r * 0.72, top + r * 0.9, r * 0.58, top + r * 0.34);
+    ctx.closePath(); ctx.fill();
+    // light running down the left of the breast
+    ctx.fillStyle = 'rgba(255,255,255,0.10)';
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.46, top + r * 0.42); ctx.lineTo(-r * 0.28, top + r * 0.42);
+    ctx.lineTo(-r * 0.32, top + r * 1.18); ctx.lineTo(-r * 0.49, top + r * 1.12);
+    ctx.closePath(); ctx.fill();
+    // tabard in the career's colour, then the belt that carries the weight
+    ctx.fillStyle = DC.rgba(cls.color, 0.4);
+    ctx.fillRect(-r * 0.13, top + r * 0.42, r * 0.26, r * 0.78);
+    ctx.fillStyle = '#1c2028';
+    ctx.fillRect(-r * 0.56, top + r * 1.02, r * 1.12, r * 0.16);
+    ctx.fillStyle = '#8d9bb5';
+    ctx.fillRect(-r * 0.09, top + r * 1.02, r * 0.18, r * 0.16);
+
+    // Pauldrons: the shape that has to survive at nine pixels a metre, so they
+    // stick out past the body -- but they are steel in shadow, not the brightest
+    // thing on screen, or they read as two detached balls.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#5c6779';
+      ctx.beginPath();
+      ctx.ellipse(side * r * 0.64, top + r * 0.46, r * 0.28, r * 0.24, side * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.13)';
+      ctx.beginPath();
+      ctx.ellipse(side * r * 0.64, top + r * 0.37, r * 0.18, r * 0.075, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Helm: a dome, a slit, two lamp-points behind the slit, and a crest that
+    // trails the way he came from. The crest is rust, not the career's pale
+    // blue-grey, because a pale crest on pale stone is a white feather.
+    const hy = top + r * 0.12;
+    ctx.fillStyle = '#7e8ba3';
+    ctx.beginPath(); ctx.arc(0, hy, r * 0.38, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.13)';
+    ctx.beginPath(); ctx.ellipse(-r * 0.09, hy - r * 0.15, r * 0.2, r * 0.1, -0.35, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#171b23';
+    ctx.beginPath();
+    ctx.ellipse(fx * r * 0.14, hy + fy * r * 0.1 + r * 0.08, r * 0.25, r * 0.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = cls.color;
+    const mx = -fy * r * 0.11, my = fx * r * 0.11;
+    const vx = fx * r * 0.15, vy = hy + fy * r * 0.1 + r * 0.08;
+    ctx.beginPath(); ctx.arc(vx + mx, vy + my, r * 0.045, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(vx - mx, vy - my, r * 0.045, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = DC.rgba('#c2564a', 0.72);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.05, hy - r * 0.3);
+    ctx.quadraticCurveTo(-fx * r * 0.5 - r * 0.1, hy - r * 0.6, -fx * r * 0.76, hy - r * 0.12);
+    ctx.quadraticCurveTo(-r * 0.02, hy - r * 0.34, r * 0.06, hy - r * 0.3);
+    ctx.closePath(); ctx.fill();
   }
 
   DC.Render.player = function (ctx, p, cam, input) {
@@ -150,25 +338,11 @@
     }
     if (p.invuln > 0 && Math.floor(p.invuln * 24) % 2 === 0) ctx.globalAlpha = 0.55;
 
-    const bob = Math.sin(p.walk) * r * 0.08;
-    // cloak
-    ctx.fillStyle = cls.robe;
-    ctx.beginPath();
-    ctx.moveTo(-r * 0.85, r * 0.9 + bob);
-    ctx.quadraticCurveTo(-r * 0.7, -r * 0.9 + bob, 0, -r * 1.05 + bob);
-    ctx.quadraticCurveTo(r * 0.7, -r * 0.9 + bob, r * 0.85, r * 0.9 + bob);
-    ctx.closePath();
-    ctx.fill();
-    // hood
-    ctx.fillStyle = cls.accent;
-    ctx.beginPath(); ctx.arc(0, -r * 0.55 + bob, r * 0.5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#0b0e14';
-    ctx.beginPath(); ctx.arc(0, -r * 0.5 + bob, r * 0.3, 0, Math.PI * 2); ctx.fill();
-    // class light
-    ctx.fillStyle = cls.color;
-    ctx.globalAlpha = 0.85;
-    ctx.beginPath(); ctx.arc(0, -r * 0.5 + bob, r * 0.12, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 1;
+    /* Everything below the waist is new. A mage has no legs and hovers; a
+       knight has legs, pauldrons and a crest. The swing, the lean and the
+       invulnerability flicker above still own the transform and the alpha. */
+    if (cls.attackKind === 'melee') knightBody(ctx, p, r);
+    else mageBody(ctx, p, r);
 
     /* The weapon. At rest it lies along the aim, because the aim is the one
        thing on screen that has to stay readable. Mid-swing it belongs to the
@@ -197,18 +371,31 @@
       ctx.fillRect(r * 0.56, -r * 0.3, r * 0.16, r * 0.6);
       bladePath(ctx, r, bl, bw, steel);
       // the fuller: light running down the middle of the edge
-      ctx.globalAlpha = 0.5;
+      ctx.globalAlpha = 0.26;
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(r * 0.78, -bw * 0.16, bl - r * 0.96, bw * 0.3);
+      ctx.fillRect(r * 0.8, -bw * 0.13, bl - r * 1.0, bw * 0.26);
       ctx.globalAlpha = 1;
     } else {
+      /* A taper on a gnarled rod. The flame is never the same size twice, and
+         it is the only thing on the mage that moves on its own -- which is how
+         she reads as a caster even standing still. */
+      ctx.fillStyle = '#6b4f2c';
+      ctx.beginPath();
+      ctx.moveTo(r * 0.3, -r * 0.115); ctx.lineTo(r * 1.46, -r * 0.075);
+      ctx.lineTo(r * 1.46, r * 0.075); ctx.lineTo(r * 0.3, r * 0.115);
+      ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#8a6a3f';
-      ctx.fillRect(r * 0.4, -r * 0.1, r * 1.1, r * 0.2);
-      ctx.fillStyle = cls.color;
-      ctx.beginPath(); ctx.arc(r * 1.6, 0, r * 0.3, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 0.35;
-      ctx.beginPath(); ctx.arc(r * 1.6, 0, r * 0.55, 0, Math.PI * 2); ctx.fill();
-      ctx.globalAlpha = 1;
+      ctx.fillRect(r * 0.46, -r * 0.14, r * 0.17, r * 0.28);   // binding
+      ctx.fillStyle = '#3c3226';
+      ctx.beginPath(); ctx.arc(r * 1.48, 0, r * 0.2, 0, Math.PI * 2); ctx.fill();
+      const flick = 0.84 + 0.16 * Math.sin(p.anim * 11.3) + 0.07 * Math.sin(p.anim * 27.1);
+      const fr = r * 0.25 * flick;
+      ctx.fillStyle = DC.rgba(cls.color, 0.14);
+      ctx.beginPath(); ctx.arc(r * 1.6, 0, fr * 2.0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = DC.rgba(cls.color, 0.55);
+      ctx.beginPath(); ctx.arc(r * 1.6, 0, fr * 1.1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#eaf6ff';
+      ctx.beginPath(); ctx.arc(r * 1.6, 0, fr * 0.5, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
 
