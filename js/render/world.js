@@ -18,6 +18,41 @@
     const c = hexRgb(hex);
     return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
   }
+  function rgbToHsl(c) {
+    const r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    const l = (mx + mn) / 2;
+    let h = 0, s = 0;
+    if (mx !== mn) {
+      const d = mx - mn;
+      s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+      if (mx === r) h = (g - b) / d + (g < b ? 6 : 0);
+      else if (mx === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+    }
+    return [h, s * 100, l * 100];
+  }
+  function hslToRgb(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    s = Math.max(0, Math.min(100, s)) / 100;
+    l = Math.max(0, Math.min(100, l)) / 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; } else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+  }
+  function hslHex(h, s, l) {
+    const f = function (v) { return Math.max(0, Math.min(255, Math.round(v))); };
+    const c = hslToRgb(h, s, l).map(f);
+    return '#' + c.map((v) => (v < 16 ? '0' : '') + v.toString(16)).join('');
+  }
+  function hexHsl(hex) { return rgbToHsl(hexRgb(hex)); }
+
   /* Lightness without hue drift: scale the channels, never mix towards white or
      black, or every variant of a region turns into the same grey soup. */
   function shade(hex, k) {
@@ -94,21 +129,92 @@
   DC.Render.theme = null;
   DC.Render.fogDark = [3, 4, 9];
 
+  /* A region is a country, not a wallpaper, and a country has weathers. The
+     three tonal variants a region carries used to be three brightness levels
+     of the same picture, which is why ten floors of Bone Tidal read as one
+     long corridor. Now a tone rotates the region's own hue and thickens or
+     thins its pigment as well as brightening it: the region stays itself --
+     the hue never leaves its corner of the wheel -- but the floor you walk
+     down into next is unmistakably somewhere else. */
+  DC.Render.VARIANT_TONES = [
+    { dh: 0, ms: 1.00 },
+    { dh: 24, ms: 1.16 },
+    { dh: -20, ms: 0.74 },
+  ];
+
+  /* On top of the tone, every floor gets a small shift of its own out of the
+     floor's own seed, so two floors wearing the same tone are still not the
+     same picture. It is deliberately tiny: the nine regions are separated by
+     real distances and a big per-floor wander would blur them back together.
+     A save file rebuilds exactly the shade it was wearing because the seed is
+     in the save. */
+  function floorShift(world) {
+    const k = ((world.depth || 1) - 1) % 10;
+    /* A straight walk across the region rather than a permutation: the tone
+       already changes every floor, so what this has to keep apart are the
+       floors three down from each other -- the ones wearing the same tone. */
+    const slot = k / 9;
+    const rng = new DC.RNG((((world.seed || 0) >>> 0) ^ 0x9e3779b9) >>> 0);
+    return {
+      dh: -15 + 30 * slot + rng.range(-2, 2),
+      ms: 0.85 + 0.30 * slot + rng.range(-0.02, 0.02),
+      /* Lightness is mostly the tone's job -- a per-floor wander there tends to
+         cancel the tone out. But the tone repeats every three floors, so the
+         tone GROUP gets a slow lightness drift of its own: the fourth floor of
+         a region is never the twelfth floor's mirror. */
+      ml: 0.94 + 0.12 * (Math.floor(k / 3) / 3),
+    };
+  }
+  DC.Render = DC.Render || {};
+  DC.Render.floorShift = floorShift;
+
+  /* The deepest regions are meant to be the darkest, but a floor you cannot
+     see is not atmosphere, it is a bug. Nothing the player walks on ever goes
+     below this. */
+  function floorLight(hex) {
+    const h = hexHsl(hex);
+    return h[2] < 13 ? hslHex(h[0], h[1], 13) : hex;
+  }
+
+  /* Nudge a colour along the region's own hue rather than repainting it. */
+  function nudge(hex, sh, keepLight) {
+    const h = hexHsl(hex);
+    return hslHex(h[0] + sh.dh, h[1] * sh.ms, keepLight ? h[2] : h[2] * sh.ml);
+  }
+
   DC.Render.pickPalette = function (world) {
     const th = (world && world.theme) || DC.THEMES[0];
     const v = th.variants[((world && world.variant) || 0) % th.variants.length];
+    const vi = ((world && world.variant) || 0) % th.variants.length;
+    const tone = DC.Render.VARIANT_TONES[vi % DC.Render.VARIANT_TONES.length];
+    const raw = world ? DC.Render.floorShift(world) : { dh: 0, ms: 1, ml: 1 };
+    /* A region's hue is the one thing that must survive: the tone and the
+       floor's own shift can pull it around, but never far enough to put it in
+       a neighbour's country. */
+    const dh = Math.max(-24, Math.min(24, tone.dh + raw.dh));
+    const sh = { dh: dh, ms: tone.ms * raw.ms, ml: raw.ml };
+    const fogHsl = rgbToHsl(th.fog);
     DC.Render.theme = th;
-    DC.Render.fogDark = th.fog;
+    DC.Render.fogDark = hslToRgb(fogHsl[0] + raw.dh, Math.min(60, fogHsl[1] * 1.3), fogHsl[2]).map(Math.round);
+    /* The lamps of a region are the same lamps however deep you are, so the
+       lights only take the floor's small shift and never the tone's. */
+    const glow = nudge(v.glow, raw, true);
+    const flame = nudge(v.flame, raw, true);
+    /* The torch tint used to be a hardcoded warm orange, which is a polite way
+       of saying it painted over every region until all nine read as one beige.
+       It now burns in the colour this floor's torches actually burn. */
+    const flameHsl = hexHsl(flame);
     DC.Render.palette = {
-      floor: shade(th.base.floor, v.d),
-      floor2: shade(th.base.floor2, v.d),
-      wall: th.base.wall,
-      wallTop: shade(th.base.wallTop, v.d),
-      edge: shade(th.base.edge, v.d),
-      glow: v.glow,
-      flame: v.flame,
-      rim: rgbaOf(v.glow, 0.16),
-      night: th.night,
+      floor: floorLight(nudge(shade(th.base.floor, v.d), sh)),
+      floor2: floorLight(nudge(shade(th.base.floor2, v.d), sh)),
+      wall: nudge(th.base.wall, sh),
+      wallTop: nudge(shade(th.base.wallTop, v.d), sh),
+      edge: nudge(shade(th.base.edge, v.d), sh),
+      glow: glow,
+      flame: flame,
+      rim: rgbaOf(glow, 0.16),
+      torch: hslHex(flameHsl[0], Math.min(70, flameHsl[1] * 0.72), Math.max(62, flameHsl[2])),
+      night: nudge(th.night, raw, true),
     };
     return DC.Render.palette;
   };
@@ -561,14 +667,17 @@
     DC.Fog.draw(ctx, cam);
   };
 
-  /* Warm torch tint, drawn after the darkness so the light reads warm. */
+  /* The torch tint, drawn after the darkness so the light reads like a flame
+     and not a screen. It burns in whatever colour this floor's torches burn,
+     which is one of the things that makes a region feel like somewhere. */
   DC.Render.torch = function (ctx, cam, p) {
     const x = cam.worldToScreenX(p.x), y = cam.worldToScreenY(p.y);
     const r = DC.Fog.reveal * cam.pxPerM;
+    const T = (DC.Render.palette && DC.Render.palette.torch) || '#ffc478';
     const g = ctx.createRadialGradient(x, y, r * 0.05, x, y, r);
-    g.addColorStop(0, 'rgba(255,196,120,0.16)');
-    g.addColorStop(0.55, 'rgba(255,170,100,0.06)');
-    g.addColorStop(1, 'rgba(255,150,90,0)');
+    g.addColorStop(0, rgbaOf(T, 0.16));
+    g.addColorStop(0.55, rgbaOf(T, 0.06));
+    g.addColorStop(1, rgbaOf(T, 0));
     ctx.globalCompositeOperation = 'lighter';
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();

@@ -164,8 +164,8 @@
   DC.THEMES = [
     {
       id: 'spill', label: 'The Spill',
-      night: '#04060a', fog: [3, 4, 9],
-      base: { floor: '#3d4757', floor2: '#353f4d', wall: '#0a0d13', wallTop: '#1b222d', edge: '#6f8199' },
+      night: '#05070a', fog: [5, 7, 10],
+      base: { floor: '#3d536c', floor2: '#35495f', wall: '#1b232c', wallTop: '#2a3746', edge: '#7790ab' },
       variants: [
         { d: 1.00, glow: '#6ea8ff', flame: '#ff9e42' },
         { d: 1.12, glow: '#8ecbff', flame: '#9ed2ff' },
@@ -179,8 +179,8 @@
     },
     {
       id: 'ash', label: 'Ash Stair',
-      night: '#0a0806', fog: [6, 5, 4],
-      base: { floor: '#4a4442', floor2: '#403a38', wall: '#100d0c', wallTop: '#2a2523', edge: '#8a7f72' },
+      night: '#0a0706', fog: [9, 7, 6],
+      base: { floor: '#7a5e52', floor2: '#6e5449', wall: '#3f322c', wallTop: '#57453d', edge: '#b39d94' },
       variants: [
         { d: 1.00, glow: '#ffc48a', flame: '#ffb066' },
         { d: 1.10, glow: '#e8e0d0', flame: '#ffd9a0' },
@@ -194,8 +194,8 @@
     },
     {
       id: 'lantern', label: 'Lantern Warrens',
-      night: '#0b0703', fog: [8, 5, 2],
-      base: { floor: '#4a3e34', floor2: '#403630', wall: '#0f0b0a', wallTop: '#271f18', edge: '#a2825a' },
+      night: '#0c0804', fog: [11, 8, 4],
+      base: { floor: '#604a29', floor2: '#523f23', wall: '#1b160d', wallTop: '#372c1a', edge: '#ad8b58' },
       variants: [
         { d: 1.00, glow: '#ffd166', flame: '#ffb347' },
         { d: 1.10, glow: '#ffe9a8', flame: '#ffd166' },
@@ -209,8 +209,8 @@
     },
     {
       id: 'gate', label: 'The Weeping Gate',
-      night: '#03080a', fog: [2, 6, 7],
-      base: { floor: '#354550', floor2: '#2d3c47', wall: '#080e12', wallTop: '#1d2c36', edge: '#5d7c8f' },
+      night: '#040b0b', fog: [4, 11, 11],
+      base: { floor: '#244c4b', floor2: '#1d3e3d', wall: '#070d0d', wallTop: '#132525', edge: '#519997' },
       variants: [
         { d: 1.00, glow: '#7fe0d0', flame: '#7fe0d0' },
         { d: 1.12, glow: '#a8f0e6', flame: '#9ee8ff' },
@@ -224,8 +224,8 @@
     },
     {
       id: 'choir', label: 'Choir Hollow',
-      night: '#08040e', fog: [5, 3, 9],
-      base: { floor: '#443b54', floor2: '#3a3149', wall: '#0e0a15', wallTop: '#251e35', edge: '#75658f' },
+      night: '#08040b', fog: [8, 4, 11],
+      base: { floor: '#51336c', floor2: '#472c5e', wall: '#1f1528', wallTop: '#342244', edge: '#8f69af' },
       variants: [
         { d: 1.00, glow: '#c79bff', flame: '#c79bff' },
         { d: 1.10, glow: '#e0c4ff', flame: '#ffb3e6' },
@@ -239,8 +239,8 @@
     },
     {
       id: 'bone', label: 'Bone Tidal',
-      night: '#0a0906', fog: [6, 6, 4],
-      base: { floor: '#4f4a3f', floor2: '#453f36', wall: '#12100c', wallTop: '#2e2a22', edge: '#9b9276' },
+      night: '#0a0905', fog: [10, 9, 5],
+      base: { floor: '#948857', floor2: '#877c4f', wall: '#544e36', wallTop: '#6e6644', edge: '#c3bda2' },
       variants: [
         { d: 1.00, glow: '#eae4c8', flame: '#ffe6a8' },
         { d: 1.08, glow: '#f6f0dc', flame: '#ffd166' },
@@ -254,8 +254,8 @@
     },
     {
       id: 'swallow', label: 'The Long Swallow',
-      night: '#0e0404', fog: [8, 2, 2],
-      base: { floor: '#4a3a3a', floor2: '#403232', wall: '#130a0a', wallTop: '#2c1c1c', edge: '#8f6058' },
+      night: '#0c0404', fog: [11, 4, 5],
+      base: { floor: '#522328', floor2: '#441d21', wall: '#0e0707', wallTop: '#2a1416', edge: '#a14f57' },
       variants: [
         { d: 1.00, glow: '#ff7a6a', flame: '#ff6a4a' },
         { d: 1.10, glow: '#ffa892', flame: '#ff9466' },
@@ -269,8 +269,8 @@
     },
     {
       id: 'foothold', label: 'Sevric\u2019s Foothold',
-      night: '#05060a', fog: [4, 4, 6],
-      base: { floor: '#3f4046', floor2: '#36373d', wall: '#0b0c10', wallTop: '#22242a', edge: '#7d828c' },
+      night: '#060709', fog: [6, 7, 9],
+      base: { floor: '#2a2d3c', floor2: '#222430', wall: '#09090c', wallTop: '#13151a', edge: '#606580' },
       variants: [
         { d: 1.00, glow: '#ff9440', flame: '#ff7a2e' },
         { d: 1.10, glow: '#c8d0dc', flame: '#ffb066' },
@@ -284,8 +284,8 @@
     },
     {
       id: 'seal', label: 'The Unmade Seal',
-      night: '#020a09', fog: [2, 6, 6],
-      base: { floor: '#334248', floor2: '#2b393e', wall: '#060b0d', wallTop: '#18262b', edge: '#58858f' },
+      night: '#040b07', fog: [5, 11, 7],
+      base: { floor: '#20412e', floor2: '#193324', wall: '#070d0a', wallTop: '#0e1b13', edge: '#4e8d68' },
       variants: [
         { d: 1.00, glow: '#8ef0c0', flame: '#8ef0c0' },
         { d: 1.12, glow: '#c0ffe4', flame: '#a8ffd8' },
