@@ -88,13 +88,27 @@
     });
   };
 
+  /* A melee blow leaves a wedge of disturbed dust behind, not a ring. A ring
+     says "that came from every direction at once", which for a sword has never
+     been true -- the wedge on the floor is the wedge that hurts, so the flash
+     that follows the blow has to be the same shape or it is telling a lie. */
+  DC.Props.arcFlash = function (world, x, y, o) {
+    world.particles.push({
+      kind: 'arc', x, y, r: o.r0 || 0.5, maxR: o.maxR || 2,
+      arc: o.arc || 120, aim: o.aim || 0,
+      life: o.life || 0.34, maxLife: o.life || 0.34,
+      color: o.color || '#ff8a5c', width: o.width || 3,
+      vx: 0, vy: 0,
+    });
+  };
+
   DC.updateParticles = function (world, dt) {
     const ps = world.particles;
     for (let i = ps.length - 1; i >= 0; i--) {
       const p = ps[i];
       p.life -= dt;
       if (p.life <= 0) { ps.splice(i, 1); continue; }
-      if (p.kind === 'ring') {
+      if (p.kind === 'ring' || p.kind === 'arc') {
         p.r = M.lerp(p.maxR, p.r, Math.pow(p.life / p.maxLife, 0.6));
         continue;
       }
