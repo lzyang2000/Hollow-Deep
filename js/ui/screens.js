@@ -387,7 +387,7 @@
       { id: 'pack', label: 'Open the pack', key: 'I', note: game.player.inv.length + '/' + game.player.invSize },
       { id: 'save', label: 'Carry this run out (save file)', key: 'S' },
       { id: 'load', label: 'Take up a saved run (load file)', key: 'L' },
-      { id: 'mute', label: DC.Audio.muted ? 'Sound on' : 'Sound off', key: 'M' },
+      { id: 'mute', label: DC.Audio.muted ? 'Sound on' : 'Sound off', key: 'H' },
       { id: 'abandon', label: 'Abandon this run', key: 'R', accent: '#ff5c5c' },
     ];
     const bw = Math.min(L.narrow ? 330 : 420, W - 28);

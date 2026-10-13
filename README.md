@@ -69,7 +69,8 @@ browser chrome.
 | `I` or `Tab` | Open / close **the pack** (pauses the run) |
 | `Esc` | Pause (or leave the shop / the pack) |
 | `V` | Toggle zoom |
-| `M` | Mute audio |
+| `M` or `N` | Open / close **the map** of the whole floor (pauses the run) |
+| `H` | Mute audio |
 | `S` / `L` (while paused) | Save the run to a file / load one back |
 | `R` (while paused) | Abandon the run |
 
