@@ -164,11 +164,11 @@ uses, so the sprite you pick is the sprite that walks down the stairs.
   tiles (10 m) of clear floor all the way around it. Walking onto it does nothing.
   Stand in it and press `E`, or the DOWN button, or tap. You can stand on it, look
   around, and go back for a chest first.
-- Floors are crowded. The first floor holds 35 demons, 11 chests and 15 urns, and
-  the spawner reaches its cap of 102 demons, 18 chests and 32 urns by the low
-  thirties. Urns break when you walk into them and are the main source of potions.
+- Floors are crowded. The first floor holds 29 demons, 11 chests and 15 urns, and
+  the spawner reaches its cap of 85 demons, 18 chests and 32 urns by the low
+  twenties. Urns break when you walk into them and are the main source of potions.
   Nothing spawns within 22 m of the stairs. Demons wake one at a time as they
-  notice you, and the waking budget runs from 5 on the first floor to 17 deep
+  notice you, and the waking budget runs from 4 on the first floor to 14 deep
   down, so a big room commits that many to the chase and no more.
 - The dungeon has nine regions, one per band of depths, and each has its own
   look. The floor, the wall colour, the colour of the dark, the torch flames, the
@@ -204,13 +204,13 @@ uses, so the sprite you pick is the sprite that walks down the stairs.
   takes 1.6 s to kick in again. A mage's whole pool empties in about 20 s of
   continuous fire, and after that each bolt costs about 2 s of waiting. One shot
   every two seconds costs nothing.
-- On top of their base shapes every demon hits half as hard again, swings half as
-  often again and covers ground half as fast again. A Hellblade walks at 7.2 m/s
-  against your 4.6, so you cannot simply outrun one forever; you break contact with
-  Blink, Dodge and doorways. Imps are held to the old rule that a shooter never
-  runs faster than a knight, which keeps a shooter fight a fight instead of a
-  countdown. None of this shortens a wind-up, so the red wedge you dodge by stays
-  the same length it always was.
+- On top of their base shapes every demon hits a quarter as hard again, swings a
+  quarter as often again and covers ground a quarter as fast again. A Hellblade
+  walks at 5.9 m/s against your 4.6, so you cannot simply outrun one forever; you
+  break contact with Blink, Dodge and doorways. Imps are held to the old rule that
+  a shooter never runs faster than a knight, which keeps a shooter fight a fight
+  instead of a countdown. None of this shortens a wind-up, so the red wedge you
+  dodge by stays the same length it always was.
 - Demon stats grow as you get stronger, but on a slope 30% shallower, so a good
   run keeps getting stronger than the floor.
 

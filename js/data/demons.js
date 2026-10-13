@@ -19,9 +19,9 @@
       // under the knight's 4.2 on purpose -- a shooter you can eventually run
       // down is a fight, a shooter you cannot is a countdown. speedCap is a
       // ceiling on the FINAL stride, so it still holds after the flat
-      // DEMON_SPEED_MULT: 2.6 x 1.5 x 1.05 = 4.10 m/s at the deepest floor.
+      // DEMON_SPEED_MULT: 2.6 x 1.25 x 1.18 = 3.84 m/s at the deepest floor.
       id: 'imp', mirrors: 'mage', name: 'Imp',
-      hp: 26, atk: 8, def: 0, speed: 2.6, speedCap: 1.05, r: 0.62,
+      hp: 26, atk: 8, def: 0, speed: 2.6, speedCap: 1.18, r: 0.62,
       attackKind: 'ranged', attackCd: 1.5, sight: 12, keepRange: 9,
       projSpeed: 15, projLife: 2.0,
       powerFactor: 0.62, color: '#ff7a59', accent: '#8f2f22', xp: 1,
