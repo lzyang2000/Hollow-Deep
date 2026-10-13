@@ -5,12 +5,18 @@
   const M = DC.M;
 
   DC.Boss = {
-    create: function (kind, x, y, depth, rng, player, entry) {
+    create: function (kind, x, y, depth, rng, player, entry, echoCycle) {
       const base = DC.BOSS[kind];
       const tier = DC.bossTier(depth);
       const roster = DC.LORE.bosses.length;
-      const cycle = Math.floor((tier - 1) / roster);
       const e = entry || DC.LORE.bosses[(tier - 1) % roster];
+      /* How many times the deck has been dealt to reach this throne. The floor
+         builder knows (it shuffled the deck), so it passes the count in; called
+         bare, the tier still says the same thing, so a throne built by a test
+         harness or an old save is named the way it always was. */
+      const cycle = echoCycle == null
+        ? (tier > DC.LORE.sealCount ? Math.floor((tier - DC.LORE.sealCount - 1) / roster) + 1 : 0)
+        : echoCycle;
       let name = e.name;
       if (cycle > 0) name = DC.LORE.echoPrefixes[(cycle - 1) % DC.LORE.echoPrefixes.length].toUpperCase() + ' ' + name;
 
@@ -32,7 +38,7 @@
       const tierMul = 0.72 + 0.2 * tier;
       const hp = Math.round(base.hp * tierMul * mult);
       return {
-        kind: 'boss', uid: 'boss', bossKind: kind, tier, name, line: e.line,
+        kind: 'boss', uid: 'boss', bossKind: kind, tier, name, line: e.line, echoCycle: cycle,
         music: e.music,
         seal: DC.sealLabel(tier),
         x, y, r: base.r, hp, maxHp: hp,

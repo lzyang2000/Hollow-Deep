@@ -199,6 +199,7 @@
       G.pauseHover = null;
       G.titleHover = null;
       G.classHover = null;
+      G.endingHover = null;
       if (s === 'playing') DC.Input.keys = Object.create(null);
     },
 
@@ -206,6 +207,14 @@
     newRun: function (classId, startDepth) {
       G.seed = (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
       G.rng = new DC.RNG(G.seed);
+      /* Below the ninth seal the throne deck is reshuffled for this run, and
+         the nine seals above it stay in story order. Both halves of the story
+         flag live on the run so a save can carry them. */
+      G.echoOrder = DC.echoOrder(G.seed);
+      G.sealBroken = false;
+      G.endingSeen = false;
+      G.retired = false;
+      G.ending = null;
       G.depth = Math.max(1, startDepth | 0) || 1;
       G.player = DC.Player.create(classId);
       G.stats = { kills: 0, goldEarned: 0, time: 0, meleeHits: 0, chests: 0, urns: 0, potions: 0 };
@@ -225,7 +234,7 @@
     startLevel: function (depth, first) {
       G.depth = depth;
       const levelRng = new DC.RNG((G.seed ^ (depth * 0x9e3779b9)) >>> 0);
-      const world = DC.levels.build(depth, levelRng, G.player);
+      const world = DC.levels.build(depth, levelRng, G.player, G.echoOrder);
       G.world = world;
       world.actor = G.player;
       G.player.x = world.start.x;
@@ -257,6 +266,10 @@
 
     descend: function () {
       if (G.transition) return;
+      /* Nine seals out and the stair under your feet: the ending gets first
+         claim on the descent, once per run. Say no to it and the stair is
+         still there when you come back to it. */
+      if (G.sealBroken && !G.endingSeen) { G.openEnding(); return; }
       DC.Audio.play('levelDown');
       G.beginTransition(function () {
         G.startLevel(G.depth + 1);
@@ -266,6 +279,50 @@
 
     beginTransition: function (fn) {
       G.transition = { t: 0, dur: 1.0, fn: fn };
+    },
+
+    /* ---------------- the ending ----------------
+       Six cards, then a door with two handles on it. Click, tap or any key
+       turns a card; the last card turns into the choice. */
+    openEnding: function () {
+      G.ending = { i: 0, start: G.time };
+      G.setState('ending');
+      DC.Audio.setScene('ending');
+      DC.Audio.play('levelDown');
+    },
+
+    endingAdvance: function () {
+      const e = G.ending;
+      if (!e) { G.setState('endingChoice'); return; }
+      if (e.i + 1 >= DC.LORE.ending.length) {
+        G.ending = null;
+        G.setState('endingChoice');
+        DC.Audio.play('uiSelect');
+        return;
+      }
+      e.i++;
+      e.start = G.time;
+      DC.Audio.play('uiMove');
+    },
+
+    endingChoice: function (id) {
+      if (id === 'deeper') {
+        G.endingSeen = true;
+        G.ending = null;
+        G.setState('playing');
+        DC.Audio.setScene(G.world && G.world.isBoss ? 'boss' : 'dungeon');
+        DC.Audio.play('uiSelect');
+        G.log(DC.LORE.deeperLine, '#ffd166');
+        G.log('The stair is still open. So is the merchant.', '#8ef0c0');
+      } else if (id === 'retire') {
+        G.endingSeen = true;
+        G.retired = true;
+        G.ending = null;
+        G.saveBest();
+        G.setState('retired');
+        DC.Audio.setScene('ending');
+        DC.Audio.play('levelUp');
+      }
     },
 
     /* ---------------- rewards ---------------- */
@@ -375,6 +432,10 @@
       G.banner = { title: b.name + ' IS DOWN', sub: 'The portal opens where it fell.', life: 4.0, maxLife: 4.0, color: '#8ef0c0' };
       G.log('The portal is open. And the merchant shrugs.', '#8ef0c0');
       if (b.seal && b.tier === DC.LORE.sealCount) {
+        /* The story's last door. The ending is not spent here -- you are still
+           standing in a throne room with loot in it and a merchant who wants
+           your coin -- it is spent on the way down the stair, in descend(). */
+        G.sealBroken = true;
         G.log('Nine seals, all of them put back by hand. The stair keeps going anyway.', '#ffd166');
       }
       for (let i = 0; i < 3; i++) {
@@ -435,6 +496,15 @@
         return;
       }
       if (G.state === 'dead') { G.setState('classSelect'); return; }
+      if (G.state === 'ending') { G.endingAdvance(); return; }
+      if (G.state === 'endingChoice') {
+        const rows = DC.UI.endingButtons(G);
+        for (let i = 0; i < rows.length; i++) {
+          if (DC.UI.hit(rows[i], mx, my)) { G.endingChoice(rows[i].id); return; }
+        }
+        return;
+      }
+      if (G.state === 'retired') { G.setState('classSelect'); return; }
       if (G.state === 'classSelect') {
         const nav = DC.UI.classNav(G);
         if (nav) {
@@ -506,6 +576,11 @@
         }
         if (over && over !== G.hoverClass) DC.Audio.play('uiMove');
         if (over) G.hoverClass = over;
+      } else if (G.state === 'endingChoice') {
+        const rows = DC.UI.endingButtons(G);
+        let hit = null;
+        for (let i = 0; i < rows.length; i++) if (DC.UI.hit(rows[i], mx, my)) hit = rows[i].id;
+        if (hit !== G.endingHover) { if (hit) DC.Audio.play('uiMove'); G.endingHover = hit; }
       } else if (G.state === 'shop') {
         const hit = DC.Shop.hover(G, mx, my);
         if (hit >= 0 && hit !== G.shop.hover) DC.Audio.play('uiMove');
@@ -539,6 +614,19 @@
         return;
       }
       if (G.state === 'dead') {
+        if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') { DC.Audio.play('uiSelect'); G.setState('classSelect'); }
+        return;
+      }
+      if (G.state === 'ending') {
+        if (code !== 'ShiftLeft' && code !== 'ShiftRight') G.endingAdvance();
+        return;
+      }
+      if (G.state === 'endingChoice') {
+        if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') { G.endingChoice('deeper'); return; }
+        if (code === 'KeyR') { G.endingChoice('retire'); return; }
+        return;
+      }
+      if (G.state === 'retired') {
         if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') { DC.Audio.play('uiSelect'); G.setState('classSelect'); }
         return;
       }
@@ -916,6 +1004,9 @@
       else if (G.state === 'inventory') DC.UI.Inv.draw(ctx, G);
       else if (G.state === 'map') DC.Render.fullMap(ctx, G, cam);
       else if (G.state === 'dead') DC.UI.drawDeath(ctx, G);
+      else if (G.state === 'ending') DC.UI.drawEnding(ctx, G);
+      else if (G.state === 'endingChoice') DC.UI.drawEndingChoice(ctx, G);
+      else if (G.state === 'retired') DC.UI.drawRetired(ctx, G);
 
       if (G.transition) {
         const k = G.transition.t / G.transition.dur;

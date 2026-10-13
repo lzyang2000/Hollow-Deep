@@ -375,6 +375,404 @@
       '700 ' + L.font(12, 11) + 'px ' + FONT, 'rgba(255,255,255,' + blink + ')');
   };
 
+  /* ---------------- the ending ----------------
+     Nine seals is the shape of the story, so putting the ninth one out gets a
+     cinematic: six cards, each with a scene drawn from the same procedural kit
+     as everything else here. No image files, no video, no new dependencies --
+     the art is rectangles, arcs and gradients, and it animates off game.time
+     so it keeps moving while the floor is frozen behind it. */
+  DC.UI.endingArt = function (ctx, W, H, key, t) {
+    const h2 = DC.hash2;
+    ctx.save();
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    if (key === 'fall' || key === 'crown') { g.addColorStop(0, '#0a1220'); g.addColorStop(1, '#2a1108'); }
+    else if (key === 'throat') { g.addColorStop(0, '#120506'); g.addColorStop(1, '#04060a'); }
+    else { g.addColorStop(0, '#050a12'); g.addColorStop(1, '#0b0a12'); }
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    if (key === 'fall') {
+      /* Aetherfall, on the way down: three bands of towers sliding off the
+         top of the frame, every window still lit, because the city did not
+         know yet. */
+      const drift = (t * 7) % 90;
+      for (let band = 0; band < 3; band++) {
+        const base = H * (0.42 + band * 0.24) + drift;
+        const a = [0.95, 0.62, 0.34][band];
+        const n = 8 + band * 4;
+        for (let i = 0; i < n; i++) {
+          const r1 = h2(i, band, 7717), r2 = h2(i + 31, band, 991);
+          const x = (i + r1 * 0.5) * (W / n);
+          const w = (W / n) * (0.45 + r2 * 0.4);
+          const hh = H * (0.2 + r1 * 0.34);
+          ctx.fillStyle = 'rgba(7,9,15,' + a + ')';
+          ctx.fillRect(x, base - hh, w, hh);
+          for (let k = 0; k < 4; k++) {
+            const r3 = h2(i * 7 + k, band, 1234);
+            if (r3 < 0.5) continue;
+            const fl = 0.55 + 0.45 * Math.sin(t * 2.2 + i * 1.7 + k * 2.1);
+            ctx.fillStyle = 'rgba(255,' + (150 + Math.floor(70 * fl)) + ',84,' + ((0.2 + 0.5 * fl) * a).toFixed(3) + ')';
+            ctx.fillRect(x + w * (0.18 + 0.6 * r3), base - hh + hh * (0.12 + 0.72 * h2(k, i, 5)), 2.5, 3.5);
+          }
+        }
+      }
+      for (let i = 0; i < 40; i++) {
+        const r1 = h2(i, 0, 4242);
+        const y = (H + 40) - ((t * (26 + r1 * 60) + r1 * H * 3) % (H + 60));
+        ctx.fillStyle = 'rgba(255,170,90,' + (0.1 + 0.35 * h2(i, 1, 7)).toFixed(3) + ')';
+        ctx.fillRect(W * h2(i, 2, 13), y, 1.5, 1.5 + 3 * h2(i, 3, 17));
+      }
+    } else if (key === 'seals') {
+      /* Nine rings, in a row you can count, eight of them dark. The ninth is
+         still burning, because it is in your hand. */
+      const n = DC.LORE.sealCount;
+      const padX = W * 0.09;
+      const r = Math.min(W * 0.042, H * 0.15);
+      for (let i = 0; i < n; i++) {
+        const k = n > 1 ? i / (n - 1) : 0.5;
+        const x = padX + k * (W - padX * 2);
+        const y = H * 0.68 - Math.sin(k * Math.PI) * H * 0.22;
+        const last = i === n - 1;
+        const pulse = last ? 0.6 + 0.4 * Math.sin(t * 2.4) : 0;
+        const rr = last ? r * (1.25 + 0.1 * pulse) : r;
+        if (last) {
+          const gg = ctx.createRadialGradient(x, y, 1, x, y, rr * 3.4);
+          gg.addColorStop(0, 'rgba(255,209,102,' + (0.34 + 0.24 * pulse).toFixed(3) + ')');
+          gg.addColorStop(1, 'rgba(255,209,102,0)');
+          ctx.fillStyle = gg; ctx.fillRect(x - rr * 3.4, y - rr * 3.4, rr * 6.8, rr * 6.8);
+        }
+        ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2);
+        ctx.strokeStyle = last ? 'rgba(255,209,102,' + (0.55 + 0.45 * pulse).toFixed(3) + ')' : 'rgba(150,170,200,0.26)';
+        ctx.lineWidth = last ? 2.5 : 1.5; ctx.stroke();
+        if (!last) {
+          ctx.beginPath();
+          ctx.moveTo(x - rr * 0.55, y - rr * 0.55); ctx.lineTo(x + rr * 0.55, y + rr * 0.55);
+          ctx.strokeStyle = 'rgba(120,140,170,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+        } else {
+          // the taper inside the ring: a wick, a flame, and a hand under it
+          ctx.fillStyle = 'rgba(255,226,150,' + (0.7 + 0.3 * pulse).toFixed(3) + ')';
+          ctx.beginPath(); ctx.ellipse(x, y - rr * 0.1, rr * 0.22, rr * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,209,102,0.6)'; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(x - rr * 0.5, y + rr * 0.75); ctx.lineTo(x + rr * 0.5, y + rr * 0.75); ctx.stroke();
+        }
+      }
+      // the eight dark ones leave a cold mark on the floor under them
+      ctx.strokeStyle = 'rgba(120,140,170,0.1)'; ctx.lineWidth = 1;
+      for (let i = 0; i < n - 1; i++) {
+        const k = i / (n - 1);
+        const x = padX + k * (W - padX * 2);
+        ctx.beginPath();
+        ctx.ellipse(x, H * 0.86, r * 1.1, r * 0.28, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else if (key === 'crown') {
+      /* An empty throne and a crown that is no longer a circle. */
+      const cx = W / 2, base = H * 0.8;
+      const r = Math.min(W * 0.16, H * 0.3);
+      ctx.fillStyle = 'rgba(13,16,23,0.95)';
+      ctx.fillRect(cx - r * 1.05, base - r * 2.5, r * 2.1, r * 2.5);          // back
+      ctx.fillRect(cx - r * 1.35, base - r * 0.2, r * 2.7, r * 0.42);        // seat
+      ctx.fillStyle = 'rgba(22,26,36,0.95)';
+      ctx.fillRect(cx - r * 1.5, base + r * 0.2, r * 3, r * 0.22);           // step
+      const y0 = base - r * 0.62;
+      ctx.strokeStyle = 'rgba(255,209,102,0.8)'; ctx.lineWidth = 2.5;
+      // the band, with the points going up off it; the fourth point is gone
+      ctx.beginPath();
+      ctx.moveTo(cx - r, y0);
+      for (let i = 0; i < 5; i++) {
+        const xa = cx - r + (i + 0.5) * (2 * r / 5);
+        const xb = cx - r + (i + 1) * (2 * r / 5);
+        if (i === 3) continue;
+        ctx.lineTo(xa, y0 - r * 0.5);
+        ctx.lineTo(xb, y0);
+      }
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx - r * 1.02, y0);
+      ctx.lineTo(cx - r * 0.94, y0 + r * 0.34);
+      ctx.lineTo(cx + r * 0.94, y0 + r * 0.34);
+      ctx.lineTo(cx + r * 1.02, y0);
+      ctx.stroke();
+      // where the point came off
+      ctx.strokeStyle = 'rgba(255,209,102,0.26)'; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx - r + 3 * (2 * r / 5), y0);
+      ctx.lineTo(cx - r + 3.35 * (2 * r / 5), y0 - r * 0.42);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx - r + 4 * (2 * r / 5), y0 - r * 0.02);
+      ctx.lineTo(cx - r + 3.8 * (2 * r / 5), y0 - r * 0.3);
+      ctx.stroke();
+      // jewels, still holding a little light
+      for (let i = 0; i < 3; i++) {
+        const x = cx + (i - 1) * r * 0.55;
+        const fl = 0.5 + 0.5 * Math.sin(t * 1.7 + i * 2.1);
+        ctx.fillStyle = 'rgba(142,240,192,' + (0.18 + 0.3 * fl).toFixed(3) + ')';
+        ctx.beginPath(); ctx.arc(x, y0 + r * 0.17, r * 0.07, 0, Math.PI * 2); ctx.fill();
+      }
+      for (let i = 0; i < 26; i++) {
+        const r1 = h2(i, 5, 808);
+        const y = ((t * (6 + r1 * 14) + r1 * H) % H);
+        ctx.fillStyle = 'rgba(220,225,235,' + (0.05 + 0.12 * h2(i, 6, 3)).toFixed(3) + ')';
+        ctx.fillRect(W * h2(i, 7, 29), y, 1.5, 1.5);
+      }
+    } else if (key === 'tapers') {
+      /* The street that grew down: two walls in perspective, every window a
+         taper, roots across the flagstones. */
+      const cx = W / 2, horizon = H * 0.34;
+      for (let side = -1; side <= 1; side += 2) {
+        ctx.fillStyle = 'rgba(24,28,38,0.95)';
+        ctx.beginPath();
+        ctx.moveTo(cx + side * W * 0.06, horizon);
+        ctx.lineTo(cx + side * W * 0.5, H);
+        ctx.lineTo(cx + side * W * 0.5, horizon * 0.2);
+        ctx.lineTo(cx + side * W * 0.06, horizon * 0.55);
+        ctx.closePath(); ctx.fill();
+        for (let i = 0; i < 9; i++) {
+          const k = (i + 0.5) / 9;
+          const x = cx + side * (W * 0.09 + k * W * 0.36);
+          const y = horizon + k * k * (H - horizon) * 0.9;
+          const s = 3 + k * 12;
+          const fl = 0.55 + 0.45 * Math.sin(t * 1.9 + i * 1.3 + (side > 0 ? 0.7 : 0));
+          const gg = ctx.createRadialGradient(x, y, 0.5, x, y, s * 2.6);
+          gg.addColorStop(0, 'rgba(255,190,110,' + (0.3 + 0.3 * fl).toFixed(3) + ')');
+          gg.addColorStop(1, 'rgba(255,190,110,0)');
+          ctx.fillStyle = gg; ctx.fillRect(x - s * 2.6, y - s * 2.6, s * 5.2, s * 5.2);
+          ctx.fillStyle = 'rgba(255,214,150,' + (0.5 + 0.4 * fl).toFixed(3) + ')';
+          ctx.fillRect(x - s * 0.16, y - s * 0.5, Math.max(1.5, s * 0.32), s);
+        }
+      }
+      ctx.strokeStyle = 'rgba(120,140,160,0.14)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 7; i++) {
+        const y = H * (0.62 + i * 0.06);
+        ctx.beginPath(); ctx.moveTo(cx - W * 0.2 - i * W * 0.03, y);
+        ctx.quadraticCurveTo(cx, y + 8 * Math.sin(i * 1.4), cx + W * 0.2 + i * W * 0.03, y); ctx.stroke();
+      }
+    } else if (key === 'throat') {
+      /* The deep as an actual throat: rings all the way down, and one small
+         light going the wrong way. */
+      const cx = W / 2, cy = H * 0.52;
+      for (let i = 0; i < 11; i++) {
+        const k = i / 10;
+        const rx = W * (0.5 - k * 0.42), ry = H * (0.46 - k * 0.38);
+        const wob = 1 + 0.05 * Math.sin(t * 1.3 + i * 0.8);
+        ctx.beginPath(); ctx.ellipse(cx, cy + k * H * 0.06, rx * wob, ry * wob, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(' + (150 - i * 8) + ',' + (70 - i * 4) + ',' + (70 - i * 4) + ',' + (0.34 - k * 0.2).toFixed(3) + ')';
+        ctx.lineWidth = 1.5; ctx.stroke();
+      }
+      const fall = (t * 0.35) % 1;
+      const fr = 1 - fall;
+      ctx.fillStyle = 'rgba(255,209,102,' + (0.25 + 0.5 * fr).toFixed(3) + ')';
+      ctx.beginPath(); ctx.arc(cx, cy + fall * H * 0.06, Math.max(1.2, W * 0.02 * fr), 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(2,3,5,0.9)';
+      ctx.beginPath(); ctx.ellipse(cx, cy + H * 0.06, W * 0.05, H * 0.05, 0, 0, Math.PI * 2); ctx.fill();
+    } else {
+      /* 'stair': the way down, seen from the top. A square of surface light at
+         the top of the shaft and a taper somewhere near the bottom. */
+      const cx = W / 2, cy = H * 0.46;
+      const steps = 15;
+      const turn = (Math.PI * 2) / steps;
+      const spin = t * 0.1;
+      for (let i = 0; i < steps; i++) {
+        const k = i / steps;
+        const a = i * turn + spin;
+        const rOut = Math.min(W * 0.46, H * 0.92) * (1 - k * 0.62);
+        const rIn = rOut * 0.42;
+        const oy = cy + k * H * 0.14;
+        ctx.beginPath();
+        ctx.arc(cx, oy, rOut, a, a + turn * 0.9);
+        ctx.arc(cx, oy, rIn, a + turn * 0.9, a, true);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(' + (26 + i * 5) + ',' + (32 + i * 6) + ',' + (44 + i * 8) + ',' + (0.92 - k * 0.3).toFixed(3) + ')';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(150,170,200,' + (0.14 - k * 0.08).toFixed(3) + ')';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      // the newel in the middle, and the taper at the bottom of the shaft
+      ctx.fillStyle = 'rgba(10,12,18,0.9)';
+      ctx.beginPath(); ctx.ellipse(cx, cy + H * 0.14, Math.min(W, H) * 0.05, Math.min(W, H) * 0.03, 0, 0, Math.PI * 2); ctx.fill();
+      // The shaft it drops down: two walls, and dust falling faster than you.
+      ctx.strokeStyle = 'rgba(120,140,170,0.16)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        const k = i / 4;
+        ctx.beginPath();
+        ctx.moveTo(cx + (W * 0.42 - k * W * 0.3) * Math.cos(k * 2.2), cy - H * 0.3 + k * H * 0.6);
+        ctx.lineTo(cx + (W * 0.42 - k * W * 0.3) * Math.cos(k * 2.2 + 0.3), cy - H * 0.24 + k * H * 0.6);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - (W * 0.42 - k * W * 0.3) * Math.cos(k * 2.2), cy - H * 0.3 + k * H * 0.6);
+        ctx.lineTo(cx - (W * 0.42 - k * W * 0.3) * Math.cos(k * 2.2 + 0.3), cy - H * 0.24 + k * H * 0.6);
+        ctx.stroke();
+      }
+      for (let i = 0; i < 18; i++) {
+        const r1 = h2(i, 11, 606);
+        const y = ((t * (18 + r1 * 40) + r1 * H * 2) % (H * 1.2));
+        ctx.fillStyle = 'rgba(255,209,102,' + (0.06 + 0.2 * h2(i, 12, 91)).toFixed(3) + ')';
+        ctx.fillRect(cx + (h2(i, 13, 7) - 0.5) * W * 0.7, y, 1.5, 1.5 + 3 * h2(i, 14, 19));
+      }
+      const gl = ctx.createRadialGradient(cx, cy + H * 0.1, 1, cx, cy + H * 0.1, Math.min(W, H) * 0.3);
+      const fl = 0.6 + 0.4 * Math.sin(t * 2.6);
+      gl.addColorStop(0, 'rgba(255,209,102,' + (0.3 + 0.2 * fl).toFixed(3) + ')');
+      gl.addColorStop(1, 'rgba(255,209,102,0)');
+      ctx.fillStyle = gl; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(190,215,255,0.16)';
+      ctx.fillRect(cx - W * 0.11, 0, W * 0.22, H * 0.09);
+    }
+    ctx.restore();
+  };
+
+  /* One layout for the choice screen, shared by the drawing and by the
+     hit-testing, so a button can never be drawn somewhere the click does not
+     agree with. */
+  DC.UI.endingChoiceLayout = function (game) {
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    const artH = M.clamp(H * 0.24, 60, 190);
+    const titleY = artH + L.font(40, 30);
+    ctxFontWrap(game, DC.LORE.endingChoice, Math.min(680, W - 56));
+    const lh = L.font(21, 17);
+    const lines = game.__endingLines;
+    const textY = titleY + L.font(26, 20);
+    const items = [
+      { id: 'deeper', label: 'Go back down into the echoes', key: 'ENTER', primary: true, note: 'depth ' + (game.depth + 1) + ' and below' },
+      { id: 'retire', label: 'Climb out with the report', key: 'R', accent: '#ffd166' },
+    ];
+    const bw = Math.min(L.narrow ? 330 : 430, W - 28);
+    const gap = 9;
+    const room = H - (textY + lines.length * lh + 26);
+    const bh = M.clamp(room / items.length - gap, 28, L.touch ? 50 : 38);
+    const blockH = items.length * (bh + gap) - gap;
+    const top = M.clamp(textY + lines.length * lh + 26, 40, Math.max(40, H - blockH - 12));
+    const x = (W - bw) / 2;
+    const rows = [];
+    for (let i = 0; i < items.length; i++) {
+      rows.push({ id: items[i].id, label: items[i].label, key: items[i].key, note: items[i].note,
+        accent: items[i].accent, primary: items[i].primary, x: x, y: top + i * (bh + gap), w: bw, h: bh });
+    }
+    return { artH: artH, titleY: titleY, textY: textY, lh: lh, lines: lines, rows: rows };
+  };
+
+  function ctxFontWrap(game, text, maxW) {
+    const L = DC.Layout;
+    game.ctx.font = '500 ' + L.font(14, 12) + 'px ' + FONT;
+    game.__endingLines = DC.UI.wrap(game.ctx, text, maxW);
+  }
+
+  DC.UI.endingButtons = function (game) {
+    return DC.UI.endingChoiceLayout(game).rows;
+  };
+
+  DC.UI.drawEnding = function (ctx, game) {
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    const e = game.ending || { i: 0, start: game.time };
+    const card = DC.LORE.ending[M.clamp(e.i, 0, DC.LORE.ending.length - 1)];
+    ctx.fillStyle = 'rgba(3,4,7,0.96)';
+    ctx.fillRect(0, 0, W, H);
+    const artH = M.clamp(H * 0.42, 80, 330);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, W, artH); ctx.clip();
+    DC.UI.endingArt(ctx, W, artH, card.art, game.time);
+    ctx.restore();
+    const fade = ctx.createLinearGradient(0, artH - 40, 0, artH);
+    fade.addColorStop(0, 'rgba(3,4,7,0)'); fade.addColorStop(1, 'rgba(3,4,7,0.96)');
+    ctx.fillStyle = fade; ctx.fillRect(0, artH - 40, W, 40);
+    ctx.strokeStyle = 'rgba(255,209,102,0.25)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, artH + 0.5); ctx.lineTo(W, artH + 0.5); ctx.stroke();
+
+    const a = M.clamp((game.time - (e.start || 0)) / 0.55, 0, 1);
+    let tf = L.font(26, 19);
+    ctx.font = '700 ' + tf + 'px ' + FONT;
+    while (tf > 12 && ctx.measureText(card.title).width > W - 40) { tf -= 1; ctx.font = '700 ' + tf + 'px ' + FONT; }
+    ctx.globalAlpha = a;
+    DC.UI.centerText(ctx, card.title, W / 2, artH + L.font(42, 32), '700 ' + tf + 'px ' + FONT, 'rgba(255,209,102,0.92)');
+    ctx.font = '500 ' + L.font(15, 12) + 'px ' + FONT;
+    ctx.textAlign = 'center';
+    const lines = DC.UI.wrap(ctx, card.text, Math.min(700, W - 56));
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillStyle = 'rgba(222,230,242,0.88)';
+      ctx.fillText(lines[i], W / 2, artH + L.font(72, 54) + i * L.font(24, 18));
+    }
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+
+    const n = DC.LORE.ending.length;
+    const dotY = H - L.font(52, 40);
+    for (let i = 0; i < n; i++) {
+      const on = i === e.i;
+      ctx.beginPath();
+      ctx.arc(W / 2 + (i - (n - 1) / 2) * 15, dotY, on ? 4 : 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = on ? 'rgba(255,209,102,0.9)' : 'rgba(255,255,255,0.22)';
+      ctx.fill();
+    }
+    const blink = 0.5 + 0.5 * Math.sin(game.time * 3);
+    DC.UI.centerText(ctx, e.i + 1 >= n ? (L.touch ? 'TAP FOR THE LAST DOOR' : 'PRESS ANY KEY FOR THE LAST DOOR')
+      : (L.touch ? 'TAP TO CONTINUE' : 'PRESS ANY KEY TO CONTINUE'),
+      W / 2, H - L.font(24, 20), '700 ' + L.font(12, 11) + 'px ' + FONT, 'rgba(255,255,255,' + blink + ')');
+  };
+
+  DC.UI.drawEndingChoice = function (ctx, game) {
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    const lay = DC.UI.endingChoiceLayout(game);
+    ctx.fillStyle = 'rgba(3,4,7,0.96)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, W, lay.artH); ctx.clip();
+    DC.UI.endingArt(ctx, W, lay.artH, 'stair', game.time);
+    ctx.restore();
+    DC.UI.centerText(ctx, 'NINE SEALS OUT', W / 2, lay.titleY, '700 ' + L.font(30, 22) + 'px ' + FONT, '#8ef0c0');
+    ctx.font = '500 ' + L.font(14, 12) + 'px ' + FONT;
+    ctx.textAlign = 'center';
+    for (let i = 0; i < lay.lines.length; i++) {
+      ctx.fillStyle = 'rgba(222,230,242,0.82)';
+      ctx.fillText(lay.lines[i], W / 2, lay.textY + i * lay.lh);
+    }
+    ctx.textAlign = 'left';
+    for (let i = 0; i < lay.rows.length; i++) DC.UI.drawButton(ctx, lay.rows[i], game.endingHover === lay.rows[i].id, game);
+  };
+
+  DC.UI.drawRetired = function (ctx, game) {
+    const W = game.cam.w, H = game.cam.h, L = DC.Layout;
+    ctx.fillStyle = 'rgba(4,9,8,0.92)';
+    ctx.fillRect(0, 0, W, H);
+    DC.UI.centerText(ctx, 'YOU CAME BACK UP', W / 2, H * 0.16, '700 ' + L.font(40, 26) + 'px ' + FONT, '#8ef0c0');
+    DC.UI.centerText(ctx, 'Nine seals out. Depth ' + game.world.depth + ' and no further down.',
+      W / 2, H * 0.16 + L.font(28, 21), '600 ' + L.font(13, 11) + 'px ' + FONT, 'rgba(255,209,102,0.8)');
+
+    const lines = DC.UI.wrap(ctx, DC.LORE.retireLine, Math.min(680, W - 60));
+    ctx.font = '500 ' + L.font(14, 11) + 'px ' + FONT;
+    ctx.textAlign = 'center';
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillStyle = 'rgba(222,230,242,0.82)';
+      ctx.fillText(lines[i], W / 2, H * 0.26 + i * L.font(21, 16));
+    }
+    ctx.textAlign = 'left';
+
+    const s = game.stats;
+    const rows = [
+      ['DEPTH REACHED', String(game.world.depth)],
+      ['SEALS PUT OUT', DC.LORE.sealCount + ' of ' + DC.LORE.sealCount],
+      ['DEMONS SLAIN', String(s.kills)],
+      ['COIN EARNED', String(s.goldEarned)],
+      ['DEEPEST EVER', String(game.best && game.best.depth ? game.best.depth : game.world.depth)],
+      ['TIME UNDER', Math.floor(s.time / 60) + 'm ' + (Math.floor(s.time) % 60) + 's'],
+    ];
+    const bw = Math.min(340, W - 40), bx = W / 2 - bw / 2, by = H * 0.46;
+    const rowH = L.font(24, 19);
+    DC.UI.panel(ctx, bx, by, bw, rows.length * rowH + 18, 'rgba(142,240,192,0.4)');
+    ctx.font = '600 ' + L.font(12, 11) + 'px ' + FONT;
+    for (let i = 0; i < rows.length; i++) {
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillText(rows[i][0], bx + 16, by + 26 + i * rowH);
+      ctx.fillStyle = '#e8eef8';
+      ctx.textAlign = 'right';
+      ctx.fillText(rows[i][1], bx + bw - 16, by + 26 + i * rowH);
+      ctx.textAlign = 'left';
+    }
+    const blink = 0.5 + 0.5 * Math.sin(game.time * 3);
+    DC.UI.centerText(ctx, L.touch ? 'TAP TO GO DOWN AGAIN' : 'CLICK OR PRESS ENTER TO GO DOWN AGAIN', W / 2, H * 0.88,
+      '700 ' + L.font(14, 12) + 'px ' + FONT, 'rgba(255,255,255,' + blink + ')');
+  };
+
   /* ---------------- pause ----------------
      The pause screen is where a run is carried out of the deep and back in, so
      it is a menu rather than a list of key names. */

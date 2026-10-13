@@ -46,10 +46,16 @@
     sealCount: 9,
 
     // Boss roster, indexed by tier (depth / C.BOSS_EVERY, so one entry every
-    // five floors). The ninth entry is the ninth seal, which is why it is
-    // ninth. It is twelve deep because the cadence doubled -- the named
-    // sovereigns now run out at depth 60 instead of depth 600. Beyond the
-    // list, names are prefixed with an echo marker.
+    // five floors). The first nine entries are the nine seals and they stand
+    // in story order: depth 5 is Vaurn, depth 45 is the Ninth Seal, and no
+    // shuffle touches them, because that is the plot.
+    //
+    // Entries 10 to 12 are not thrones at all -- they are what is left down
+    // there after the seals are all out. Below depth 45 the whole twelve-card
+    // deck is shuffled per run (DC.echoOrder) and dealt again, and every pass
+    // through it wears a deeper echo marker: ECHO OF, then SECOND, then
+    // HOLLOW. Same seed, same sequence of thrones, so a save file still knows
+    // who was waiting for it on depth 63.
     //
     // Each entry also carries its own score, which is what plays the moment
     // the throne room door opens: `bpm` and `key` (semitones off the depth's
@@ -87,6 +93,31 @@
         music: { bpm: 72, key: -2, prog: 3, mode: 'locrian', motif: [0, 3, 1, 4, 3, 1, 0, -1], lead: 'bell', drums: 'still', accent: 'roar' } },
     ],
 
+    /* The ninth seal is the story's last door. Killing what sat on it does not
+       end the run, it ends the *story*, and then asks whether the deep is
+       finished for you. Six cards, one click each, each with a vector scene
+       drawn by DC.UI.endingArt -- no image files anywhere in this game. */
+    ending: [
+      { art: 'fall', title: 'THE NINTH SEAL IS DOWN',
+        text: 'The last taper goes out in your hand and the whole deep exhales. Nine hundred years of held breath, leaving through a wound you made with a sword.' },
+      { art: 'seals', title: 'NINE, PUT BACK BY HAND',
+        text: 'No choir sang these back into place. You lit them one at a time, in the wrong order, out of gear you took off demons. That is not how the hymn goes. It worked anyway.' },
+      { art: 'crown', title: 'WHAT SEVRIC BECAME',
+        text: 'The Archon is not down here. There is no bargain left to make and nobody left to pay with. The Order never wrote this part: the deep does not want anything from you. It only keeps what it is given.' },
+      { art: 'tapers', title: 'THE CITY IS NOT UP THERE',
+        text: 'Aetherfall did not break when it fell. It grew down. Every floor you crossed was a street that learned to swallow, and every Sovereign was a citizen who got good at it.' },
+      { art: 'throat', title: 'THE STAIR KEEPS GOING',
+        text: 'Below the ninth seal the deep runs out of names and starts reusing them. The thrones down there are echoes, and an echo is not weaker than the thing it came from. It has had longer to practise.' },
+      { art: 'stair', title: 'YOU ARE STILL HOLDING A FLAME',
+        text: 'The Order sent one delver down and expects one report. You can carry that report up right now, with nine seals relit behind you. Or you can keep going, which is what the flame was ever actually for.' },
+    ],
+
+    // What the two doors on the choice screen say, and what the climb out is
+    // worth. The deep keeps a record either way.
+    endingChoice: 'Nine seals are out and none of them are dark. The stair goes down and the stair goes up, and only one of them is still yours to take.',
+    deeperLine: 'You step back onto depth 45 with the report you did not write. The merchant is still there. He does not look up.',
+    retireLine: 'You came back up. Nine seals relit by hand, a city that is still a crater, and a report nobody in the Order wants to read out loud. You kept the flame lit and you walked out holding it. That was the whole job.',
+
     echoPrefixes: ['Echo of', 'Second', 'Hollow', 'Ashen', 'Unquiet', 'Last'],
     echoNouns: ['the Drowned Choir', 'the Gate That Walks', 'Nine Throats', 'the Long Swallow', 'the Taper\u2019s End'],
 
@@ -97,6 +128,7 @@
       { min: 20, text: 'Two seals relit, and a lantern left burning on a rock for the next one.' },
       { min: 30, text: 'The choir knows your name now. It sings it in the wrong key, but it knows it.' },
       { min: 40, text: 'You walked the throat of the deep for forty swallowings and made it flinch.' },
+      { min: 46, text: 'Nine seals out, and you kept going anyway. The deep had to put something new in your way, and it did, and it finished you. That is not a loss, it is arithmetic.' },
       { min: 50, text: 'You stood where Aetherfall landed. The crater still has your bootprints in it.' },
       { min: 70, text: 'Past the Archon, past the seals, past the point where the deep has a floor. Nobody has ever gone this far and come back to say so.' },
     ],

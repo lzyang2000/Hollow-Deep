@@ -14,8 +14,9 @@ logo and the favicons.
 
 Nine pillars were torn out of the world, and nine demons called Sovereigns sit on
 the pieces. You go down to put them back. One Sovereign waits at depth 5, then 10,
-15, and so on up to 45. Below 45 the dungeon keeps going and the Sovereigns come
-back stronger.
+15, and so on up to 45. Put out the ninth one and the deep tells you what it
+actually is, then offers you a door. Take the stair up and the run is over. Take
+the stair down and the Sovereigns come back in an order nobody chose.
 
 ## Run it
 
@@ -245,8 +246,31 @@ uses, so the sprite you pick is the sprite that walks down the stairs.
   tenth asks 4,350, against a purse of roughly 2,000 to 6,000. That makes it one
   big choice per boss floor. Potions stay cheap.
 - There are twelve named Sovereigns. The nine you are sent down for sit at depths
-  5 through 45, and the ninth is "The Ninth Seal, Unmade". Past depth 45 the
-  roster repeats with a prefix, such as "Echo of", and keeps scaling.
+  5 through 45, and the ninth is "The Ninth Seal, Unmade". What happens when it
+  falls is its own section below.
+
+## The ninth seal, and the echoes under it
+
+- Killing the Sovereign at depth 45 ends the errand you were sent down for. A six
+  card cinematic plays, one card at a time, over a hymn with no drums in it, and
+  it says what the deep turns out to be. Any key or a click turns a card.
+- Then you choose a door. "Climb out with the report" (`R`) ends the run on a
+  victory screen that lists your depth, the seals you put out, the demons you
+  killed, the coin you carried and the time it took. "Go back down into the
+  echoes" (`Enter`) puts you back on depth 45 with the portal still open and the
+  merchant still standing there, and the run carries on from depth 46 with your
+  gear and your purse.
+- Below 45 the throne rooms are dealt from a deck. Each run shuffles the twelve
+  named Sovereigns and uses them in that order, so one run might meet the Ash
+  Herald at 50 and the Blade of the Choir at 60, and the next run deals them
+  differently. Every twelfth throne wraps the deck, and those thrones arrive with
+  another cycle of scaling on them and a heavier prefix: "Echo of", then "Second",
+  then "Hollow", "Ashen", "Unquiet", "Last".
+- A Sovereign keeps its own music when it comes back as an echo, so a shuffled
+  deck also shuffles the score.
+- The deck and the story flags are stored in the save file, so a saved run
+  resumes with the same thrones waiting at the same depths, and the cinematic does
+  not play at you twice.
 
 ## Saving and loading
 
@@ -255,7 +279,9 @@ JSON file, and "Take up a saved run", which loads one back. You can also drop th
 file onto the window.
 
 A save stores the floor's seed and only what you changed since: dead demons,
-opened chests, broken urns, and the ground you revealed. A file is a few
+opened chests, broken urns, and the ground you revealed. Below the ninth seal it
+also stores the throne deck for the run and whether you have already seen the
+ending. A file is a few
 kilobytes, and it cannot hand you a floor you never walked. Numbers and indices
 read from a file are clamped or dropped, and editing a file cannot skip a boss
 portal.
@@ -269,6 +295,10 @@ two reeds slightly out of tune), drum pattern (march, war, pulse, triplet, slow,
 or none), and one instrument used only by it (anvil, choir, bass roar, bowed
 pair, bell). The piece belongs to the Sovereign, so an echo of one comes back with
 the same music, and none of it plays in the corridor outside its room.
+
+The ending has its own score: 52 bpm, whole bar pads, a bell that resolves once,
+and no drums at all. It is the only music in the game that never argues with
+anything.
 
 A hit on a body is a low thud: a sawtooth falling through a low-pass filter that
 is closing, with a band of grit over the top. It starts at 110 to 170 Hz and drops
