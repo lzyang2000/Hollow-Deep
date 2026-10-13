@@ -98,12 +98,26 @@
        live when nobody is touching them. */
     sticks: function (game) {
       const r = L.tiny ? 34 : (L.narrow ? 42 : 48);
-      const cy = L.h - L.pad - r - 2;
+      /* Where the two homes sit, and they are only homes -- a thumb that lands
+         anywhere in the half gets a stick under it, so this is about where the
+         rings invite the thumb, not where it is allowed to work.
+
+         Held upright, the floor of the glass is past where a thumb rests
+         comfortably and right on top of the system gesture bar, so the pair
+         lifts off the floor by about a tenth of the height.
+
+         Turned sideways, the hands hold the phone by its corners and the palms
+         cover the edges, so the pair comes inward toward the free thumbs
+         instead of sitting out under the palms. */
+      const sideways = L.w > L.h;
+      const lift = sideways ? Math.min(18, L.h * 0.05) : M.clamp(L.h * 0.11, 40, 110);
+      const edge = sideways ? M.clamp(L.w * 0.11, 56, 150) : L.pad + 4;
+      const cy = L.h - L.pad - r - lift;
       return {
         r: r,
         band: Math.round(L.h * 0.52),
-        move: { x: L.pad + r + 4, y: cy },
-        attack: { x: L.w - L.pad - r - 4, y: cy },
+        move: { x: edge + r, y: cy },
+        attack: { x: L.w - edge - r, y: cy },
       };
     },
 
