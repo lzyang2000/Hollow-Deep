@@ -237,7 +237,36 @@ any more, and it is still the fastest thing in the dark:
 - Population scales with depth: demons, chests and urns all grow, and every
   level is dressed with rubble, bones, skulls, cobwebs, braziers and wall
   torches that light the rooms.
-- Boss: large, hits far harder, dormant until the player lands the first hit.
+- **Sovereign** (every 5th floor): large, dormant until the player lands the
+  first hit, enraged at 35 % HP. Its armour is now actually subtracted from
+  every blow, floored at 25 % of the blow so a stack of small bolts can never
+  make it immune — `defVal` used to be computed for every Sovereign and read
+  by nothing. The bases trade health for plate: knight **330 HP / 11 DEF**,
+  blade **300 / 10**, mage **270 / 8**, where they were 420/5, 380/4 and 340/3
+  with the defence inert.
+- **A Sovereign answers a bolt camp.** Measured against a properly kitted
+  delver, the throne room used to be a punching bag: 32 harness fights, 32
+  wins, 0 deaths, and a ranged delver took **zero damage at every depth** from
+  a knight- or blade-shaped Sovereign. Three things close that gap.
+  - *Relentless ramp.* Holding more than about 11 m of clear ground away winds
+    a Sovereign up over 3.5 s to **+42 % stride** and **−24 % on every
+    windup**, with a roar, a ring and a line of log when it is fully wound.
+    Standing in its face unwinds it again in 1.6 s.
+  - *Reach.* A knight Sovereign **hurls its shield** — 12.5 m/s, telegraphed,
+    leads the target, two of them once enraged — and its charge now leads,
+    opens at 7 m instead of 10, and shakes the ground it lands on (except for
+    a delver it already body-checked, so the wave never double-taps). A blade
+    Sovereign **lunges** about 14 m and hops again on half the wait when the
+    leap falls short, which is the only reason the blade shape can reach a
+    mage at all. A mage's volley leads the target and arrives at **staggered
+    speeds**, because a volley that lands in a single instant can only ever
+    cost one hit against 0.45 s of immunity.
+  - A charge or lunge is **drawn with a smear** behind it, so twenty-six metres
+    a second reads as a line rather than a teleport.
+  Measured after: 32 fights, 30 wins, 2 deaths, mean **30.7 s** (was 22.1),
+  mean damage taken **725** (was 449), and the ranged rows take 10–805 instead
+  of nothing. On full runs the average depth moved from 9.9 to 8.3, with
+  Sovereigns doubling their share of deaths (5 of 18 to 10 of 23).
 
 ## 7. Rewards
 Every kill, chest and **smashed urn** drops exactly one of: equipment (attack

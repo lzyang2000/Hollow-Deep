@@ -356,6 +356,29 @@
       ctx.restore();
     }
 
+    /* A charge or a lunge is a straight line at you at twenty-plus metres a
+       second. Without a smear behind it, it reads as a teleport, and the one
+       thing a Sovereign's new reach needs is to be readable. */
+    if (b.action === 'charge' || b.action === 'lunge') {
+      const sp = Math.hypot(b.cvx, b.cvy) || 1;
+      const ux = b.cvx / sp, uy = b.cvy / sp;
+      const len = Math.min(9, sp * 0.45) * s;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const sg = ctx.createLinearGradient(x, y, x - ux * len, y - uy * len);
+      const c = b.action === 'lunge' ? '#ff5c5c' : '#c9d4e8';
+      sg.addColorStop(0, DC.rgba(c, 0.34)); sg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = sg;
+      const nx = -uy, ny = ux, w = r * 0.72;
+      ctx.beginPath();
+      ctx.moveTo(x + nx * w, y + ny * w);
+      ctx.lineTo(x - nx * w, y - ny * w);
+      ctx.lineTo(x - ux * len - nx * w * 0.25, y - uy * len - ny * w * 0.25);
+      ctx.lineTo(x - ux * len + nx * w * 0.25, y - uy * len + ny * w * 0.25);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
     ctx.save();
     ctx.translate(x, y);
     const bob = Math.sin(b.anim * 3.4) * r * 0.05;

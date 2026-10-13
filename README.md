@@ -233,7 +233,19 @@ you the hands changed.
   sleeps until you strike it; the portal opens when it dies. Halving the cadence
   did not halve the danger: a sovereign's strength is anchored to its own depth,
   so the thing waiting for you on depth 20 is exactly as nasty as a depth-20 boss
-  always was — there are just twice as many of them between you and the bottom. The counter's wares
+  always was — there are just twice as many of them between you and the bottom.
+- **A Sovereign cannot be walked off the edge of its own room.** Standing
+  fourteen metres back and clicking used to be a free win: measured against a
+  kitted delver, a ranged player took *zero damage at every depth* from a
+  knight- or blade-shaped Sovereign. Now holding that much clear ground winds
+  the thing up over three and a half seconds — forty percent more legs, a
+  quarter off every windup, and it tells you so — and each shape has an answer
+  at range: the knight **hurls its shield** and its charge leads you and shakes
+  the ground where it lands, the blade **lunges** fourteen metres and hops again
+  if it fell short, and a mage's volley **leads** and arrives spread out rather
+  than all at once. Their armour is real now too (it was being calculated and
+  then ignored), so the trade is less beef and about twice the plate: 330/11
+  for the knight, 300/10 for the blade, 270/8 for the mage. The counter's wares
   improve as you descend — better item levels than the best chest on that floor,
   never below *Fine*, and a longer shelf the deeper you go — and its prices grow
   with the square of the depth, so a purchase stays worth saving for instead of

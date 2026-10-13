@@ -53,12 +53,21 @@
     ];
   };
 
+  /* Sovereigns. hp is what you grind through, def is what makes the grinding
+     mean something, atk is what makes you care about getting hit.
+     The old numbers were 420/5, 340/3, 380/4 with the def never actually read
+     by anything. Measured against a properly kitted delver, that made a
+     throne room a 20-second punching bag: 24 harness fights, 24 wins, 0
+     deaths, and a mage standing at 14 m took literally zero damage. So the
+     beef came down about a quarter and the plate went up about double -- the
+     fight gets shorter but every blow has to be earned through armour -- and
+     the reach fixes in entities/boss.js are what actually make it dangerous. */
   DC.BOSS = {
-    knight: { hp: 420, atk: 26, def: 5, speed: 3.4, r: 2.5, color: '#9fb0cc', accent: '#4a5772', body: '#2b3444', cape: '#161c26', horn: '#c8b79a' },
+    knight: { hp: 330, atk: 26, def: 11, speed: 3.4, r: 2.5, color: '#9fb0cc', accent: '#4a5772', body: '#2b3444', cape: '#161c26', horn: '#c8b79a' },
     // The sovereign kites too, so it obeys the same rule: slower than a knight
     // even at the x1.18 enrage (2.9 x 1.18 = 3.42 < 3.5). Its threat is the
     // volley and the slam, not the ability to never be caught.
-    mage: { hp: 340, atk: 30, def: 3, speed: 2.9, r: 2.2, color: '#ff8f5e', accent: '#7c2c1c', body: '#3a1f1a', cape: '#1d0f0d', horn: '#e2c39b' },
-    swordsman: { hp: 380, atk: 28, def: 4, speed: 4.6, r: 2.3, color: '#e8564d', accent: '#5d160d', body: '#33171a', cape: '#1a0c0e', horn: '#d8b78e' },
+    mage: { hp: 270, atk: 30, def: 8, speed: 2.9, r: 2.2, color: '#ff8f5e', accent: '#7c2c1c', body: '#3a1f1a', cape: '#1d0f0d', horn: '#e2c39b' },
+    swordsman: { hp: 300, atk: 28, def: 10, speed: 4.6, r: 2.3, color: '#e8564d', accent: '#5d160d', body: '#33171a', cape: '#1a0c0e', horn: '#d8b78e' },
   };
 })(typeof window !== 'undefined' ? window : globalThis);

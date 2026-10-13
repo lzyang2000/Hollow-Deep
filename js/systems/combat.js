@@ -50,7 +50,13 @@
       b.awake = true;
       game.onBossWake(b);
     }
-    const dmg = Math.max(1, Math.round(amount));
+    /* A Sovereign's hide is real. b.defVal used to be computed and then never
+       read -- every blow landed whole, which is one reason a throne room was a
+       punching bag. Flat subtraction like the player's own armour, but floored
+       at a quarter of the blow so a Sovereign can never be made immune by a
+       stack of small bolts. */
+    const def = b.defVal || 0;
+    const dmg = Math.max(1, Math.min(Math.round(amount), Math.max(Math.round(amount * 0.25), Math.round(amount - def))));
     b.hp -= dmg;
     b.hitFlash = 0.12;
     DC.Props.floater(world, b.x + 0.6, b.y - b.r, String(dmg), '#ffe9b0', { life: 0.9, size: 15 });
