@@ -249,6 +249,20 @@ back-sword.
   misses 4 degrees past it, a Gorewarden's slam takes 0 off a delver standing
   behind it and 22 off one standing in front, and the wedge drawn on the floor
   is measured to be the same wedge.
+- **The steel travels, and it travels inside that wedge.** A blade is not a
+  hitbox that appears for a fifth of a second: it cocks back through the
+  wind-up, crosses its own arc so that it points at the aim on the exact beat
+  the damage lands, and overshoots past it. The delver, a Hellblade, a
+  Gorewarden and a Sovereign all swing on one shared curve, which is what makes
+  a demon's tell legible as a tell. What used to mark a landed blow was an
+  **expanding ring** for the Gorewarden and **nothing at all** for a Hellblade
+  -- a circle, which is the shape of a slam or a shockwave and has never been
+  the shape of a sword. Both now leave a wedge-shaped flash of exactly their own
+  arc, and a Sovereign's cut finally telegraphs in the direction it is *facing*
+  instead of down the screen's x axis. Measured, not asserted: three samples of
+  one swing sweep three different edges, every swept edge stays inside the arc
+  that hurts, a landed demon blow leaves one arc particle and no ring, and a
+  Sovereign winding a cut rotates its telegraph to its own aim.
 - **Dodge** (`Shift`, and a **DODGE** circle beside ATTACK on a phone — plus a
   second beside the ATTACK pad for the other thumb) is 0.2 s at
   21 m/s — about **4.2 m**, once per 1.9 s. No invulnerability, no steering once

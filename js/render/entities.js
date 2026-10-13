@@ -383,6 +383,66 @@
     ctx.beginPath(); ctx.arc(lx - ox, ly - oy, rad, 0, Math.PI * 2); ctx.fill();
   }
 
+  /* One curve for every blade in the game. The delver's sword, a Hellblade's
+     and a Sovereign's all swing on it: the steel cocks back through the
+     windup, crosses the arc so that it points at the aim at the exact beat the
+     damage lands, and overshoots past it. Damage is resolved the moment the
+     blow is committed, so all of this is tell -- and a tell shaped like the
+     thing that can hurt you is worth a great deal more than a ring that is not.
+
+     phase 'wind'  : the windup is still running (the demon is cocking and
+                     starting its cast; the hit has not landed yet)
+     phase 'strike': the blow has landed and the blade is in the follow-through
+     dir           : the aim frozen at the moment the blow was committed        */
+  function swingState(sw) {
+    const half = sw.arc * Math.PI / 360;
+    const dur = sw.dur || 0.24;
+    const u = M.clamp(1 - sw.t / dur, 0, 1);
+    const cock = -half * 1.3;
+    if (sw.phase === 'wind') {
+      const c = 0.35;                       // the catch, then the cast
+      if (u < c) return { ang: sw.dir + cock * (u / c), u, swept: false };
+      const v = (u - c) / (1 - c);
+      const e = 1 - (1 - v) * (1 - v);      // out fast, off slow
+      return { ang: sw.dir + cock * (1 - e), u, swept: true };
+    }
+    const e2 = 1 - (1 - u) * (1 - u);
+    return { ang: sw.dir + half * 1.1 * e2, u, swept: true };
+  }
+
+  /* The swept steel: a filled wedge behind the edge, a soft band along the
+     rim, and a bright hairline for the blade itself -- the same three strokes
+     the player's own swing uses, so a demon winding up reads as the same kind
+     of threat the delver makes. */
+  function swingTrail(ctx, x, y, sw, s, rad, color, alpha) {
+    const st = swingState(sw);
+    if (!st.swept) return st;
+    const half = sw.arc * Math.PI / 360;
+    const from = Math.max(st.ang - 1.15, sw.dir - half * 1.3);
+    if (from >= st.ang) return st;
+    const a = alpha == null ? 1 : alpha;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.globalAlpha = 0.26 * a;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.arc(0, 0, rad, from, st.ang);
+    ctx.closePath(); ctx.fill();
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.45 * a;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(2, s * 0.2);
+    ctx.beginPath(); ctx.arc(0, 0, rad, from, st.ang); ctx.stroke();
+    ctx.globalAlpha = 0.85 * a;
+    ctx.strokeStyle = '#f2f6ff';
+    ctx.lineWidth = Math.max(1, s * 0.07);
+    ctx.beginPath(); ctx.arc(0, 0, rad, from, st.ang); ctx.stroke();
+    ctx.lineCap = 'butt';
+    ctx.globalAlpha = 1;
+    ctx.restore();
+    return st;
+  }
+
   function impArt(ctx, d, r, body, accent) {
     const fx = Math.cos(d.facing), fy = Math.sin(d.facing);
     const px = -fy, py = fx;
@@ -462,7 +522,7 @@
     ctx.restore();
   }
 
-  function hellbladeArt(ctx, d, r, body, accent) {
+  function hellbladeArt(ctx, d, r, body, accent, wpn) {
     const fx = Math.cos(d.facing), fy = Math.sin(d.facing);
     const px = -fy, py = fx;
     const step = Math.sin(d.anim * 9.2) * r * 0.3;
@@ -533,7 +593,7 @@
     // The blade: longer than the demon holding it, and the reason you can pick
     // a Hellblade out of the dark at the far end of a corridor.
     ctx.save();
-    ctx.rotate(d.aim == null ? d.facing : d.aim);
+    ctx.rotate(wpn == null ? (d.aim == null ? d.facing : d.aim) : wpn);
     ctx.fillStyle = '#3a3f4c';
     ctx.fillRect(r * 0.2, -r * 0.09, r * 0.34, r * 0.18);
     ctx.fillStyle = accent;
@@ -551,7 +611,7 @@
     ctx.restore();
   }
 
-  function gorewardenArt(ctx, d, r, body, accent) {
+  function gorewardenArt(ctx, d, r, body, accent, wpn) {
     const fx = Math.cos(d.facing), fy = Math.sin(d.facing);
     const px = -fy, py = fx;
     const step = Math.sin(d.anim * 5.4) * r * 0.18;
@@ -651,7 +711,7 @@
     // Axe: a haft and a heavy head, drawn along the aim so the windup wedge
     // and the steel agree about where the blow is going to land.
     ctx.save();
-    ctx.rotate(d.aim == null ? d.facing : d.aim);
+    ctx.rotate(wpn == null ? (d.aim == null ? d.facing : d.aim) : wpn);
     ctx.fillStyle = '#54402c';
     ctx.fillRect(r * 0.3, -r * 0.09, r * 1.15, r * 0.18);
     ctx.fillStyle = d.hitFlash > 0 ? '#ffffff' : '#aab3c2';
@@ -686,6 +746,19 @@
 
     DC.Render.actorShadow(ctx, x, y, r);
 
+    /* A demon's blade travels the way yours does. What used to mark a landed
+       blow was an expanding ring -- a circle -- which is the shape of a slam
+       or a shockwave, never of a sword. Now the steel cocks back, crosses its
+       own arc and overshoots, and the wedge it sweeps is the wedge on the
+       floor that was already telling you to step out of it. */
+    const aim0 = d.aim == null ? d.facing : d.aim;
+    let bladeAng = aim0, swinging = null, swU = 0;
+    if (d.swing && def.attackKind === 'melee') {
+      const st = swingState(d.swing);
+      bladeAng = st.ang; swU = st.u; swinging = d.swing;
+      swingTrail(ctx, x, y, swinging, s, swinging.reach * s * (0.72 + swU * 0.3), def.color, 1);
+    }
+
     /* The windup wedge is the hit: same arc, same reach, drawn before the
        body so the thing standing in it is still visible. A Gorewarden's is
        150 degrees wide because that is exactly what its slam covers. */
@@ -706,11 +779,14 @@
 
     ctx.save();
     ctx.translate(x, y);
+    // The body goes with the blade: a lean into the swing, exactly as the
+    // delver's does, so the tell is legible even where the steel is not.
+    if (swinging) ctx.rotate(M.clamp(bladeAng - aim0, -1.2, 1.2) * 0.22);
     const body = d.hitFlash > 0 ? '#ffffff' : def.color;
     const accent = d.hitFlash > 0 ? '#ffffff' : def.accent;
     if (def.id === 'imp') impArt(ctx, d, r, body, accent);
-    else if (def.id === 'gorewarden') gorewardenArt(ctx, d, r, body, accent);
-    else hellbladeArt(ctx, d, r, body, accent);
+    else if (def.id === 'gorewarden') gorewardenArt(ctx, d, r, body, accent, bladeAng);
+    else hellbladeArt(ctx, d, r, body, accent, bladeAng);
     ctx.restore();
 
     // health pip when damaged
@@ -809,7 +885,7 @@
     ctx.stroke();
   }
 
-  function sovereignKnight(ctx, b, r, base, flash, body, trim, bob) {
+  function sovereignKnight(ctx, b, r, base, flash, body, trim, bob, wpn) {
     const fx = Math.cos(b.facing), fy = Math.sin(b.facing);
     const px = -fy, py = fx;
     const step = Math.sin(b.anim * 2.6) * r * 0.2;
@@ -892,7 +968,7 @@
     ctx.restore();
 
     ctx.save();
-    ctx.rotate(b.aim);
+    ctx.rotate(wpn == null ? b.aim : wpn);
     ctx.fillStyle = flash ? '#ffffff' : '#20242c';
     ctx.fillRect(r * 0.6, -r * 0.16, r * 1.7, r * 0.32);
     ctx.fillStyle = flash ? '#ffffff' : '#8e98a8';
@@ -902,7 +978,7 @@
     ctx.restore();
   }
 
-  function sovereignBlade(ctx, b, r, base, flash, body, trim, bob) {
+  function sovereignBlade(ctx, b, r, base, flash, body, trim, bob, wpn) {
     const fx = Math.cos(b.facing), fy = Math.sin(b.facing);
     const step = Math.sin(b.anim * 3.6) * r * 0.3;
     const px = -fy, py = fx;
@@ -965,7 +1041,7 @@
 
     // the drawn blade: long, single-edged, along the aim
     ctx.save();
-    ctx.rotate(b.aim);
+    ctx.rotate(wpn == null ? b.aim : wpn);
     ctx.fillStyle = flash ? '#ffffff' : '#241a1e';
     ctx.fillRect(r * 0.34, -r * 0.1, r * 0.4, r * 0.2);
     ctx.fillStyle = flash ? '#ffffff' : base.horn;
@@ -1054,10 +1130,10 @@
     ctx.restore();
   }
 
-  function sovereignArt(ctx, b, r, base, flash, body, trim, bob) {
+  function sovereignArt(ctx, b, r, base, flash, body, trim, bob, wpn) {
     if (b.bossKind === 'mage') sovereignMage(ctx, b, r, base, flash, body, trim, bob);
-    else if (b.bossKind === 'swordsman') sovereignBlade(ctx, b, r, base, flash, body, trim, bob);
-    else sovereignKnight(ctx, b, r, base, flash, body, trim, bob);
+    else if (b.bossKind === 'swordsman') sovereignBlade(ctx, b, r, base, flash, body, trim, bob, wpn);
+    else sovereignKnight(ctx, b, r, base, flash, body, trim, bob, wpn);
   }
 
   /* The weapon, on its own so the career picker can draw the same rod or the
@@ -1178,6 +1254,11 @@
       ctx.translate(x, y);
       ctx.fillStyle = 'rgba(255,92,92,' + (0.08 + k * 0.16) + ')';
       if (b.pending === (DC.Boss.ACTIONS && DC.Boss.ACTIONS.sweep)) {
+        // The cut is 150 degrees wide -- and it is 150 degrees wide in the
+        // direction it is facing, not due east. Without this the one telegraph
+        // that was ever a wedge pointed wherever the screen's x axis happened
+        // to be, which made the honest answer (step out of the wedge) wrong.
+        ctx.rotate(b.aim);
         ctx.beginPath(); ctx.arc(0, 0, (b.r + 3.6) * s, -1.3, 1.3); ctx.fill();
       } else {
         ctx.beginPath(); ctx.arc(0, 0, (b.r + 4.8) * s, 0, Math.PI * 2); ctx.fill();
@@ -1208,8 +1289,21 @@
       ctx.restore();
     }
 
+    /* The Sovereign's cut used to flash a ring out from its feet. A ring is
+       the shape of the slam and the shockwave, never of a sword: the sweep is
+       a 150 degree cut, and the blade now travels that cut the way the
+       delver's own does -- cocked back through the windup, across on the beat
+       the damage lands, and past it in the follow-through. */
+    let bladeAng = b.aim, swinging = null, swU = 0;
+    if (b.swing) {
+      const st = swingState(b.swing);
+      bladeAng = st.ang; swU = st.u; swinging = b.swing;
+      swingTrail(ctx, x, y, swinging, s, swinging.reach * s * (0.72 + swU * 0.3), trim, 1);
+    }
+
     ctx.save();
     ctx.translate(x, y);
+    if (swinging) ctx.rotate(M.clamp(bladeAng - b.aim, -1.2, 1.2) * 0.2);
     const bob = Math.sin(b.anim * 3.4) * r * 0.05;
 
     // heat haze so the thing reads as a threat even at the edge of the torch
@@ -1219,7 +1313,7 @@
     ctx.fillStyle = aura;
     ctx.beginPath(); ctx.arc(0, -r * 0.2, r * 2.1, 0, Math.PI * 2); ctx.fill();
 
-    sovereignArt(ctx, b, r, base, flash, body, trim, bob);
+    sovereignArt(ctx, b, r, base, flash, body, trim, bob, bladeAng);
     ctx.restore();
 
     // name + bar, top centre: clear of the log stack at the bottom
@@ -1279,6 +1373,19 @@
         ctx.strokeStyle = p.color;
         ctx.lineWidth = p.width || 2;
         ctx.beginPath(); ctx.arc(x, y, p.r * s, 0, Math.PI * 2); ctx.stroke();
+        continue;
+      }
+      if (p.kind === 'arc') {
+        const half = p.arc * Math.PI / 360;
+        ctx.globalAlpha = k * 0.34;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.moveTo(x, y);
+        ctx.arc(x, y, p.r * s, p.aim - half, p.aim + half);
+        ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = k * 0.8;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = p.width || 3;
+        ctx.beginPath(); ctx.arc(x, y, p.r * s, p.aim - half, p.aim + half); ctx.stroke();
         continue;
       }
       if (p.kind === 'glow') {

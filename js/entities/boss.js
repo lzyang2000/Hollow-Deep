@@ -51,6 +51,7 @@
       if (b.dead) { b.deadT += dt; return; }
       b.anim += dt;
       b.hitFlash = Math.max(0, b.hitFlash - dt);
+      if (b.swing) { b.swing.t -= dt; if (b.swing.t <= 0) b.swing = null; }
       const p = world.actor;
 
       if (!b.awake) { b.sleepBreath += dt; return; }   // dormant: no move, no attack
@@ -177,6 +178,13 @@
     b.pending = fn;
     b.windup = windup;
     b.windupMax = windup;
+    // Only the cut owns a blade. A slam, a volley or a charge is not a swing,
+    // and the Sovereign should not cock a sword for a shockwave.
+    if (fn === BossAct.sweep) {
+      b.swing = { phase: 'wind', t: windup, dur: windup, arc: 150, reach: b.r + 3.4, dir: b.aim };
+    } else {
+      b.swing = null;
+    }
   }
 
   const BossAct = {
@@ -194,7 +202,10 @@
       b.attackCd = 0.5;
     },
     sweep: function (world, b, game) {
-      DC.Props.ring(world, b.x, b.y, b.r + 3.6, { color: '#ffd166', life: 0.3, width: 3 });
+      b.swing = { phase: 'strike', t: 0.28, dur: 0.28, arc: 150, reach: b.r + 3.4, dir: b.aim };
+      DC.Props.arcFlash(world, b.x, b.y, {
+        maxR: b.r + 3.6, arc: 150, aim: b.aim, color: '#ffd166', life: 0.34, width: 4,
+      });
       DC.Audio.play('swing', { pitch: 0.65 });
       DC.Combat.sweep(world, { side: 'demon', x: b.x, y: b.y, aim: b.aim, name: b.name },
         { arc: 150, reach: b.r + 3.4, dmg: b.atk, knock: 3.4 }, game);

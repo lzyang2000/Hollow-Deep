@@ -24,6 +24,10 @@
         speed: def.speed * M.clamp(1 + (mult - 1) * 0.25, 1, def.speedCap || 1.5),
         state: 'idle', hasSeen: false, alertedT: 0,
         attackCd: rng.range(0, 1), windup: 0, windupMax: 0,
+        // The blade's own clock: { phase, t, dur, arc, reach, dir }. Nothing
+        // about the fight reads it -- it is animation state, and the animation
+        // is the tell the player is dodging by.
+        swing: null,
         hitFlash: 0, kx: 0, ky: 0,
         anim: rng.range(0, 6.28), facing: rng.range(0, 6.28),
         wanderT: 0, wx: 0, wy: 0, strafe: rng.chance(0.5) ? 1 : -1,
@@ -57,6 +61,7 @@
       d.hasSeen = false;
       d.state = 'idle';
       d.windup = 0;
+      d.swing = null;
       d.lostT = 0;
       world.awakeCount = Math.max(0, (world.awakeCount || 0) - 1);
       return true;
@@ -68,6 +73,7 @@
       const def = d.def;
       d.anim += dt;
       d.attackCd -= dt;
+      if (d.swing) { d.swing.t -= dt; if (d.swing.t <= 0) d.swing = null; }
       d.hitFlash = Math.max(0, d.hitFlash - dt);
 
       /* --- sight gate: nothing happens until it has seen the player ------
@@ -144,6 +150,13 @@
           d.windupMax = d.windup;
           d.facing = Math.atan2(p.y - d.y, p.x - d.x);
           d.aim = d.facing;
+          // The windup is not just a number counting down any more: it is the
+          // cock of the blade, and the cast finishes at the exact moment the
+          // wedge on the floor goes off.
+          d.swing = {
+            phase: 'wind', t: d.windup, dur: d.windup, arc: def.arc,
+            reach: def.reach + (def.id === 'gorewarden' ? 1.2 : 0), dir: d.aim,
+          };
         }
       } else if (d.windup > 0) {
         d.windup -= dt;
@@ -169,14 +182,26 @@
                it: so the one thing the game told you to do, step aside, was
                the one thing that did not work. The ring stays as dust and
                noise; the damage is the wedge. */
-            DC.Props.ring(world, d.x, d.y, def.reach + 1.2, { color: '#ff5c5c', life: 0.35, width: 4 });
+            d.swing = { phase: 'strike', t: 0.3, dur: 0.3, arc: def.arc, reach: def.reach + 1.2, dir: d.aim };
+            DC.Props.arcFlash(world, d.x, d.y, {
+              maxR: def.reach + 1.2, arc: def.arc, aim: d.aim,
+              color: '#ff5c5c', life: 0.36, width: 4,
+            });
             DC.Audio.play('slam');
             game.shake(0.5);
             DC.Combat.sweep(world, { side: 'demon', x: d.x, y: d.y, aim: d.aim, name: def.name },
               { arc: def.arc, reach: def.reach + 1.2, dmg: d.atk, knock: def.knockback || 2.6 }, game);
           } else {
+            d.swing = { phase: 'strike', t: 0.24, dur: 0.24, arc: def.arc, reach: def.reach, dir: d.aim };
             DC.Combat.sweep(world, { side: 'demon', x: d.x, y: d.y, aim: d.aim, name: def.name },
               { arc: def.arc, reach: def.reach, dmg: d.atk, knock: def.knockback || 1.6 }, game);
+            // A Hellblade used to mark its hit with nothing but a sound. The
+            // swing carries the follow-through; this is the dust it throws, and
+            // it is the same 110 degrees the cut was.
+            DC.Props.arcFlash(world, d.x, d.y, {
+              maxR: def.reach, arc: def.arc, aim: d.aim,
+              color: def.color, life: 0.26, width: 2,
+            });
             DC.Audio.play('swing', { pitch: 0.9 });
           }
         }
