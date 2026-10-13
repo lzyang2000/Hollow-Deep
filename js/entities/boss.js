@@ -24,10 +24,16 @@
          Halving the slope the other way (1 + 0.18 * (tier - 1)) made the deep
          ones ~10% beefier and the depth-5 throne killed 9 bot runs out of 48
          instead of 4, so the parity version is the one that stays. */
-      const tierMul = 0.65 + 0.175 * tier;
+      /* The slope came up. A kitted delver was walking out of throne rooms in
+         twenty seconds with most of their health, so every Sovereign is about
+         twelve percent more of a problem per tier than it was -- and the
+         chamber it waits in is a quarter the size, which is the half of this
+         change that actually bites. */
+      const tierMul = 0.72 + 0.2 * tier;
       const hp = Math.round(base.hp * tierMul * mult);
       return {
         kind: 'boss', uid: 'boss', bossKind: kind, tier, name, line: e.line,
+        seal: DC.sealLabel(tier),
         x, y, r: base.r, hp, maxHp: hp,
         atk: base.atk * tierMul * mult, defVal: Math.round(base.def * mult * 0.7),
         speed: base.speed, awake: false, dead: false, deadT: 0,
@@ -49,7 +55,7 @@
 
       if (!b.awake) { b.sleepBreath += dt; return; }   // dormant: no move, no attack
 
-      if (!b.enraged && b.hp <= b.maxHp * 0.35) {
+      if (!b.enraged && b.hp <= b.maxHp * 0.45) {
         b.enraged = true;
         DC.Audio.play('roar', { pitch: 0.75 });
         game.shake(1.2);
@@ -90,7 +96,7 @@
         b.actionT -= dt;
         const moved = DC.moveBody(world, b, b.cvx * dt, b.cvy * dt);
         if (!b.hitPlayer && Math.hypot(p.x - b.x, p.y - b.y) < b.r + p.r + 0.4) {
-          DC.Combat.damagePlayer(world, p, b.atk * (isCharge ? 0.9 : 0.85), game,
+          DC.Combat.damagePlayer(world, p, b.atk * (isCharge ? 1.0 : 0.95), game,
             { fromX: b.x, fromY: b.y, knock: isCharge ? 4.5 : 3.2, killer: b.name });
           b.hitPlayer = true;
         }
@@ -182,17 +188,17 @@
       game.shake(1.0);
       const p = world.actor;
       if (p && !p.dead && Math.hypot(p.x - b.x, p.y - b.y) <= R + p.r) {
-        DC.Combat.damagePlayer(world, p, b.atk * 0.85, game, { fromX: b.x, fromY: b.y, knock: 4, killer: b.name });
+        DC.Combat.damagePlayer(world, p, b.atk * 0.95, game, { fromX: b.x, fromY: b.y, knock: 4, killer: b.name });
       }
-      b.slamCd = (b.enraged ? 2.0 : 3.2) * game.rng.range(0.85, 1.2);
+      b.slamCd = (b.enraged ? 1.7 : 2.7) * game.rng.range(0.85, 1.2);
       b.attackCd = 0.5;
     },
     sweep: function (world, b, game) {
       DC.Props.ring(world, b.x, b.y, b.r + 3.6, { color: '#ffd166', life: 0.3, width: 3 });
       DC.Audio.play('swing', { pitch: 0.65 });
       DC.Combat.sweep(world, { side: 'demon', x: b.x, y: b.y, aim: b.aim, name: b.name },
-        { arc: 150, reach: b.r + 3.4, dmg: b.atk * 0.9, knock: 3.4 }, game);
-      b.attackCd = (b.enraged ? 0.7 : 1.05) * game.rng.range(0.85, 1.2);
+        { arc: 150, reach: b.r + 3.4, dmg: b.atk, knock: 3.4 }, game);
+      b.attackCd = (b.enraged ? 0.62 : 0.95) * game.rng.range(0.85, 1.2);
     },
     volley: function (world, b, game) {
       const p = world.actor;
@@ -214,7 +220,7 @@
         world.projectiles.push(DC.Props.projectile({
           x: b.x + Math.cos(a) * (b.r + 0.6), y: b.y + Math.sin(a) * (b.r + 0.6),
           vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-          dmg: b.atk * 0.42, side: 'demon', life: 3.2, kind: 'fire',
+          dmg: b.atk * 0.5, side: 'demon', life: 3.2, kind: 'fire',
           color: '#ff7a59', r: 0.42, sourceName: b.name,
         }));
       }
@@ -264,7 +270,7 @@
         world.projectiles.push(DC.Props.projectile({
           x: b.x + Math.cos(aa) * (b.r + 0.5), y: b.y + Math.sin(aa) * (b.r + 0.5),
           vx: Math.cos(aa) * 12.5, vy: Math.sin(aa) * 12.5,
-          dmg: b.atk * 0.42, side: 'demon', life: 4, kind: 'shield',
+          dmg: b.atk * 0.5, side: 'demon', life: 4, kind: 'shield',
           color: '#c9d4e8', r: 0.62, sourceName: b.name,
         }));
       }
@@ -281,7 +287,7 @@
       game.shake(0.7);
       const p = world.actor;
       if (p && !p.dead && Math.hypot(p.x - b.x, p.y - b.y) <= R + p.r) {
-        DC.Combat.damagePlayer(world, p, b.atk * 0.6 * (scale || 1), game,
+        DC.Combat.damagePlayer(world, p, b.atk * 0.7 * (scale || 1), game,
           { fromX: b.x, fromY: b.y, knock: 3.2, killer: b.name });
       }
     },

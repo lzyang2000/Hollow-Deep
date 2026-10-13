@@ -29,7 +29,7 @@
     gorewarden: {
       id: 'gorewarden', mirrors: 'knight', name: 'Gorewarden',
       hp: 58, atk: 16, def: 3, speed: 3.0, r: 0.82,
-      attackKind: 'melee', attackCd: 1.5, reach: 2.4, arc: 95, sight: 10,
+      attackKind: 'melee', attackCd: 1.5, reach: 2.4, arc: 150, sight: 10,
       knockback: 2.6, powerFactor: 0.7, xp: 2,
     },
   };

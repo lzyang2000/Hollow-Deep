@@ -7,12 +7,14 @@
   DC.VERSION = '1.0.0';
 
   DC.C = {
-    // World geometry. 40 tiles * 5 m = a 200 m x 200 m level. The tile stays
-    // 5 m, so every metre figure below -- torch, minimap, sight, reach --
-    // carries over unchanged; only the square got smaller.
+    // World geometry. 30 tiles * 5 m = a 150 m x 150 m level. The tile stays
+    // 5 m, so every metre figure below -- torch, reach, dodge, sight --
+    // carries over unchanged; only the square got smaller. It used to be
+    // 200 m, and 200 m was not a floor, it was an errand: the interesting part
+    // of a roguelike level is the part you can hold in your head.
     TILE: 5,
-    GRID: 40,
-    WORLD_M: 200,
+    GRID: 30,
+    WORLD_M: 150,
 
     // Information fog.
     REVEAL: 15,          // metres of torchlight
@@ -20,9 +22,16 @@
     MEMORY_LIGHT: 0.13,  // how much of already-seen terrain survives
     LIGHT_STEP: 0.7,     // metres between light-map samples
 
-    // Minimap: a 45 m square centred on the player, upper right.
-    MINIMAP_M: 45,
+    // Minimap: a 50 m square centred on the player, upper right. A third of
+    // the floor across, which is about how much of a 150 m floor you are ever
+    // making a decision about at once.
+    MINIMAP_M: 50,
     MINIMAP_PX: 300,
+
+    // The throne chamber: a 50 m square of open floor hewn out of the middle
+    // of the level, walls of solid rock on every side. It used to be the whole
+    // floor, which turned a boss fight into a lap of an empty stadium.
+    ARENA_TILES: 10,
 
     // Camera.
     PX_PER_M: 20,
@@ -40,16 +49,16 @@
     // density figures, not raw counts -- the walkable floor went from ~1000 to
     // ~450 tiles when the level shrank, so the counts came down with it and a
     // corridor still holds the same number of demons per torch.
-    ENEMY_BASE: 30,
-    ENEMY_PER_DEPTH: 3.2,
-    ENEMY_MAX: 120,
-    CHEST_BASE: 11,
-    CHEST_PER_DEPTH: 0.9,
-    CHEST_MAX: 26,
-    URN_BASE: 16,
-    URN_PER_DEPTH: 1.2,
-    URN_MAX: 39,
-    MIN_SPAWN_DIST: 26,   // metres from start before a demon may appear
+    ENEMY_BASE: 21,
+    ENEMY_PER_DEPTH: 2.2,
+    ENEMY_MAX: 68,        // what the spawner can actually place on a 150 m floor
+    CHEST_BASE: 10,
+    CHEST_PER_DEPTH: 0.6,
+    CHEST_MAX: 18,
+    URN_BASE: 14,
+    URN_PER_DEPTH: 0.8,
+    URN_MAX: 32,
+    MIN_SPAWN_DIST: 22,   // metres from start before a demon may appear
 
     // Descent cadence: every Nth floor is a boss arena with a merchant in it.
     // It used to be 10. At 200 m a floor is a short, dense sweep, and a
@@ -70,17 +79,17 @@
 
     // Portal gate: a reachable tile this deep into the maze's walking
     // distance, not the absolute farthest one.
-    PORTAL_MIN_TILES: 20,
+    PORTAL_MIN_TILES: 14,
     PORTAL_FRACTION: 0.5,
     // The portal is a thing you walk *up to and decide about*, so it needs
     // room around it: this many tiles of open floor in every direction.
     PORTAL_CLEAR_TILES: 2,
 
     // Dungeon plan: rooms joined by corridors, not a lattice maze.
-    ROOM_COUNT_MIN: 9,
-    ROOM_COUNT_MAX: 13,
+    ROOM_COUNT_MIN: 6,
+    ROOM_COUNT_MAX: 10,
     ROOM_MIN: 4,          // tiles
-    ROOM_MAX: 9,
+    ROOM_MAX: 7,          // a 9-tile room in a 30-tile grid is a district
     CORRIDOR_WIDE_CHANCE: 0.30,
     ROOM_LOOP_CHANCE: 0.4,      // extra links as a fraction of the room count
     ROOM_LOOP_MAX_DIST: 16,     // Manhattan between room centres
@@ -91,9 +100,9 @@
     // the whole floor never comes with you, so a pack can always be pulled.
     AGGRO_BASE: 3,
     AGGRO_PER_DEPTH: 0.8,
-    AGGRO_MAX: 14,
-    LEASH_DIST: 30,      // metres -- beyond this a lost hunter gives up
-    SIGHT_CULL: 44,      // metres -- no line-of-sight test is paid for beyond this
+    AGGRO_MAX: 11,
+    LEASH_DIST: 26,      // metres -- beyond this a lost hunter gives up
+    SIGHT_CULL: 38,      // metres -- no line-of-sight test is paid for beyond this
 
     // Out-of-combat recovery. A crowded floor is only survivable if losing
     // a pack is worth something: once nothing can see you and you have not

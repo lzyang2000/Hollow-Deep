@@ -88,6 +88,15 @@
   // Which boss in the roster this depth gets.
   DC.bossTier = function (depth) { return Math.max(1, Math.round(depth / C.BOSS_EVERY)); };
 
+  /* Nine seals, nine thrones, one every fifth floor: the first eight are
+     numbered, the ninth says so out loud, and past the ninth there is nothing
+     left holding the dark back. */
+  const SEAL_NUMERAL = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
+  DC.sealLabel = function (tier) {
+    if (tier < 1 || tier > DC.LORE.sealCount) return null;
+    return 'The ' + SEAL_NUMERAL[tier] + (tier === 1 ? 'st' : tier === 2 ? 'nd' : tier === 3 ? 'rd' : 'th') + ' seal';
+  };
+
   function tileCenter(t) { return (t + 0.5) * C.TILE; }
 
   function openTileNear(grid, tx, ty, radius) {
@@ -110,9 +119,18 @@
     const cand = [];
     const dist = world.dist;
     const minTiles = o.minDistTiles == null ? Math.ceil(C.MIN_SPAWN_DIST / C.TILE) : o.minDistTiles;
+    /* Walking distance is the honest measure -- it is how you actually get
+       there -- but it is not the measure the player feels when a demon is
+       standing twenty metres away in a straight line through a doorway. The
+       enemy spawner asks for both. */
+    const minStartM = o.minStartM || 0;
     for (let i = 0; i < world.open.length; i++) {
       const t = world.open[i];
       if (dist[t] < minTiles) continue;
+      if (minStartM) {
+        const sx = t % C.GRID, sy = (t - sx) / C.GRID;
+        if (Math.hypot(tileCenter(sx) - world.start.x, tileCenter(sy) - world.start.y) < minStartM) continue;
+      }
       if (o.avoid && o.avoid.length) {
         const tx = t % C.GRID, ty = (t - tx) / C.GRID;
         let skip = false;
@@ -126,16 +144,26 @@
     }
     rng.shuffle(cand);
     const out = [];
-    for (let i = 0; i < cand.length && out.length < count; i++) {
-      const t = cand[i];
-      const tx = t % C.GRID, ty = (t - tx) / C.GRID;
-      let ok = true;
-      for (let k = 0; k < out.length; k++) {
-        const ox = out[k] % C.GRID, oy = (out[k] - ox) / C.GRID;
-        if (Math.abs(ox - tx) < minSep && Math.abs(oy - ty) < minSep) { ok = false; break; }
+    const taken = new Set();
+    const pass = function (sep) {
+      for (let i = 0; i < cand.length && out.length < count; i++) {
+        const t = cand[i];
+        if (taken.has(t)) continue;
+        const tx = t % C.GRID, ty = (t - tx) / C.GRID;
+        let ok = true;
+        for (let k = 0; k < out.length; k++) {
+          const ox = out[k] % C.GRID, oy = (out[k] - ox) / C.GRID;
+          if (Math.abs(ox - tx) < sep && Math.abs(oy - ty) < sep) { ok = false; break; }
+        }
+        if (ok) { out.push(t); taken.add(t); }
       }
-      if (ok) out.push(t);
-    }
+    };
+    pass(minSep);
+    /* The first pass is a shuffled lottery, and on a 150 m floor there are
+       only a few hundred walkable tiles -- so it can strand the last handful
+       of demons against the spacing rule and quietly ship a floor with fewer
+       than the depth asked for. Relax the spacing rather than underfill. */
+    for (let sep = minSep - 1; sep >= 1 && out.length < count; sep--) pass(sep);
     return out;
   }
 
@@ -148,22 +176,29 @@
     let world = null;
 
     if (isBoss) {
-      const startTx = (G >> 1), startTy = G - 7;
+      /* A 50 m chamber, not the whole floor. You come down the stair at the
+         south edge of it, the merchant is a few paces along that same edge,
+         and the Sovereign stands at the centre of the room. The keepOut radii
+         are chamber-sized now too: a 34 m no-pillar zone in a 50 m room is the
+         whole room. */
+      const R = DC.Maze.arenaRect();
+      const mcx = (R.x0 + R.x1) >> 1, mcy = (R.y0 + R.y1) >> 1;
+      const startTx = mcx, startTy = R.y1 - 1;
       const keepOut = [
-        { x: tileCenter(startTx), y: tileCenter(startTy), r: 34 },
-        { x: C.WORLD_M / 2, y: C.WORLD_M / 2, r: 40 },
+        { x: tileCenter(startTx), y: tileCenter(startTy), r: 11 },
+        { x: tileCenter(mcx), y: tileCenter(mcy), r: 13 },
       ];
       const grid = DC.Maze.arena(rng, keepOut);
       world = makeWorld(depth, grid, rng, isBoss, levelSeed);
-      const s = openTileNear(grid, startTx, startTy, 6);
+      const s = openTileNear(grid, startTx, startTy, 4);
       world.start = { tx: s[0], ty: s[1], x: tileCenter(s[0]), y: tileCenter(s[1]) };
-      // The arena needs a real distance field too: spacedTiles filters by walk
-      // distance from the start, and a zero-filled field rejects every tile --
-      // which is why the boss room used to spawn no chests at all.
+      // The chamber needs a real distance field too: spacedTiles filters by
+      // walk distance from the start, and a zero-filled field rejects every
+      // tile -- which is why the boss room used to spawn no chests at all.
       world.dist = DC.Maze.bfs(grid, s[0], s[1]).dist;
-      const m = openTileNear(grid, startTx + rng.int(-4, 4), startTy - rng.int(2, 4), 6);
+      const m = openTileNear(grid, startTx + rng.int(-3, 3), startTy - rng.int(1, 3), 4);
       world.merchant = DC.Props.merchant(tileCenter(m[0]), tileCenter(m[1]), rng, depth);
-      const b = openTileNear(grid, G >> 1, G >> 1, 6);
+      const b = openTileNear(grid, mcx, mcy, 4);
       const tier = DC.bossTier(depth);
       const entry = DC.LORE.bosses[(tier - 1) % DC.LORE.bosses.length];
       world.boss = DC.Boss.create(entry.kind, tileCenter(b[0]), tileCenter(b[1]), depth, rng, player, entry);
@@ -171,13 +206,15 @@
         x: tileCenter(b[0]), y: tileCenter(b[1]), tx: b[0], ty: b[1],
         active: false, discovered: false, anim: 0,
       };
-      // A couple of comfort chests in the arena, plus the merchant.
-      const chestTiles = spacedTiles(rng, world, 4, { minDistTiles: 4, minSep: 8 });
+      // A couple of comfort chests in the chamber, plus the merchant. The
+      // chamber is a quarter the floor it used to be, so it holds a quarter
+      // the pottery.
+      const chestTiles = spacedTiles(rng, world, 3, { minDistTiles: 3, minSep: 6 });
       for (let i = 0; i < chestTiles.length; i++) {
         const t = chestTiles[i];
         world.chests.push(DC.Props.chest(tileCenter(t % G), tileCenter((t - (t % G)) / G), rng, depth));
       }
-      const arenaUrns = spacedTiles(rng, world, 8, { minDistTiles: 3, minSep: 4 });
+      const arenaUrns = spacedTiles(rng, world, 5, { minDistTiles: 2, minSep: 3 });
       for (let i = 0; i < arenaUrns.length; i++) {
         const t = arenaUrns[i];
         world.urns.push(DC.Props.urn(tileCenter(t % G), tileCenter((t - (t % G)) / G), rng, depth));
@@ -219,22 +256,7 @@
         }
         return false;
       };
-      // The largest r such that the (2r+1)^2 block around the tile is all
-      // open floor and clear of the rock border. Corridors (1-2 tiles wide),
-      // doorways and alcoves all stop at r = 0 or 1.
-      const openRadius = function (tx, ty, maxR) {
-        for (let r = 1; r <= maxR; r++) {
-          for (let dy = -r; dy <= r; dy++) {
-            for (let dx = -r; dx <= r; dx++) {
-              if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;   // only the new ring
-              const X = tx + dx, Y = ty + dy;
-              if (X < 1 || Y < 1 || X > G - 2 || Y > G - 2) return r - 1;
-              if (grid[Y * G + X] !== 1) return r - 1;   // 1 = open floor, 0 = rock
-            }
-          }
-        }
-        return maxR;
-      };
+      const openRadius = function (tx, ty, maxR) { return DC.Maze.openRadius(grid, tx, ty, maxR); };
 
       let best = -1, bestT = -1, bestScore = Infinity;
       const pick = function (needRadius, mustRoom) {
@@ -276,7 +298,7 @@
 
       const nearPortal = [[world.portal.tx, world.portal.ty, 3]];
       const enemyCount = Math.min(C.ENEMY_MAX, Math.round(C.ENEMY_BASE + C.ENEMY_PER_DEPTH * depth));
-      const eTiles = spacedTiles(rng, world, enemyCount, { minSep: 2, avoid: nearPortal });
+      const eTiles = spacedTiles(rng, world, enemyCount, { minSep: 2, avoid: nearPortal, minStartM: C.MIN_SPAWN_DIST });
       const mix = DC.demonMix(depth);
       const totalW = mix.reduce((a, b) => a + b[1], 0);
       for (let i = 0; i < eTiles.length; i++) {

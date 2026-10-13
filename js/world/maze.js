@@ -6,7 +6,9 @@
    centres, and some corridors are two tiles wide, so the map reads as built
    space rather than a grid of identical cells.
 
-   Boss levels: one open arena with a few pillars.
+   Boss levels: a 50 m square chamber in the middle of solid rock, with a
+   few pillars. The chamber is DC.Maze.arenaRect(); everything outside it is
+   rock, so the portal is the only way in or out.
 
    Invariants enforced here and asserted by tmp/test_maze.js:
      - border ring is always solid
@@ -122,7 +124,7 @@
     // 1. Rooms, assorted sizes, never touching (a tile of rock between them).
     const want = C.ROOM_COUNT_MIN + rng.int(0, C.ROOM_COUNT_MAX - C.ROOM_COUNT_MIN);
     let guard = 0;
-    while (rooms.length < want && guard++ < 1200) {
+    while (rooms.length < want && guard++ < 4000) {
       const w = rng.int(C.ROOM_MIN, C.ROOM_MAX), h = rng.int(C.ROOM_MIN, C.ROOM_MAX);
       const x = rng.int(2, G - 3 - w), y = rng.int(2, G - 3 - h);
       let ok = true;
@@ -185,25 +187,47 @@
     return { grid: grid, rooms: rooms, start: start };
   };
 
-  /* --- boss arena ------------------------------------------------------- */
+  /* --- the throne chamber ------------------------------------------------
+     A Sovereign used to stand in the middle of the whole 200 m floor, which
+     made the fight a lap of an empty stadium: enough open ground to kite
+     forever, and no corner in the room that anything had to be decided in.
+     It is a 50 m square of open floor hewn out of solid rock at the centre of
+     the level, with a handful of pillars to break line of sight. Everything
+     outside the chamber is rock, so the only way in and out is the portal. */
+  DC.Maze.arenaRect = function () {
+    const G = C.GRID;
+    const half = Math.max(3, Math.floor(C.ARENA_TILES / 2));
+    let x0 = (G >> 1) - half, x1 = (G >> 1) + half - 1;
+    let y0 = (G >> 1) - half, y1 = (G >> 1) + half - 1;
+    if (x0 < 1) { x1 += 1 - x0; x0 = 1; }
+    if (y0 < 1) { y1 += 1 - y0; y0 = 1; }
+    if (x1 > G - 2) { x0 -= x1 - (G - 2); x1 = G - 2; }
+    if (y1 > G - 2) { y0 -= y1 - (G - 2); y1 = G - 2; }
+    return { x0: x0, y0: y0, x1: x1, y1: y1, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  };
+
   DC.Maze.arena = function (rng, keepOut) {
     const G = C.GRID;
-    const grid = new Uint8Array(G * G);
-    for (let y = 0; y < G; y++)
-      for (let x = 0; x < G; x++)
-        grid[y * C.GRID + x] = (x === 0 || y === 0 || x === G - 1 || y === G - 1) ? 0 : 1;
+    const grid = new Uint8Array(G * G);            // 0 = rock, everywhere
+    const R = DC.Maze.arenaRect();
+    for (let y = R.y0; y <= R.y1; y++)
+      for (let x = R.x0; x <= R.x1; x++) grid[y * G + x] = 1;
 
-    // Pillars, kept clear of the spawn / boss / merchant zones.
+    // Pillars, kept clear of the spawn / Sovereign / merchant zones. In a
+    // 10x10 room a 3-tile pillar is a wall, so these are 1-2 tiles each and
+    // there are only a few of them: enough to hide behind, not enough to
+    // corner yourself.
     const avoid = keepOut || [];
     let placed = 0, guard = 0;
-    const want = 10 + rng.int(0, 6);
-    while (placed < want && guard++ < 400) {
-      const w = rng.int(1, 2) + 1, h = rng.int(1, 2) + 1; // 2..3 tiles
-      const x = rng.int(3, G - 4 - w), y = rng.int(3, G - 4 - h);
+    const want = 2 + rng.int(0, 3);
+    while (placed < want && guard++ < 300) {
+      const w = rng.int(1, 2), h = rng.int(1, 2);
+      if (R.x1 - R.x0 < 5 || R.y1 - R.y0 < 5) break;
+      const x = rng.int(R.x0 + 2, R.x1 - 2 - w), y = rng.int(R.y0 + 2, R.y1 - 2 - h);
       const cxm = (x + w / 2) * C.TILE, cym = (y + h / 2) * C.TILE;
       let ok = true;
-      for (let i = 0; i < avoid.length; i++) {
-        if (Math.hypot(cxm - avoid[i].x, cym - avoid[i].y) < avoid[i].r) { ok = false; break; }
+      for (let k = 0; k < avoid.length; k++) {
+        if (Math.hypot(cxm - avoid[k].x, cym - avoid[k].y) < avoid[k].r) { ok = false; break; }
       }
       if (!ok) continue;
       for (let yy = y; yy < y + h; yy++)
@@ -211,6 +235,48 @@
       placed++;
     }
     return grid;
+  };
+
+  /* The largest r such that the (2r+1)^2 block around a tile is all open floor
+     and clear of the rock border. Corridors (1-2 tiles wide), doorways and
+     alcoves all stop at r = 0 or 1, which is exactly the difference a gate
+     cares about. */
+  DC.Maze.openRadius = function (grid, tx, ty, maxR) {
+    const G = C.GRID;
+    for (let r = 1; r <= maxR; r++) {
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;   // only the new ring
+          const X = tx + dx, Y = ty + dy;
+          if (X < 1 || Y < 1 || X > G - 2 || Y > G - 2) return r - 1;
+          if (grid[Y * G + X] !== 1) return r - 1;                  // 1 = open floor
+        }
+      }
+    }
+    return maxR;
+  };
+
+  /* The nearest tile to a world point with at least needR of open floor all
+     the way round, spiralling out and relaxing the requirement rather than
+     failing. Used when a gate has to open at a spot nobody chose -- where a
+     Sovereign actually fell, which may be against a pillar. */
+  DC.Maze.portalNear = function (grid, wx, wy, needR) {
+    const G = C.GRID;
+    const tx = Math.min(G - 2, Math.max(1, Math.floor(wx / C.TILE)));
+    const ty = Math.min(G - 2, Math.max(1, Math.floor(wy / C.TILE)));
+    for (let need = needR; need >= 0; need--) {
+      let best = null, bestD = Infinity;
+      for (let y = 1; y < G - 1; y++) {
+        for (let x = 1; x < G - 1; x++) {
+          if (grid[y * G + x] !== 1) continue;
+          if (DC.Maze.openRadius(grid, x, y, need) < need) continue;
+          const d = Math.abs(x - tx) + Math.abs(y - ty);
+          if (d < bestD) { bestD = d; best = [x, y]; }
+        }
+      }
+      if (best) return best;
+    }
+    return [tx, ty];
   };
 
   /* --- graph tools ------------------------------------------------------ */
