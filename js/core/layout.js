@@ -166,14 +166,16 @@
     },
 
     /* Pause on the corner of the map: the map is already the thing you tap to
-       look at where you are, and its far corner is the one place on a phone
-       that is never a stick or a thumb. */
+       look at where you are, and its corner is the one place on a phone that is
+       never a stick or a thumb. It sits on the upper right corner of the glass,
+       the corner of the map that is furthest from the vitals panel, so finding
+       the pause tab means going to the corner you already look at. */
     pauseButton: function (game) {
       if (!L.touch || !game || !game.player) return null;
       const r = L.tiny ? 15 : 17;
-      const x0 = L.w - L.minimapPx - L.pad;
+      const x1 = L.w - L.pad;          // the map's right edge, which is the glass edge
       const y0 = L.pad;
-      return { id: 'pause', label: '', tab: true, x: x0 + r + 3, y: y0 + r + 3, r: r };
+      return { id: 'pause', label: '', tab: true, x: x1 - r - 3, y: y0 + r + 3, r: r };
     },
 
     /* Everything a thumb can press, with its place. */

@@ -104,7 +104,7 @@ thumb attacks.
 | BLINK or SHIELD, left of the attack stick | Class ability |
 | TRADE or DOWN, above the attack stick | Only appears when a merchant or a portal is under you |
 | PACK, HEAL, MANA, under the health bar | Open the pack, drink a healing draught, drink a mana draught |
-| Pause, top left corner of the minimap | Pause menu: resume, pack, save, load, mute, abandon |
+| Pause, top right corner of the screen, on the minimap | Pause menu: resume, pack, save, load, mute, abandon |
 
 Because the two sticks are separate, you can walk north and attack east at the
 same time, and lifting one thumb only affects that thumb. The dashed circles in

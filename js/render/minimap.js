@@ -186,13 +186,17 @@
     ctx.font = '600 ' + ((L && L.font(10, 9)) || 10) + 'px ui-monospace, Menlo, monospace';
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.fillText(span + ' m', x0 + 6, y0 + size - 6);
+    // The MAP hint lives in the bottom right corner. The pause tab owns the top
+    // right one, and the top left is where the vitals panel ends on a phone held
+    // upright, which is too close for a word to be readable there.
     ctx.textAlign = 'right';
-    ctx.fillText('MAP', x0 + size - 6, y0 + 12);
+    ctx.fillText('MAP', x0 + size - 14, y0 + size - 9);
     ctx.textAlign = 'left';
 
-    /* Pause sits on the map's own corner. On a phone it is the one control that
-       is never under a thumb, and the map is already the thing you look at --
-       so the corner of it is where stopping the run belongs. It is painted here
+    /* Pause sits on the map's own corner, the upper right one. On a phone it is
+       the one control that is never under a thumb, and the map is already the
+       thing you look at, so the corner of it is where stopping the run belongs.
+       It is painted here
        rather than with the rest of the HUD because the map draws over the HUD,
        and a tab drawn first would be a tab under a map. */
     if (L && L.touch) {
