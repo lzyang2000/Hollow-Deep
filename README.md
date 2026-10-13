@@ -234,6 +234,21 @@ back-sword.
   relatively more common as you go down — and each one sees *slightly* less far
   than your torch reaches, so on a crowded floor you always spot them first. Lose
   sight of a hunter for a few seconds and it gives up the chase and drifts home.
+- **A melee telegraph is the hit, not a hint.** Every swing and slam lands
+  inside the red wedge on the floor and nowhere else: a Hellblade cuts **110
+  degrees**, a Gorewarden's slam **150**, your own sword **105**, a Sovereign's
+  sweep 150. Wind-ups lock onto where you *were*, so stepping behind the thing
+  while it cocked back is the answer the wedge is offering, and it works. It
+  used to not work: arcs are authored in degrees and `angleDiff` answers in
+  radians, so dividing the degrees by two and comparing that to a radian angle
+  meant the reject could never fire and every melee blow in the game was a
+  **full circle** -- the wedge on the floor was decoration, and the one thing
+  it told you to do (step out of it) was the one thing that changed nothing.
+  The smoke test now pins both ends: a 110-degree swing cuts 7 of 24 dummies
+  standing in a ring, every melee shape hits 4 degrees inside its own arc and
+  misses 4 degrees past it, a Gorewarden's slam takes 0 off a delver standing
+  behind it and 22 off one standing in front, and the wedge drawn on the floor
+  is measured to be the same wedge.
 - **Dodge** (`Shift`, and a **DODGE** circle beside ATTACK on a phone — plus a
   second beside the ATTACK pad for the other thumb) is 0.2 s at
   21 m/s — about **4.2 m**, once per 1.9 s. No invulnerability, no steering once
