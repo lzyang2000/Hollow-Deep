@@ -161,12 +161,13 @@ his visor and the edge of his blade are bright.
 
 ## The rules that matter
 
-- Every level is a **200 m x 200 m** procedurally generated dungeon: 9-13
+- Every level is a **150 m x 150 m** procedurally generated dungeon: 6-10
   rooms of assorted sizes joined by corridors that bend, occasionally run two
   tiles wide, and are looped and alcoved so nothing is a dead end. Every open
   tile is reachable. It is built space, not a hedge puzzle. About a third of
-  the square is walkable (~13,800 m^2), and the stair down is ~145 m of
-  corridor away — a knight crosses it in about a minute of walking.
+  the square is walkable (~7,650 m^2, 306 tiles), and the stair down is ~100 m
+  of corridor away — a knight covers that in about twenty-five seconds of
+  unobstructed walking, and the floor is not unobstructed.
 - **Every floor has a name.** *The Drowned Undercroft*, *Weeping Colonnade*,
   *Ember Shaft* — composed from a seeded word list and remembered for the rest of
   the run, so depth 7 is the same place every time you take that run back up and a
@@ -177,17 +178,20 @@ his visor and the edge of his blade are bright.
   map, and shrinks to fit when it is too long for them.
 - The **camera follows you**. It eases toward the actor, snaps across big
   jumps, and gives way at the world edge so you can never walk out of frame.
-- Levels are crowded: from the first floor there are **30+ demons, 11+ chests and
-  16+ urns** on a level (growing to 120 / 26 / 39 deep down), plus rubble, bones,
-  cobwebs, braziers and **wall torches** whose warm glow marks the rooms. Urns
-  shatter when you walk into them and are the potion supply. The floor shrank
-  44% and the population did not shrink with it, so a corridor holds about 25%
-  more demons per metre than it used to. Nothing spawns within 26 m of the stair,
-  and only a handful of demons hunt at once (the aggro budget), so you can always
+- Levels are crowded: from the first floor there are **23+ demons, 11+ chests
+  and 15+ urns** on a level, and the spawner fills the floor to its cap of
+  **68 / 18 / 32** by the mid-twenties — measured, not aspirational: the
+  placement pass relaxes its own spacing rather than quietly shipping a floor
+  with fewer demons than the depth asked for. Plus rubble, bones, cobwebs,
+  braziers and **wall torches** whose warm glow marks the rooms. Urns shatter
+  when you walk into them and are the potion supply. The floor shrank again and
+  the population did not shrink with it, so a corridor holds about a demon every
+  twelve metres of walkable ground. Nothing spawns within 22 m of the stair, and
+  only a handful of demons hunt at once (the aggro budget), so you can always
   pull a pack.
 - The portal sits about **half the maze's own walking span** from the stair —
-  a real journey each level, never a 700 m slog (measured: 110 / 145 / 200 m at
-  the 10th / 50th / 90th percentile).
+  a real journey each level, never a slog (measured: 75 / 100 / 140 m of
+  corridor at the 10th / 50th / 90th percentile).
 - The gate **stands in the open**: always inside a room, never in a corridor, a
   doorway or an alcove, with at least 2 tiles (10 m) of clear floor all the way
   round it — 99.7% of levels get the full 2, the rest relax to 1 rather than
@@ -198,7 +202,7 @@ his visor and the edge of his blade are bright.
   around, and go back for that chest.
 - Torchlight reveals **15 m** of the dungeon. Everything else is fogged, and
   what you have already seen stays dimly remembered.
-- The **minimap** (upper right) is a 45 m square centred on you and shows the
+- The **minimap** (upper right) is a 50 m square centred on you and shows the
   ground you have already revealed. Once you find the portal it is marked, and
   an arrow points at it when it is off the minimap.
 - **Click / tap the minimap** (or press **N**) for the **whole floor**: the level
@@ -240,11 +244,20 @@ his visor and the edge of his blade are bright.
   `vs worn` is scored in **stats minus stride**, at the rate your career values
   stride — a mage pays 6 ATK per m/s, a knight 2.5. That is why the same coat is
   auto-equipped on a knight and left on the floor for a mage.
-- Every **5th level** is a boss arena (no maze) with a merchant. The boss
-  sleeps until you strike it; the portal opens when it dies. Halving the cadence
-  did not halve the danger: a sovereign's strength is anchored to its own depth,
-  so the thing waiting for you on depth 20 is exactly as nasty as a depth-20 boss
-  always was — there are just twice as many of them between you and the bottom.
+- Every **5th level** is a throne room: a bare **50 m x 50 m** chamber in the
+  middle of the floor, no maze, a merchant by the stair and a Sovereign at the
+  centre. The Sovereign sleeps until you strike it, and **the portal opens where
+  it fell** — so the gate is never standing in a passage, and never somewhere
+  else in the room. Halving the cadence did not halve the danger: a sovereign's
+  strength is anchored to its own tier, and that slope was raised again after
+  delvers started walking out of throne rooms in twenty seconds with most of
+  their health.
+- **Nine seals, nine thrones.** The story says nine pillars were torn out of the
+  world and nine Sovereigns sit on the pieces, so the thrones are depths
+  5, 10, 15 … 45 and the ninth — *The Ninth Seal, Unmade* — is the last named
+  one. The deep does not stop being angry there: past depth 45 the roster
+  echoes, prefixed, and keeps scaling. The run is endless either way; the nine
+  are the nine you were sent down to put back.
 - **A Sovereign cannot be walked off the edge of its own room.** Standing
   fourteen metres back and clicking used to be a free win: measured against a
   kitted delver, a ranged player took *zero damage at every depth* from a

@@ -349,16 +349,33 @@
     onBossWake: function (b) {
       DC.Audio.play('roar');
       G.shake(1.4);
-      G.banner = { title: b.name + ' WAKES', sub: 'It remembers being hit.', life: 3.0, maxLife: 3.0, color: '#ff5c5c' };
+      G.banner = {
+        title: b.name + ' WAKES',
+        sub: b.seal ? b.seal + ' of nine. It remembers being hit.' : 'Below the last seal. It remembers being hit.',
+        life: 3.0, maxLife: 3.0, color: '#ff5c5c',
+      };
       G.log(b.line, '#ff8a5c');
     },
 
     onBossDeath: function (b) {
       const w = G.world;
+      /* The gate opens where the thing fell. It used to open on the tile the
+         Sovereign was standing on when the floor was drawn, which meant the
+         room's most important object sat exactly where you had just spent a
+         minute refusing to stand. Now the body is the landmark: walk to where
+         it went down and the way deeper is under it. If that tile is against a
+         pillar, the gate takes the nearest open ground with room around it --
+         a gate you cannot walk up to is scenery. */
+      const t = DC.Maze.portalNear(w.grid, b.x, b.y, C.PORTAL_CLEAR_TILES);
+      w.portal.tx = t[0]; w.portal.ty = t[1];
+      w.portal.x = (t[0] + 0.5) * C.TILE; w.portal.y = (t[1] + 0.5) * C.TILE;
       w.portal.active = true;
       w.portal.discovered = false;
-      G.banner = { title: b.name + ' IS DOWN', sub: 'The portal opens in the middle of the room.', life: 4.0, maxLife: 4.0, color: '#8ef0c0' };
+      G.banner = { title: b.name + ' IS DOWN', sub: 'The portal opens where it fell.', life: 4.0, maxLife: 4.0, color: '#8ef0c0' };
       G.log('The portal is open. And the merchant shrugs.', '#8ef0c0');
+      if (b.seal && b.tier === DC.LORE.sealCount) {
+        G.log('Nine seals, all of them put back by hand. The stair keeps going anyway.', '#ffd166');
+      }
       for (let i = 0; i < 3; i++) {
         const res = DC.Loot.grant(G, w, 'chest', b.x, b.y);
         G.log(res.text, res.color);

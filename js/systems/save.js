@@ -18,7 +18,11 @@
   // 4: a boss arena now sits on every 5th floor instead of every 10th, and
   // floors have names. A version-3 file would drop a delver who stopped on
   // depth 15 into an arena they never fought their way into.
-  const VERSION = 4;
+  // 5: the floor is 30x30 tiles now, not 40x40, and the throne room is a 50 m
+  // chamber instead of the whole level. A version-4 file would put a delver
+  // outside its own map and hand the Sovereign back a stadium it never fought
+  // in.
+  const VERSION = 5;
 
   function num(v, min, max, dflt) {
     const n = typeof v === 'number' ? v : Number(v);
@@ -133,7 +137,10 @@
           demons: demons,
           chestsOpened: opened, urnsBroken: broken, merchantSold: sold,
           boss: w.boss ? { hp: r2(w.boss.hp), awake: !!w.boss.awake, dead: !!w.boss.dead } : null,
-          portal: w.portal ? { active: !!w.portal.active, discovered: !!w.portal.discovered } : null,
+          portal: w.portal ? {
+            active: !!w.portal.active, discovered: !!w.portal.discovered,
+            tx: w.portal.tx, ty: w.portal.ty,
+          } : null,
           seen: toRuns(w.discovered),
         },
       };
@@ -255,6 +262,19 @@
       }
       if (w.portal && lv.portal && typeof lv.portal === 'object') {
         w.portal.discovered = !!lv.portal.discovered;
+        /* A boss gate moves when the Sovereign dies, so the file has to say
+           where it ended up. A maze gate is rebuilt from the seed and lands
+           back on the same tile anyway, so this is only honoured when the tile
+           is real, open floor on the floor being rebuilt. */
+        if (typeof lv.portal.tx === 'number' && typeof lv.portal.ty === 'number') {
+          const ptx = int(lv.portal.tx, 0, C.GRID - 1, w.portal.tx);
+          const pty = int(lv.portal.ty, 0, C.GRID - 1, w.portal.ty);
+          if (w.grid[pty * C.GRID + ptx] === 1) {
+            w.portal.tx = ptx; w.portal.ty = pty;
+            w.portal.x = (ptx + 0.5) * C.TILE;
+            w.portal.y = (pty + 0.5) * C.TILE;
+          }
+        }
         // A boss portal only opens with the boss dead; never let a file claim
         // both, or a save could skip the fight.
         w.portal.active = !!lv.portal.active && (!w.isBoss || !w.boss || w.boss.dead);

@@ -162,12 +162,18 @@
             }));
             DC.Audio.play('cast', { pitch: 1.25 });
           } else if (def.id === 'gorewarden') {
+            /* A Gorewarden is a wall of plate with a hammer, and the honest
+               read of it is that its slam is huge -- but huge in a direction.
+               It used to damage anything within reach + 1.2 m, all the way
+               round, while the telegraph on the floor was a wedge in front of
+               it: so the one thing the game told you to do, step aside, was
+               the one thing that did not work. The ring stays as dust and
+               noise; the damage is the wedge. */
             DC.Props.ring(world, d.x, d.y, def.reach + 1.2, { color: '#ff5c5c', life: 0.35, width: 4 });
             DC.Audio.play('slam');
             game.shake(0.5);
-            if (Math.hypot(p.x - d.x, p.y - d.y) <= def.reach + 1.2 + p.r) {
-              DC.Combat.damagePlayer(world, p, d.atk, game, { fromX: d.x, fromY: d.y, knock: def.knockback || 2.4, killer: def.name });
-            }
+            DC.Combat.sweep(world, { side: 'demon', x: d.x, y: d.y, aim: d.aim, name: def.name },
+              { arc: def.arc, reach: def.reach + 1.2, dmg: d.atk, knock: def.knockback || 2.6 }, game);
           } else {
             DC.Combat.sweep(world, { side: 'demon', x: d.x, y: d.y, aim: d.aim, name: def.name },
               { arc: def.arc, reach: def.reach, dmg: d.atk, knock: def.knockback || 1.6 }, game);

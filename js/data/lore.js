@@ -33,13 +33,21 @@
       { depth: 40, text: 'Sevric\u2019s ledger, pages fused into a brick. The last legible line: \u201cIt asked for something small. I gave it the city.\u201d' },
       { depth: 43, text: 'Nine hundred years, it turns out, is a number you can hear. It sounds like water in a room nobody has opened.' },
       { depth: 45, text: 'The deep is not a cave. It is a throat. Every level you cross is a swallow that has not finished happening.' },
+      { depth: 46, text: 'Nine thrones behind you and nine seals put back by hand. The stair keeps going anyway, which tells you the seals were never the bottom of the thing.' },
       { depth: 50, text: 'You find the Archon\u2019s cloak folded neatly on a rock, empty, sized for something that no longer needs cloth.' },
       { depth: 60, text: 'The seals are not objects. They are wounds that were taught to hold. Down here, one of them is starting to open again.' },
       { depth: 70, text: 'A door with your own name on it, in your own handwriting. You do not touch it. You go around it. That is what keeps you you.' },
     ],
 
+    /* Aetherfall was held up by nine seals, and a Sovereign sits on each one,
+       so the nine thrones are at depths 5, 10 ... 45. That is the story's
+       shape, not the run's: the deep goes on under the last seal, and the
+       roster keeps cycling with an echo marker past depth 60. */
+    sealCount: 9,
+
     // Boss roster, indexed by tier (depth / C.BOSS_EVERY, so one entry every
-    // five floors). It is twelve deep because the cadence doubled -- the named
+    // five floors). The ninth entry is the ninth seal, which is why it is
+    // ninth. It is twelve deep because the cadence doubled -- the named
     // sovereigns now run out at depth 60 instead of depth 600. Beyond the
     // list, names are prefixed with an echo marker.
     bosses: [
@@ -51,9 +59,9 @@
       { name: 'GRIMM OF THE NINE DOORS', kind: 'swordsman', line: 'Nine doors, nine oaths, one mouth left to break them with. It counts you as the tenth.' },
       { name: 'THE CHOIR BELOW', kind: 'mage', line: 'It has no throat of its own. It borrows yours, briefly, and sings the note you were about to sing.' },
       { name: 'ASHVANE, THE SECOND HERALD', kind: 'swordsman', line: 'Vaurn had a sister. She kept the gatehouse ledger, and she has come to balance it.' },
-      { name: 'THE UNMADE VESSEL', kind: 'knight', line: 'A reliquary with nothing inside but habit. It fights the way it lived: on command.' },
-      { name: 'SEVRIC, THE FIRST SOVEREIGN', kind: 'mage', line: 'The Archon. Still bargaining. Still willing to pay with somebody else.' },
       { name: 'THE NINTH SEAL, UNMADE', kind: 'swordsman', line: 'The last taper, inverted. It does not want the light out \u2014 it wants the light to agree.' },
+      { name: 'SEVRIC, THE FIRST SOVEREIGN', kind: 'mage', line: 'The Archon. Still bargaining. Still willing to pay with somebody else.' },
+      { name: 'THE UNMADE VESSEL', kind: 'knight', line: 'A reliquary with nothing inside but habit. It fights the way it lived: on command.' },
       { name: 'THE DEEP THAT REMEMBERS', kind: 'knight', line: 'It is wearing the last delver. Not his armour \u2014 him, folded into the shape of armour.' },
     ],
 
