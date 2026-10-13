@@ -6,3 +6,5 @@ node_modules/
 # editor
 .vscode/
 .idea/
+# local scratch / showcase renders — never commit
+media/
