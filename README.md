@@ -159,6 +159,20 @@ that survives, which is the point -- pale steel against pale stone is a blob, so
 the knight's cloak and helm are dark and only the crest, the two points behind
 his visor and the edge of his blade are bright.
 
+The career picker is not a mood board either. It calls the same
+`DC.Render.careerBody` the game world uses, at 21 px, so the robe and the
+pauldrons you click on are the ones that walk down the stairs.
+
+The demons are drawn the same way, and they are three different *shapes* too: an
+**Imp** is small with a head too big for it and a coal burning in its chest; a
+**Hellblade** is narrow and long-coated with a pale blade over its shoulder; a
+**Gorewarden** is broad and brass-plated with a pale axe. Brass, not a third
+shade of red, because three crimson silhouettes at the edge of the torchlight
+are one demon. The nine Sovereigns are three drawings at three sizes: a horned
+plate giant with a tower shield and a greatsword, a legless hovering robe under a
+bone crown with a flaming rod, and a lean long-coated bladesman with a sheathed
+back-sword.
+
 ## The rules that matter
 
 - Every level is a **150 m x 150 m** procedurally generated dungeon: 6-10
@@ -294,7 +308,10 @@ his visor and the edge of his blade are bright.
 ## Development
 
     node tmp/test_maze.js    # maze invariants: reachability, borders, arenas
-    node tmp/smoke.js        # loads the real files, 9000 frames of headless play
+    node tmp/smoke.js        # loads the real files, 9000 frames of headless play,
+                             # and counts the drawing operations of every shape:
+                             # the three demons and three Sovereigns must be three
+                             # different drawings in three different palettes
     node tmp/balance.js      # no-cheat difficulty bot across both careers
     node tmp/duel.js         # worst-case stand-and-trade fights, career vs demon
     node tmp/perf.js         # cost of a full 180-demon floor, and level generation

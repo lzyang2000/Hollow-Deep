@@ -222,17 +222,15 @@
     };
   };
 
-  function drawPortrait(ctx, cls, x, y) {
+  /* The card shows the body you will actually play, not a colour swatch with
+     a hat on it: the same renderer the game uses, at the same proportions,
+     holding the weapon you will actually swing. It idles rather than freezing,
+     because a mage whose rod never stops flickering and a knight whose crest
+     keeps moving are the two things you will read most in a fight. */
+  function drawPortrait(ctx, cls, x, y, t) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = cls.robe;
-    ctx.beginPath();
-    ctx.moveTo(-16, 22); ctx.quadraticCurveTo(-14, -16, 0, -20);
-    ctx.quadraticCurveTo(14, -16, 16, 22); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = cls.accent;
-    ctx.beginPath(); ctx.arc(0, -18, 9, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = cls.color;
-    ctx.beginPath(); ctx.arc(0, -18, 3, 0, Math.PI * 2); ctx.fill();
+    DC.Render.careerBody(ctx, cls, 21, { t: t, facing: -0.45, aim: 0.12 });
     ctx.restore();
   }
 
@@ -264,13 +262,13 @@
       y += 20;
       ctx.font = '600 ' + L.font(11, 10) + 'px ' + FONT;
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      const roleLines = DC.UI.wrap(ctx, cls.role, card.w - (narrow ? 36 : 98));
+      const roleLines = DC.UI.wrap(ctx, cls.role, card.w - 112);
       for (let k = 0; k < roleLines.length; k++) {
         ctx.fillText(roleLines[k], px, y);
         if (k < roleLines.length - 1) y += 13;
       }
 
-      if (!narrow) drawPortrait(ctx, cls, card.x + card.w - 44, card.y + 40);
+      drawPortrait(ctx, cls, card.x + card.w - 58, card.y + 48, game.time || 0);
 
       y += 26;
       const rows = [
