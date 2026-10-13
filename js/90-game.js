@@ -94,7 +94,7 @@
       if (DC.Layout.touch) {
         el.textContent = 'Two thumbs: drag with one to walk and aim, hold ATTACK with the other \u00b7 one thumb: tap to strike, or tap ATTACK \u00b7 tap the merchant or the portal \u00b7 tap the map for the whole floor';
       } else {
-        el.textContent = 'WASD move \u00b7 mouse aim \u00b7 click attack \u00b7 SPACE ability \u00b7 E interact \u00b7 1/2 potions \u00b7 I pack \u00b7 N map \u00b7 V zoom \u00b7 M mute \u00b7 ESC pause \u00b7 S/L save and load in the pause menu';
+        el.textContent = 'WASD move \u00b7 mouse aim \u00b7 click attack \u00b7 SPACE ability \u00b7 E interact \u00b7 1/2 potions \u00b7 I pack \u00b7 M map \u00b7 V zoom \u00b7 H mute \u00b7 ESC pause \u00b7 S/L save and load in the pause menu';
       }
     },
 
@@ -501,7 +501,7 @@
 
     onKey: function (code, ev) {
       DC.Audio.resume();
-      if (code === 'KeyM') { const m = DC.Audio.toggleMute(); G.log(m ? 'Audio muted' : 'Audio on', 'rgba(255,255,255,0.5)'); }
+      if (code === 'KeyH') { const m = DC.Audio.toggleMute(); G.log(m ? 'Audio muted' : 'Audio on', 'rgba(255,255,255,0.5)'); }
       if (G.state === 'title') {
         if (code === 'Enter' || code === 'Space' || code === 'NumpadEnter') { DC.Audio.play('uiSelect'); G.setState('classSelect'); G.hoverClass = 'mage'; }
         if (code === 'KeyL') { DC.Audio.play('uiSelect'); G.openLoadPicker(); }
@@ -555,7 +555,7 @@
         return;
       }
       if (G.state === 'map') {
-        if (code === 'Escape' || code === 'Enter' || code === 'Space' || code === 'KeyN' || code === 'Tab') {
+        if (code === 'Escape' || code === 'Enter' || code === 'Space' || code === 'KeyN' || code === 'KeyM' || code === 'Tab') {
           if (code === 'Tab') ev.preventDefault();
           G.toggleMap();
         }
@@ -563,7 +563,7 @@
       }
       if (G.state === 'playing') {
         if (code === 'Escape') { G.setState('pause'); return; }
-        if (code === 'KeyN') { G.toggleMap(); return; }
+        if (code === 'KeyN' || code === 'KeyM') { G.toggleMap(); return; }
         if (code === 'KeyI' || code === 'Tab') { G.openPack(); return; }
         if (code === 'KeyV') { DC.Camera.zoomCycle(); G.log('Zoom ' + DC.Camera.pxPerM + ' px/m', 'rgba(255,255,255,0.45)'); return; }
         if (code === 'Space') { DC.Player.ability(G.world, G.player, G); return; }
