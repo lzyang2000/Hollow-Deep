@@ -1,0 +1,6 @@
+{
+  "tool": "built-in imagegen",
+  "prompt": "Use case: logo-brand.\nEdit the attached original The Hollow Deep game logo into a square favicon crest with transparent background. Preserve ALL NINE circular seal medallions on the arch, exactly as original: one star at apex; four left medallions (crescent moon, bisected circle, three vertical spears, four-point diamond star); four right medallions (four-point cross star, triangle, three wavy lines, rising sun). Keep these distinct gold symbols inside dark round gold-rimmed medallions. Keep the silver and gold gothic arch, bright burning taper in center, and descending dark stairs. Remove all title lettering and horizontal title ornaments. Make the crest fill the square with a small safe margin. Slightly simplify texture only for icon clarity, but DO NOT remove or replace any medallion. Strong high-contrast silhouette. Transparent outside arch, dark interior. One icon, no text, no surrounding haze.",
+  "source": "The-Hollow-Deep-Logo.png",
+  "output": "The-Hollow-Deep-Crest.png"
+}
