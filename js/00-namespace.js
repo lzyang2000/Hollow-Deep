@@ -49,9 +49,14 @@
     // density figures, not raw counts -- the walkable floor went from ~1000 to
     // ~450 tiles when the level shrank, so the counts came down with it and a
     // corridor still holds the same number of demons per torch.
-    ENEMY_BASE: 21,
-    ENEMY_PER_DEPTH: 2.2,
-    ENEMY_MAX: 68,        // what the spawner can actually place on a 150 m floor
+    //
+    // Half again the crowd on top of that. A 150 m floor is about 450 walkable
+    // tiles, so 102 demons is still one per four and a half tiles, and the
+    // spawner's 2 tile spacing is what decides whether a floor can hold them
+    // all -- see the crowded-floor section of the smoke test.
+    ENEMY_BASE: 32,
+    ENEMY_PER_DEPTH: 3.3,
+    ENEMY_MAX: 102,        // what the spawner can actually place on a 150 m floor
     CHEST_BASE: 10,
     CHEST_PER_DEPTH: 0.6,
     CHEST_MAX: 18,
@@ -59,6 +64,16 @@
     URN_PER_DEPTH: 0.8,
     URN_MAX: 32,
     MIN_SPAWN_DIST: 22,   // metres from start before a demon may appear
+
+    // Demon strength. Every shape hits half as hard again, swings half as often
+    // again and covers ground half as fast again. The windup is deliberately
+    // left alone: the cooldown is how often a blow arrives, the windup is the
+    // tell you dodge by, and shortening both at once takes away the only thing
+    // that made a faster demon fair. The stride rule still holds -- see the
+    // speedCap on the ranged shapes in data/demons.js.
+    DEMON_ATK_MULT: 1.5,
+    DEMON_RATE_MULT: 1.5,     // attacks per second, so cooldowns divide by it
+    DEMON_SPEED_MULT: 1.5,
 
     // Descent cadence: every Nth floor is a boss arena with a merchant in it.
     // It used to be 10. At 200 m a floor is a short, dense sweep, and a
@@ -98,9 +113,11 @@
 
     // Aggro budget: how many demons may hunt at once. Levels are dense but
     // the whole floor never comes with you, so a pack can always be pulled.
-    AGGRO_BASE: 3,
-    AGGRO_PER_DEPTH: 0.8,
-    AGGRO_MAX: 11,
+    // The waking budget follows the crowd. Half again the demons on a floor
+    // without this would only mean half again the demons asleep in the dark.
+    AGGRO_BASE: 5,
+    AGGRO_PER_DEPTH: 1.2,
+    AGGRO_MAX: 17,
     LEASH_DIST: 26,      // metres -- beyond this a lost hunter gives up
     SIGHT_CULL: 38,      // metres -- no line-of-sight test is paid for beyond this
 

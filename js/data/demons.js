@@ -1,8 +1,13 @@
-/* Three demon shapes, one tier weaker than the career they echo. powerFactor <
-   1 keeps the run winnable: they are the same shape of enemy as you, just
-   dimmer. The shapes are not the careers -- a Hellblade wears the shape of the
-   Swordsman nobody can play any more, and it is still the fastest thing in the
-   dark, so the deep keeps three bodies while the surface offers two. */
+/* Three demon shapes, each a shorter fight than the career it echoes. The shapes
+   are not the careers: a Hellblade wears the shape of the Swordsman nobody can
+   play any more, and it is still the fastest thing in the dark, so the deep keeps
+   three bodies while the surface offers two.
+
+   What actually decides how hard a demon is: the base numbers below, the flat
+   DEMON_ATK_MULT / DEMON_RATE_MULT / DEMON_SPEED_MULT in 00-namespace.js, and the
+   depth-and-gear multiplier from systems/progression.js. Nothing reads
+   powerFactor any more; it is a note about how dim each shape is meant to feel
+   next to its career. */
 (function (global) {
   'use strict';
   const DC = global.DC;
@@ -11,11 +16,12 @@
     imp: {
       // Skittish but not a sprinter: an imp keeps its distance by backing off
       // to keepRange, not by outrunning a knight forever. The stride is set
-      // under the knight's 3.5 on purpose -- a shooter you can eventually run
-      // down is a fight, a shooter you cannot is a countdown. speedCap keeps
-      // deep floors from buying that stride back (2.6 x 1.18 = 3.07 m/s).
+      // under the knight's 4.2 on purpose -- a shooter you can eventually run
+      // down is a fight, a shooter you cannot is a countdown. speedCap is a
+      // ceiling on the FINAL stride, so it still holds after the flat
+      // DEMON_SPEED_MULT: 2.6 x 1.5 x 1.05 = 4.10 m/s at the deepest floor.
       id: 'imp', mirrors: 'mage', name: 'Imp',
-      hp: 26, atk: 8, def: 0, speed: 2.6, speedCap: 1.18, r: 0.62,
+      hp: 26, atk: 8, def: 0, speed: 2.6, speedCap: 1.05, r: 0.62,
       attackKind: 'ranged', attackCd: 1.5, sight: 12, keepRange: 9,
       projSpeed: 15, projLife: 2.0,
       powerFactor: 0.62, color: '#ff7a59', accent: '#8f2f22', xp: 1,

@@ -17,11 +17,17 @@
         uid: UID++, kind, def, name: def.name,
         x, y, r: def.r,
         hp, maxHp: hp,
-        atk: def.atk * mult,
+        atk: def.atk * mult * C.DEMON_ATK_MULT,
         defVal: Math.round(def.def * mult * 0.7),
         // A ranged demon's stride is capped per-kind: depth may buy it hp, atk
         // and defence, but never the legs to escape a career it already lost.
-        speed: def.speed * M.clamp(1 + (mult - 1) * 0.25, 1, def.speedCap || 1.5),
+        // The cap is a ceiling on the final stride, so it still bites after the
+        // flat DEMON_SPEED_MULT on top of the base.
+        speed: def.speed * C.DEMON_SPEED_MULT *
+          M.clamp(1 + (mult - 1) * 0.25, 1, def.speedCap || 1.5),
+        // The demon's own swing clock. The windup stays what the shapes were
+        // drawn with; only the wait between blows shortens.
+        cdBase: def.attackCd / C.DEMON_RATE_MULT,
         state: 'idle', hasSeen: false, alertedT: 0,
         attackCd: rng.range(0, 1), windup: 0, windupMax: 0,
         // The blade's own clock: { phase, t, dur, arc, reach, dir }. Nothing
@@ -162,7 +168,7 @@
         d.windup -= dt;
         d.aim = d.aim == null ? d.facing : d.aim;
         if (d.windup <= 0) {
-          d.attackCd = def.attackCd * game.rng.range(0.9, 1.15);
+          d.attackCd = d.cdBase * game.rng.range(0.9, 1.15);
           if (def.attackKind === 'ranged') {
             const lead = 0.28;
             const tx = p.x + (p.lastVx || 0) * lead, ty = p.y + (p.lastVy || 0) * lead;
