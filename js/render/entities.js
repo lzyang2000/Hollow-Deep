@@ -349,6 +349,722 @@
        swing instead, and it is drawn as a sword rather than a grey bar: grip,
        crossguard, and a blade that tapers to a point and is tinted by the
        steel you actually found. */
+    careerWeapon(ctx, p, r, swinging, bladeAng, sk);
+
+    if (p.shieldT > 0) {
+      ctx.strokeStyle = 'rgba(201,212,232,' + (0.35 + 0.25 * Math.sin(p.anim * 9)) + ')';
+      ctx.lineWidth = Math.max(2, s * 0.16);
+      ctx.beginPath(); ctx.arc(0, 0, r * 1.7, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  /* --- the three demons -------------------------------------------------
+     They used to be one teardrop in three colours, which is how a player dies
+     to something they were sure was an Imp. Each now owns its own silhouette,
+     built to still read at the sixteen pixels a metre a phone hands you:
+
+       Imp        head and limbs, almost no torso, a tail that will not hold
+                  still, and an ember in its hands that never stops pulsing --
+                  so even asleep it reads as the thing that throws fire.
+       Hellblade  tall, lean, coat streaming behind it, and a blade longer
+                  than its own body. The fastest thing in the dark, and it
+                  looks like it.
+       Gorewarden a slab. Pauldrons past its own body, greaves, a tower
+                  shield on the off side and an axe on the near one. It is the
+                  one that eats your first three swings.
+
+     Colour is a bonus on top of that, never the tell. */
+  function demonEyes(ctx, hx, hy, fx, fy, rad, seen, spread) {
+    ctx.fillStyle = seen ? '#ffe9b0' : 'rgba(255,233,176,0.5)';
+    const ox = -fy * spread, oy = fx * spread;
+    const lx = hx + fx * rad * 0.6, ly = hy + fy * rad * 0.6;
+    ctx.beginPath(); ctx.arc(lx + ox, ly + oy, rad, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(lx - ox, ly - oy, rad, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function impArt(ctx, d, r, body, accent) {
+    const fx = Math.cos(d.facing), fy = Math.sin(d.facing);
+    const px = -fy, py = fx;
+    const sway = Math.sin(d.anim * 3.1);
+    const cy = -Math.abs(Math.sin(d.anim * 5.2)) * r * 0.14;   // it never stops bouncing
+    const step = Math.sin(d.anim * 8.4) * r * 0.18;
+
+    // Tail: thin, whipped, always behind it.
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = Math.max(1, r * 0.13);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-fx * r * 0.4, -fy * r * 0.4 + cy + r * 0.18);
+    ctx.quadraticCurveTo(-fx * r * 1.05 + px * r * 0.55 * sway, -fy * r * 1.0 + py * r * 0.55 * sway + cy,
+      -fx * r * 1.45 + px * r * 0.85 * sway, -fy * r * 1.35 + py * r * 0.85 * sway + cy - r * 0.3);
+    ctx.stroke();
+
+    // Legs: two thin shins mid-stride.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.ellipse(px * r * 0.2 * side + fx * step * side, py * r * 0.2 * side + r * 0.52 + cy,
+        r * 0.14, r * 0.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Torso: small, hunched, tipped into the direction of travel -- and
+    // deliberately smaller than the head sitting on it.
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.ellipse(fx * r * 0.12, fy * r * 0.1 + cy + r * 0.06, r * 0.38, r * 0.44, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = DC.rgba(accent, 0.6);
+    ctx.beginPath();
+    ctx.ellipse(fx * r * 0.24, fy * r * 0.2 + cy + r * 0.12, r * 0.17, r * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Arms: too long for the body, and they hang forward.
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(px * r * 0.32 * side, py * r * 0.32 * side - r * 0.04 + cy);
+      ctx.lineTo(fx * r * 0.6 + px * r * 0.3 * side, fy * r * 0.6 + py * r * 0.3 * side + r * 0.08 + cy);
+      ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
+
+    // Head: far too big for it. That is the whole Imp.
+    const hx = fx * r * 0.18, hy = -r * 0.74 + fy * r * 0.14 + cy;
+    ctx.fillStyle = accent;
+    for (const side of [-1, 1]) {                       // ears, out and up
+      ctx.beginPath();
+      ctx.moveTo(hx + px * r * 0.34 * side, hy + py * r * 0.34 * side - r * 0.08);
+      ctx.lineTo(hx + px * r * 0.84 * side, hy + py * r * 0.84 * side - r * 0.36);
+      ctx.lineTo(hx + px * r * 0.4 * side, hy + py * r * 0.4 * side + r * 0.18);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.arc(hx, hy, r * 0.47, 0, Math.PI * 2); ctx.fill();
+    for (const side of [-1, 1]) {                       // two short horns
+      ctx.beginPath();
+      ctx.moveTo(hx + px * r * 0.16 * side - fx * r * 0.06, hy - r * 0.36);
+      ctx.lineTo(hx + px * r * 0.3 * side, hy - r * 0.72);
+      ctx.lineTo(hx + px * r * 0.02 * side, hy - r * 0.4);
+      ctx.closePath(); ctx.fill();
+    }
+    demonEyes(ctx, hx, hy, fx, fy, r * 0.085, d.hasSeen, r * 0.15);
+
+    // The ember. It pulses whether or not the Imp has seen you, which is how
+    // a sleeping one still reads as the caster of the three.
+    ctx.save();
+    ctx.rotate(d.aim == null ? d.facing : d.aim);
+    const flick = 0.82 + 0.18 * Math.sin(d.anim * 9.1) + 0.08 * Math.sin(d.anim * 21.3);
+    ctx.fillStyle = DC.rgba('#ff9a5c', 0.16);
+    ctx.beginPath(); ctx.arc(r * 0.76, 0, r * 0.44 * flick, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = d.hitFlash > 0 ? '#ffffff' : '#ffb066';
+    ctx.beginPath(); ctx.arc(r * 0.76, 0, r * 0.21 * flick, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function hellbladeArt(ctx, d, r, body, accent) {
+    const fx = Math.cos(d.facing), fy = Math.sin(d.facing);
+    const px = -fy, py = fx;
+    const step = Math.sin(d.anim * 9.2) * r * 0.3;
+    const bob = Math.abs(Math.sin(d.anim * 9.2)) * r * 0.07;
+    const top = -r * 1.04 - bob;
+
+    // Coat tails streaming behind: the speed tell, and the only part of an
+    // actor here that points at where it has been.
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.34, r * 0.42 - bob);
+    ctx.quadraticCurveTo(-fx * r * 1.1 - r * 0.16, -fy * r * 0.95 + r * 0.28 - bob,
+      -fx * r * 1.55, -fy * r * 1.3 + r * 0.5 - bob);
+    ctx.quadraticCurveTo(-fx * r * 0.7, r * 0.3 - bob, r * 0.32, r * 0.44 - bob);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = DC.rgba(body, 0.35);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.2, r * 0.34 - bob);
+    ctx.quadraticCurveTo(-fx * r * 0.95, -fy * r * 0.8 + r * 0.3 - bob, -fx * r * 1.3, -fy * r * 1.05 + r * 0.5 - bob);
+    ctx.quadraticCurveTo(-fx * r * 0.6, r * 0.3 - bob, r * 0.18, r * 0.36 - bob);
+    ctx.closePath(); ctx.fill();
+
+    // Legs: digitigrade, long in the stride.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.ellipse(px * r * 0.24 * side + fx * step * side, py * r * 0.24 * side + r * 0.72 - bob,
+        r * 0.16, r * 0.26, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Torso: narrow and long -- the tall silhouette of the three.
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.26, top + r * 0.42);
+    ctx.quadraticCurveTo(-r * 0.36, top + r * 0.92, -r * 0.2, top + r * 1.3);
+    ctx.lineTo(r * 0.2, top + r * 1.3);
+    ctx.quadraticCurveTo(r * 0.36, top + r * 0.92, r * 0.26, top + r * 0.42);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = DC.rgba('#ffffff', 0.1);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.2, top + r * 0.5); ctx.lineTo(-r * 0.09, top + r * 0.5);
+    ctx.lineTo(-r * 0.11, top + r * 1.22); ctx.lineTo(-r * 0.24, top + r * 1.16);
+    ctx.closePath(); ctx.fill();
+
+    // Arms: one forward on the blade, one back on the coat.
+    ctx.strokeStyle = body;
+    ctx.lineWidth = Math.max(1, r * 0.15);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-px * r * 0.26, -py * r * 0.26 + top + r * 0.5);
+    ctx.lineTo(fx * r * 0.62 - px * r * 0.1, fy * r * 0.62 + top + r * 0.62);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+
+    // Head: a narrow skull, crest swept back off the face.
+    const hx = fx * r * 0.1, hy = top - r * 0.06;
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.moveTo(hx - r * 0.06, hy - r * 0.3);
+    ctx.quadraticCurveTo(hx - fx * r * 0.55 - r * 0.12, hy - r * 0.62, hx - fx * r * 0.8, hy - r * 0.1);
+    ctx.quadraticCurveTo(hx - r * 0.02, hy - r * 0.34, hx + r * 0.08, hy - r * 0.28);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.ellipse(hx, hy, r * 0.3, r * 0.34, 0, 0, Math.PI * 2); ctx.fill();
+    demonEyes(ctx, hx, hy, fx, fy, r * 0.075, d.hasSeen, r * 0.13);
+
+    // The blade: longer than the demon holding it, and the reason you can pick
+    // a Hellblade out of the dark at the far end of a corridor.
+    ctx.save();
+    ctx.rotate(d.aim == null ? d.facing : d.aim);
+    ctx.fillStyle = '#3a3f4c';
+    ctx.fillRect(r * 0.2, -r * 0.09, r * 0.34, r * 0.18);
+    ctx.fillStyle = accent;
+    ctx.fillRect(r * 0.5, -r * 0.26, r * 0.13, r * 0.52);
+    ctx.fillStyle = d.hitFlash > 0 ? '#ffffff' : '#d8dee9';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.6, -r * 0.15);
+    ctx.quadraticCurveTo(r * 1.5, -r * 0.2, r * 2.05, -r * 0.03);
+    ctx.lineTo(r * 2.12, 0);
+    ctx.lineTo(r * 2.05, r * 0.06);
+    ctx.quadraticCurveTo(r * 1.5, r * 0.14, r * 0.6, r * 0.15);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(r * 0.7, -r * 0.06, r * 1.3, r * 0.05);
+    ctx.restore();
+  }
+
+  function gorewardenArt(ctx, d, r, body, accent) {
+    const fx = Math.cos(d.facing), fy = Math.sin(d.facing);
+    const px = -fy, py = fx;
+    const step = Math.sin(d.anim * 5.4) * r * 0.18;
+    const bob = Math.abs(Math.sin(d.anim * 5.4)) * r * 0.04;
+    const top = -r * 0.94 - bob;
+
+    // Greaves, wide apart. It plants rather than strides.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#2f2a2c';
+      ctx.beginPath();
+      ctx.ellipse(px * r * 0.34 * side + fx * step * side, py * r * 0.34 * side + r * 0.72,
+        r * 0.26, r * 0.24, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Tasset skirt over the hips.
+    ctx.fillStyle = accent;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.62, top + r * 1.02);
+    ctx.lineTo(r * 0.62, top + r * 1.02);
+    ctx.lineTo(r * 0.5, top + r * 1.42);
+    ctx.lineTo(-r * 0.5, top + r * 1.42);
+    ctx.closePath(); ctx.fill();
+
+    // Torso: a barrel, wider than it is tall. The silhouette of the three.
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.72, top + r * 0.3);
+    ctx.quadraticCurveTo(-r * 0.86, top + r * 0.8, -r * 0.66, top + r * 1.1);
+    ctx.lineTo(r * 0.66, top + r * 1.1);
+    ctx.quadraticCurveTo(r * 0.86, top + r * 0.8, r * 0.72, top + r * 0.3);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = DC.rgba('#ffffff', 0.08);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.58, top + r * 0.38); ctx.lineTo(-r * 0.34, top + r * 0.38);
+    ctx.lineTo(-r * 0.4, top + r * 1.04); ctx.lineTo(-r * 0.62, top + r * 0.96);
+    ctx.closePath(); ctx.fill();
+    // the hide it wears, hanging off one shoulder
+    ctx.fillStyle = DC.rgba('#6b3a2a', 0.55);
+    ctx.beginPath();
+    ctx.ellipse(-px * r * 0.3, -py * r * 0.3 + top + r * 0.62, r * 0.4, r * 0.3, 0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pauldrons: slabs that stick out past the body, because that is the shape
+    // that has to survive at nine pixels a metre.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.moveTo(side * r * 0.5, top + r * 0.2);
+      ctx.lineTo(side * r * 0.98, top + r * 0.3);
+      ctx.lineTo(side * r * 0.94, top + r * 0.66);
+      ctx.lineTo(side * r * 0.52, top + r * 0.6);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillRect(side * r * 0.56, top + r * 0.24, side * r * 0.36, r * 0.07);
+    }
+
+    // Tower shield on the off hand: a rounded slab with a boss in it, held
+    // out along the facing so you can see which side it is guarding.
+    ctx.save();
+    ctx.rotate(d.aim == null ? d.facing : d.aim);
+    ctx.fillStyle = '#4a3b34';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.1, -r * 1.02);
+    ctx.lineTo(r * 0.42, -r * 0.96);
+    ctx.lineTo(r * 0.46, -r * 0.12);
+    ctx.lineTo(r * 0.2, r * 0.1);
+    ctx.lineTo(r * -0.02, -r * 0.2);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = DC.rgba(accent, 0.85);
+    ctx.beginPath(); ctx.arc(r * 0.22, -r * 0.55, r * 0.16, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Helm: sunk into the shoulders, brow ridge, two horns up and in.
+    const hx = fx * r * 0.12, hy = top + r * 0.06;
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(hx - r * 0.34, hy + r * 0.3);
+    ctx.quadraticCurveTo(hx - r * 0.38, hy - r * 0.34, hx, hy - r * 0.4);
+    ctx.quadraticCurveTo(hx + r * 0.38, hy - r * 0.34, hx + r * 0.34, hy + r * 0.3);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#141014';
+    ctx.beginPath();
+    ctx.ellipse(hx + fx * r * 0.12, hy + fy * r * 0.1 + r * 0.04, r * 0.24, r * 0.11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    demonEyes(ctx, hx, hy, fx, fy, r * 0.06, d.hasSeen, r * 0.12);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = Math.max(1.5, r * 0.14);
+    ctx.lineCap = 'round';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(hx + side * r * 0.28, hy - r * 0.24);
+      ctx.quadraticCurveTo(hx + side * r * 0.5, hy - r * 0.72, hx + side * r * 0.16, hy - r * 0.86);
+      ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
+
+    // Axe: a haft and a heavy head, drawn along the aim so the windup wedge
+    // and the steel agree about where the blow is going to land.
+    ctx.save();
+    ctx.rotate(d.aim == null ? d.facing : d.aim);
+    ctx.fillStyle = '#54402c';
+    ctx.fillRect(r * 0.3, -r * 0.09, r * 1.15, r * 0.18);
+    ctx.fillStyle = d.hitFlash > 0 ? '#ffffff' : '#aab3c2';
+    ctx.beginPath();
+    ctx.moveTo(r * 1.16, -r * 0.5);
+    ctx.quadraticCurveTo(r * 1.72, -r * 0.42, r * 1.66, r * 0.02);
+    ctx.quadraticCurveTo(r * 1.6, r * 0.46, r * 1.16, r * 0.5);
+    ctx.lineTo(r * 1.1, r * 0.16);
+    ctx.lineTo(r * 1.1, -r * 0.16);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.fillRect(r * 1.16, -r * 0.44, r * 0.4, r * 0.08);
+    ctx.restore();
+  }
+
+  DC.Render.demon = function (ctx, d, cam) {
+    const s = cam.pxPerM;
+    const x = cam.worldToScreenX(d.x), y = cam.worldToScreenY(d.y);
+    const r = d.r * s;
+    const def = d.def;
+
+    if (d.dead) {
+      const k = M.clamp(1 - d.deadT / 1.6, 0, 1);
+      if (k <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = k * 0.5;
+      ctx.fillStyle = '#4a1512';
+      ctx.beginPath(); ctx.ellipse(x, y, r * (1.2 - k * 0.2), r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    DC.Render.actorShadow(ctx, x, y, r);
+
+    /* The windup wedge is the hit: same arc, same reach, drawn before the
+       body so the thing standing in it is still visible. A Gorewarden's is
+       150 degrees wide because that is exactly what its slam covers. */
+    if (d.windup > 0 && def.attackKind === 'melee') {
+      const k = 1 - d.windup / d.windupMax;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(d.aim == null ? d.facing : d.aim);
+      ctx.fillStyle = 'rgba(255,92,92,' + (0.10 + k * 0.16) + ')';
+      const reach = (def.id === 'gorewarden' ? def.reach + 1.2 : def.reach) * s;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, reach, -(def.arc * Math.PI / 360), def.arc * Math.PI / 360);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.translate(x, y);
+    const body = d.hitFlash > 0 ? '#ffffff' : def.color;
+    const accent = d.hitFlash > 0 ? '#ffffff' : def.accent;
+    if (def.id === 'imp') impArt(ctx, d, r, body, accent);
+    else if (def.id === 'gorewarden') gorewardenArt(ctx, d, r, body, accent);
+    else hellbladeArt(ctx, d, r, body, accent);
+    ctx.restore();
+
+    // health pip when damaged
+    if (d.hp < d.maxHp) {
+      const w = r * 1.8, h = 3;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(x - w / 2, y - r * 2.1, w, h);
+      ctx.fillStyle = '#e0524b';
+      ctx.fillRect(x - w / 2, y - r * 2.1, w * M.clamp(d.hp / d.maxHp, 0, 1), h);
+    }
+  };
+
+  /* --- the three Sovereigns ----------------------------------------------
+     A throne room should tell you what you are about to fight before it moves.
+     The three used to be the same body in three paint jobs; now each one owns
+     a shape, and the shape is the move set:
+
+       knight     a wall of plate with a tower shield on the off side -- the
+                  one it hurls at you from across the room. Low, broad, and
+                  the crest trails the way it came from.
+       swordsman  lean and tall under a long coat, twin blades, and the only
+                  one of the three that looks like it can outrun you.
+       mage       no legs at all. It hangs above the floor in a torn robe
+                  with a burning rod, and the hem points where it has been.
+
+     The dormant mound, the telegraph, the charge smear and the health bar are
+     shared: those are the parts that have to be identical so you can read the
+     danger rather than the costume. */
+  function sovereignFace(ctx, b, r, base, flash, body, trim, hy, hornStyle) {
+    // head
+    ctx.fillStyle = body;
+    ctx.beginPath(); ctx.ellipse(0, hy, r * 0.42, r * 0.38, 0, 0, Math.PI * 2); ctx.fill();
+
+    if (hornStyle === 'crown') {
+      // The hood already owns the face, so a crowned Sovereign gets the bone
+      // and nothing else.
+      ctx.strokeStyle = flash ? '#ffffff' : base.horn;
+      ctx.lineWidth = Math.max(2, r * 0.11);
+      ctx.lineCap = 'round';
+      for (let i = -2; i <= 2; i++) {
+        const bx = i * r * 0.19;
+        ctx.beginPath();
+        ctx.moveTo(bx, hy - r * 0.3);
+        ctx.lineTo(bx + i * r * 0.03, hy - r * (0.52 + 0.11 * (2 - Math.abs(i))));
+        ctx.stroke();
+      }
+      ctx.lineCap = 'butt';
+      return;
+    }
+    ctx.strokeStyle = flash ? '#ffffff' : base.horn;
+    ctx.lineWidth = Math.max(2, r * 0.13);
+    ctx.lineCap = 'round';
+    if (hornStyle === 'crown') {
+      // A mage Sovereign wears bone like a mitre: five short spikes rather
+      // than a pair of horns, so the head alone says "caster".
+      for (let i = -2; i <= 2; i++) {
+        const bx = i * r * 0.19;
+        ctx.beginPath();
+        ctx.moveTo(bx, hy - r * 0.3);
+        ctx.lineTo(bx + i * r * 0.03, hy - r * (0.52 + 0.11 * (2 - Math.abs(i))));
+        ctx.stroke();
+      }
+    } else if (hornStyle === 'swept') {
+      for (const sgn of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(sgn * r * 0.3, hy - r * 0.2);
+        ctx.quadraticCurveTo(sgn * r * 0.86, hy - r * 0.5, sgn * r * 0.96, hy + r * 0.34);
+        ctx.stroke();
+      }
+    } else {
+      for (const sgn of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(sgn * r * 0.3, hy - r * 0.2);
+        ctx.quadraticCurveTo(sgn * r * 0.78, hy - r * 0.58, sgn * r * 0.52, hy - r * 1.03);
+        ctx.stroke();
+      }
+    }
+    ctx.lineCap = 'butt';
+
+    const eye = b.enraged ? '#ffdede' : trim;
+    ctx.fillStyle = DC.rgba(eye, 0.35);
+    ctx.beginPath(); ctx.ellipse(0, hy, r * 0.4, r * 0.26, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = eye;
+    for (const sgn of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(sgn * r * 0.17, hy - r * 0.03, r * 0.1, r * 0.06, sgn * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = DC.rgba(eye, 0.6);
+    ctx.lineWidth = Math.max(1, r * 0.045);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.18, hy + r * 0.18);
+    ctx.lineTo(-r * 0.06, hy + r * 0.26);
+    ctx.lineTo(r * 0.06, hy + r * 0.18);
+    ctx.lineTo(r * 0.18, hy + r * 0.26);
+    ctx.stroke();
+  }
+
+  function sovereignKnight(ctx, b, r, base, flash, body, trim, bob) {
+    const fx = Math.cos(b.facing), fy = Math.sin(b.facing);
+    const px = -fy, py = fx;
+    const step = Math.sin(b.anim * 2.6) * r * 0.2;
+
+    // mantle, hung off the shoulders and dragged
+    ctx.fillStyle = flash ? '#ffffff' : base.cape;
+    ctx.beginPath();
+    ctx.moveTo(-r * 1.18, r * 1.02 + bob);
+    ctx.lineTo(-r * 0.92, r * 0.55 + bob);
+    ctx.lineTo(-r * 1.02, r * 0.1 + bob);
+    ctx.quadraticCurveTo(-r * 0.95, -r * 0.95 + bob, 0, -r * 1.12 + bob);
+    ctx.quadraticCurveTo(r * 0.95, -r * 0.95 + bob, r * 1.02, r * 0.1 + bob);
+    ctx.lineTo(r * 0.92, r * 0.55 + bob);
+    ctx.lineTo(r * 1.18, r * 1.02 + bob);
+    ctx.closePath(); ctx.fill();
+
+    // legs in plate
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#1d2531';
+      ctx.beginPath();
+      ctx.ellipse(px * r * 0.4 * side + fx * step * side, py * r * 0.4 * side + r * 1.02 + bob,
+        r * 0.3, r * 0.26, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // torso: heavier than it is tall, which is the whole point
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.86, r * 0.92 + bob);
+    ctx.quadraticCurveTo(-r * 1.06, -r * 0.2 + bob, -r * 0.68, -r * 0.76 + bob);
+    ctx.quadraticCurveTo(0, -r * 1.0 + bob, r * 0.68, -r * 0.76 + bob);
+    ctx.quadraticCurveTo(r * 1.06, -r * 0.2 + bob, r * 0.86, r * 0.92 + bob);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = DC.rgba(trim, 0.35);
+    ctx.lineWidth = Math.max(1, r * 0.05);
+    for (let i = 0; i < 3; i++) {
+      const yy = -r * 0.35 + i * r * 0.42 + bob;
+      ctx.beginPath(); ctx.moveTo(-r * 0.56, yy); ctx.quadraticCurveTo(0, yy + r * 0.14, r * 0.56, yy); ctx.stroke();
+    }
+    // the tabard it was knighted in
+    ctx.fillStyle = DC.rgba(trim, 0.22);
+    ctx.fillRect(-r * 0.17, -r * 0.6 + bob, r * 0.34, r * 1.4);
+
+    // pauldrons
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = flash ? '#ffffff' : base.accent;
+      ctx.beginPath();
+      ctx.ellipse(side * r * 0.86, -r * 0.5 + bob, r * 0.34, r * 0.28, side * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.ellipse(side * r * 0.86, -r * 0.6 + bob, r * 0.22, r * 0.09, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    sovereignFace(ctx, b, r, base, flash, body, trim, -r * 0.94 + bob, 'helm');
+    // a great helm: the slit is a bar, and the crest is rust, not pale
+    ctx.fillStyle = '#12161d';
+    ctx.fillRect(-r * 0.32, -r * 1.18 + bob, r * 0.64, r * 0.1);
+    ctx.fillStyle = DC.rgba('#c2564a', 0.75);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.06, -r * 1.26 + bob);
+    ctx.quadraticCurveTo(-fx * r * 0.6 - r * 0.12, -r * 1.62 + bob, -fx * r * 0.9, -r * 1.1 + bob);
+    ctx.quadraticCurveTo(-r * 0.02, -r * 1.3 + bob, r * 0.08, -r * 1.24 + bob);
+    ctx.closePath(); ctx.fill();
+
+    // shield on the off hand, then the sword along the aim
+    ctx.save();
+    ctx.rotate(b.aim);
+    ctx.fillStyle = flash ? '#ffffff' : base.accent;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.1, -r * 1.24);
+    ctx.lineTo(r * 0.4, -r * 1.16);
+    ctx.lineTo(r * 0.44, -r * 0.2);
+    ctx.lineTo(r * 0.16, r * 0.12);
+    ctx.lineTo(-r * 0.06, -r * 0.3);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = DC.rgba(trim, 0.8);
+    ctx.beginPath(); ctx.arc(r * 0.2, -r * 0.66, r * 0.18, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.rotate(b.aim);
+    ctx.fillStyle = flash ? '#ffffff' : '#20242c';
+    ctx.fillRect(r * 0.6, -r * 0.16, r * 1.7, r * 0.32);
+    ctx.fillStyle = flash ? '#ffffff' : '#8e98a8';
+    ctx.fillRect(r * 0.6, -r * 0.16, r * 1.7, Math.max(1, r * 0.08));
+    ctx.fillStyle = flash ? '#ffffff' : base.horn;
+    ctx.fillRect(r * 0.5, -r * 0.26, r * 0.18, r * 0.52);
+    ctx.restore();
+  }
+
+  function sovereignBlade(ctx, b, r, base, flash, body, trim, bob) {
+    const fx = Math.cos(b.facing), fy = Math.sin(b.facing);
+    const step = Math.sin(b.anim * 3.6) * r * 0.3;
+    const px = -fy, py = fx;
+
+    // a long coat, split and streaming: the fast silhouette
+    ctx.fillStyle = flash ? '#ffffff' : base.cape;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.62, r * 0.9 + bob);
+    ctx.quadraticCurveTo(-fx * r * 1.3 - r * 0.2, -fy * r * 1.1 + r * 0.4 + bob,
+      -fx * r * 1.7, -fy * r * 1.45 + r * 0.7 + bob);
+    ctx.quadraticCurveTo(-fx * r * 0.8, r * 0.5 + bob, r * 0.5, r * 0.92 + bob);
+    ctx.closePath(); ctx.fill();
+
+    // legs, long in the stride
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#1a0f12';
+      ctx.beginPath();
+      ctx.ellipse(px * r * 0.3 * side + fx * step * side, py * r * 0.3 * side + r * 0.98 + bob,
+        r * 0.22, r * 0.3, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // torso: narrow and tall
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.56, -r * 0.72 + bob);
+    ctx.quadraticCurveTo(-r * 0.7, r * 0.1 + bob, -r * 0.44, r * 0.92 + bob);
+    ctx.lineTo(r * 0.44, r * 0.92 + bob);
+    ctx.quadraticCurveTo(r * 0.7, r * 0.1 + bob, r * 0.56, -r * 0.72 + bob);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = DC.rgba(trim, 0.3);
+    ctx.lineWidth = Math.max(1, r * 0.05);
+    for (let i = 0; i < 2; i++) {
+      const yy = -r * 0.2 + i * r * 0.44 + bob;
+      ctx.beginPath(); ctx.moveTo(-r * 0.4, yy); ctx.quadraticCurveTo(0, yy + r * 0.12, r * 0.4, yy); ctx.stroke();
+    }
+    // a baldric across the chest, holding the second sword on the back
+    ctx.fillStyle = DC.rgba(trim, 0.3);
+    ctx.save();
+    ctx.rotate(0.6);
+    ctx.fillRect(-r * 0.16, -r * 1.0 + bob, r * 0.3, r * 1.9);
+    ctx.restore();
+    // the sheathed blade, over the shoulder and behind
+    ctx.save();
+    ctx.rotate(b.facing + Math.PI * 0.78);
+    ctx.fillStyle = flash ? '#ffffff' : '#2c2126';
+    ctx.fillRect(r * 0.3, -r * 0.12, r * 1.5, r * 0.24);
+    ctx.fillStyle = flash ? '#ffffff' : base.horn;
+    ctx.fillRect(r * 0.24, -r * 0.2, r * 0.16, r * 0.4);
+    ctx.restore();
+
+    sovereignFace(ctx, b, r, base, flash, body, trim, -r * 0.98 + bob, 'swept');
+    // a plume over the brow, trailing behind
+    ctx.fillStyle = DC.rgba(trim, 0.5);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.3, -r * 1.16 + bob);
+    ctx.quadraticCurveTo(-fx * r * 0.9, -r * 1.5 + bob, -fx * r * 1.25, -r * 0.95 + bob);
+    ctx.quadraticCurveTo(-r * 0.3, -r * 1.2 + bob, r * 0.26, -r * 1.14 + bob);
+    ctx.closePath(); ctx.fill();
+
+    // the drawn blade: long, single-edged, along the aim
+    ctx.save();
+    ctx.rotate(b.aim);
+    ctx.fillStyle = flash ? '#ffffff' : '#241a1e';
+    ctx.fillRect(r * 0.34, -r * 0.1, r * 0.4, r * 0.2);
+    ctx.fillStyle = flash ? '#ffffff' : base.horn;
+    ctx.fillRect(r * 0.7, -r * 0.3, r * 0.14, r * 0.6);
+    ctx.fillStyle = flash ? '#ffffff' : '#d9c3b0';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.82, -r * 0.17);
+    ctx.quadraticCurveTo(r * 1.9, -r * 0.22, r * 2.5, -r * 0.02);
+    ctx.lineTo(r * 2.56, r * 0.02);
+    ctx.quadraticCurveTo(r * 1.9, r * 0.14, r * 0.82, r * 0.17);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(r * 0.95, -r * 0.07, r * 1.5, r * 0.05);
+    ctx.restore();
+  }
+
+  function sovereignMage(ctx, b, r, base, flash, body, trim, bob) {
+    const fx = Math.cos(b.facing), fy = Math.sin(b.facing);
+    const hover = Math.sin(b.anim * 1.9) * r * 0.1;
+    const hem = r * 1.24 + hover;
+
+    // No legs. The robe goes straight to the floor and the hem trails behind,
+    // which is the one shape in this game that says "this one casts".
+    ctx.fillStyle = flash ? '#ffffff' : base.cape;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.5, -r * 0.8 + hover);
+    ctx.quadraticCurveTo(-r * 0.98, r * 0.2 + hover, -r * 1.12 - fx * r * 0.3, hem - fy * r * 0.2);
+    for (let i = 1; i <= 7; i++) {
+      const u = i / 7;
+      ctx.lineTo(-r * 1.12 + r * 2.24 * u - fx * r * 0.3, hem - fy * r * 0.2 - (i % 2 ? r * 0.2 : 0));
+    }
+    ctx.quadraticCurveTo(r * 0.98, r * 0.2 + hover, r * 0.5, -r * 0.8 + hover);
+    ctx.closePath(); ctx.fill();
+
+    // sleeves, wide and empty, held up around the rod
+    ctx.fillStyle = flash ? '#ffffff' : base.body;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.56, -r * 0.72 + hover);
+    ctx.quadraticCurveTo(-r * 0.8, -r * 0.1 + hover, -r * 0.5, r * 0.5 + hover);
+    ctx.lineTo(r * 0.5, r * 0.5 + hover);
+    ctx.quadraticCurveTo(r * 0.8, -r * 0.1 + hover, r * 0.56, -r * 0.72 + hover);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = DC.rgba(trim, 0.18);
+    ctx.fillRect(-r * 0.16, -r * 0.66 + hover, r * 0.32, r * 1.1);
+
+    // the hood: a peak, and the face is a hole in it
+    const hy = -r * 0.92 + hover;
+    ctx.fillStyle = flash ? '#ffffff' : base.body;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.52, hy + r * 0.42);
+    ctx.quadraticCurveTo(-r * 0.6, hy - r * 0.46, -r * 0.08, hy - r * 0.66);
+    ctx.lineTo(r * 0.08, hy - r * 0.62);
+    ctx.quadraticCurveTo(r * 0.6, hy - r * 0.46, r * 0.52, hy + r * 0.42);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#0a0708';
+    ctx.beginPath();
+    ctx.ellipse(fx * r * 0.12, hy + fy * r * 0.1 + r * 0.06, r * 0.3, r * 0.26, 0, 0, Math.PI * 2);
+    ctx.fill();
+    const eye = b.enraged ? '#ffdede' : trim;
+    ctx.fillStyle = eye;
+    const ox = -fy * r * 0.12, oy = fx * r * 0.12;
+    ctx.beginPath(); ctx.arc(fx * r * 0.16 + ox, hy + fy * r * 0.14 + oy, r * 0.07, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(fx * r * 0.16 - ox, hy + fy * r * 0.14 - oy, r * 0.07, 0, Math.PI * 2); ctx.fill();
+    sovereignFace(ctx, b, r, base, flash, flash ? '#ffffff' : base.accent, trim, hy - r * 0.34, 'crown');
+
+    // the rod, and a flame that is never the same size twice
+    ctx.save();
+    ctx.rotate(b.aim);
+    ctx.fillStyle = flash ? '#ffffff' : '#4a3324';
+    ctx.beginPath();
+    ctx.moveTo(r * 0.3, -r * 0.13); ctx.lineTo(r * 2.0, -r * 0.09);
+    ctx.lineTo(r * 2.0, r * 0.09); ctx.lineTo(r * 0.3, r * 0.13);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = flash ? '#ffffff' : base.horn;
+    ctx.fillRect(r * 0.62, -r * 0.17, r * 0.2, r * 0.34);
+    ctx.fillStyle = flash ? '#ffffff' : '#241a14';
+    ctx.beginPath(); ctx.arc(r * 2.02, 0, r * 0.26, 0, Math.PI * 2); ctx.fill();
+    const flick = 0.82 + 0.18 * Math.sin(b.anim * 8.4) + 0.09 * Math.sin(b.anim * 19.7);
+    const fr = r * 0.3 * flick;
+    ctx.fillStyle = DC.rgba(b.enraged ? '#ff5c5c' : trim, 0.2);
+    ctx.beginPath(); ctx.arc(r * 2.06, 0, fr * 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = DC.rgba(b.enraged ? '#ff8a5c' : trim, 0.7);
+    ctx.beginPath(); ctx.arc(r * 2.06, 0, fr * 1.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff2d8';
+    ctx.beginPath(); ctx.arc(r * 2.06, 0, fr * 0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function sovereignArt(ctx, b, r, base, flash, body, trim, bob) {
+    if (b.bossKind === 'mage') sovereignMage(ctx, b, r, base, flash, body, trim, bob);
+    else if (b.bossKind === 'swordsman') sovereignBlade(ctx, b, r, base, flash, body, trim, bob);
+    else sovereignKnight(ctx, b, r, base, flash, body, trim, bob);
+  }
+
+  /* The weapon, on its own so the career picker can draw the same rod or the
+     same sword the game will. Nothing about it changes between the two: the
+     swing owns the angle, the aim owns it at rest. */
+  function careerWeapon(ctx, p, r, swinging, bladeAng, sk) {
+    const cls = p.cls;
     ctx.save();
     ctx.rotate(swinging ? bladeAng : p.aim);
     if (cls.attackKind === 'melee') {
@@ -398,103 +1114,29 @@
       ctx.beginPath(); ctx.arc(r * 1.6, 0, fr * 0.5, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
+  }
 
-    if (p.shieldT > 0) {
-      ctx.strokeStyle = 'rgba(201,212,232,' + (0.35 + 0.25 * Math.sin(p.anim * 9)) + ')';
-      ctx.lineWidth = Math.max(2, s * 0.16);
-      ctx.beginPath(); ctx.arc(0, 0, r * 1.7, 0, Math.PI * 2); ctx.stroke();
-    }
-    ctx.restore();
+  /* A career drawn outside the game world. The picker used to show a colour
+     swatch with a hat on it; it now shows the body you will actually play, at
+     the same proportions, holding the weapon you will actually swing. */
+  DC.Render.careerBody = function (ctx, cls, r, opts) {
+    const o = opts || {};
+    const t = o.t || 0;
+    const p = {
+      cls: cls, r: r,
+      facing: o.facing == null ? -0.4 : o.facing,
+      aim: o.aim == null ? 0 : o.aim,
+      walk: o.walk == null ? t * 2.6 : o.walk,
+      anim: o.anim == null ? t : o.anim,
+      weapon: { weight: 1, color: '#cfd6e4' },
+      invuln: 0, shieldT: 0, dodgeT: 0, swing: null,
+    };
+    DC.Render.actorShadow(ctx, 0, 0, r);
+    if (cls.attackKind === 'melee') knightBody(ctx, p, r);
+    else mageBody(ctx, p, r);
+    careerWeapon(ctx, p, r, null, p.aim, 0);
   };
-
-  DC.Render.demon = function (ctx, d, cam) {
-    const s = cam.pxPerM;
-    const x = cam.worldToScreenX(d.x), y = cam.worldToScreenY(d.y);
-    const r = d.r * s;
-    const def = d.def;
-
-    if (d.dead) {
-      const k = M.clamp(1 - d.deadT / 1.6, 0, 1);
-      if (k <= 0) return;
-      ctx.save();
-      ctx.globalAlpha = k * 0.5;
-      ctx.fillStyle = '#4a1512';
-      ctx.beginPath(); ctx.ellipse(x, y, r * (1.2 - k * 0.2), r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
-      return;
-    }
-
-    DC.Render.actorShadow(ctx, x, y, r);
-
-    // windup telegraph
-    if (d.windup > 0 && def.attackKind === 'melee') {
-      const k = 1 - d.windup / d.windupMax;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(d.aim == null ? d.facing : d.aim);
-      ctx.fillStyle = 'rgba(255,92,92,' + (0.10 + k * 0.16) + ')';
-      const reach = (def.id === 'gorewarden' ? def.reach + 1.2 : def.reach) * s;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, reach, -(def.arc * Math.PI / 360), def.arc * Math.PI / 360);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-
-    ctx.save();
-    ctx.translate(x, y);
-    const bob = Math.sin(d.anim * 6) * r * 0.07;
-    const body = d.hitFlash > 0 ? '#ffffff' : def.color;
-
-    // body
-    ctx.fillStyle = body;
-    ctx.beginPath();
-    ctx.ellipse(0, bob * 0.4, r * 0.82, r * 0.95, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // shoulders / arms
-    ctx.fillStyle = d.hitFlash > 0 ? '#ffffff' : def.accent;
-    ctx.beginPath(); ctx.arc(-r * 0.72, -r * 0.15 + bob, r * 0.3, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(r * 0.72, -r * 0.15 + bob, r * 0.3, 0, Math.PI * 2); ctx.fill();
-    // head
-    ctx.fillStyle = body;
-    ctx.beginPath(); ctx.arc(0, -r * 0.75 + bob, r * 0.44, 0, Math.PI * 2); ctx.fill();
-    // horns
-    ctx.strokeStyle = def.accent;
-    ctx.lineWidth = Math.max(1.5, r * 0.16);
-    ctx.beginPath();
-    ctx.moveTo(-r * 0.3, -r * 1.0 + bob);
-    ctx.quadraticCurveTo(-r * 0.62, -r * 1.5 + bob, -r * 0.2, -r * 1.55 + bob);
-    ctx.moveTo(r * 0.3, -r * 1.0 + bob);
-    ctx.quadraticCurveTo(r * 0.62, -r * 1.5 + bob, r * 0.2, -r * 1.55 + bob);
-    ctx.stroke();
-    // eyes
-    ctx.fillStyle = d.hasSeen ? '#ffe9b0' : 'rgba(255,233,176,0.55)';
-    ctx.beginPath(); ctx.arc(-r * 0.17, -r * 0.78 + bob, r * 0.1, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(r * 0.17, -r * 0.78 + bob, r * 0.1, 0, Math.PI * 2); ctx.fill();
-
-    // weapon tell
-    ctx.save();
-    ctx.rotate(d.aim == null ? d.facing : d.aim);
-    if (def.attackKind === 'melee') {
-      ctx.fillStyle = 'rgba(210,215,225,0.9)';
-      ctx.fillRect(r * 0.6, -r * 0.1, r * (def.reach * 0.55), r * 0.2);
-    } else {
-      ctx.fillStyle = 'rgba(255,138,92,0.9)';
-      ctx.beginPath(); ctx.arc(r * 0.95, 0, r * 0.26, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.restore();
-    ctx.restore();
-
-    // health pip when damaged
-    if (d.hp < d.maxHp) {
-      const w = r * 1.8, h = 3;
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(x - w / 2, y - r * 2.1, w, h);
-      ctx.fillStyle = '#e0524b';
-      ctx.fillRect(x - w / 2, y - r * 2.1, w * M.clamp(d.hp / d.maxHp, 0, 1), h);
-    }
-  };
+  DC.Render.careerBodies = { mage: mageBody, knight: knightBody };
 
   DC.Render.boss = function (ctx, b, cam) {
     const s = cam.pxPerM;
@@ -577,80 +1219,7 @@
     ctx.fillStyle = aura;
     ctx.beginPath(); ctx.arc(0, -r * 0.2, r * 2.1, 0, Math.PI * 2); ctx.fill();
 
-    // tattered mantle
-    ctx.fillStyle = flash ? '#ffffff' : base.cape;
-    ctx.beginPath();
-    ctx.moveTo(-r * 1.18, r * 1.02 + bob);
-    ctx.lineTo(-r * 0.92, r * 0.55 + bob);
-    ctx.lineTo(-r * 1.02, r * 0.1 + bob);
-    ctx.quadraticCurveTo(-r * 0.95, -r * 0.95 + bob, 0, -r * 1.12 + bob);
-    ctx.quadraticCurveTo(r * 0.95, -r * 0.95 + bob, r * 1.02, r * 0.1 + bob);
-    ctx.lineTo(r * 0.92, r * 0.55 + bob);
-    ctx.lineTo(r * 1.18, r * 1.02 + bob);
-    ctx.closePath(); ctx.fill();
-
-    // torso: heavy shoulders, narrow waist
-    ctx.fillStyle = body;
-    ctx.beginPath();
-    ctx.moveTo(-r * 0.78, r * 0.9 + bob);
-    ctx.quadraticCurveTo(-r * 0.95, -r * 0.2 + bob, -r * 0.62, -r * 0.72 + bob);
-    ctx.quadraticCurveTo(0, -r * 0.95 + bob, r * 0.62, -r * 0.72 + bob);
-    ctx.quadraticCurveTo(r * 0.95, -r * 0.2 + bob, r * 0.78, r * 0.9 + bob);
-    ctx.closePath(); ctx.fill();
-    // ribs / plating
-    ctx.strokeStyle = DC.rgba(trim, 0.35);
-    ctx.lineWidth = Math.max(1, r * 0.05);
-    for (let i = 0; i < 3; i++) {
-      const yy = -r * 0.35 + i * r * 0.42 + bob;
-      ctx.beginPath(); ctx.moveTo(-r * 0.5, yy); ctx.quadraticCurveTo(0, yy + r * 0.14, r * 0.5, yy); ctx.stroke();
-    }
-
-    // head, low and forward
-    ctx.fillStyle = body;
-    ctx.beginPath(); ctx.ellipse(0, -r * 0.92 + bob, r * 0.42, r * 0.38, 0, 0, Math.PI * 2); ctx.fill();
-
-    // horns, swept back
-    ctx.strokeStyle = flash ? '#ffffff' : base.horn;
-    ctx.lineWidth = Math.max(2, r * 0.13);
-    ctx.lineCap = 'round';
-    for (const sgn of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(sgn * r * 0.3, -r * 1.12 + bob);
-      ctx.quadraticCurveTo(sgn * r * 0.78, -r * 1.5 + bob, sgn * r * 0.52, -r * 1.95 + bob);
-      ctx.stroke();
-    }
-    ctx.lineCap = 'butt';
-
-    // eyes
-    const eye = b.enraged ? '#ffdede' : trim;
-    ctx.fillStyle = DC.rgba(eye, 0.35);
-    ctx.beginPath(); ctx.ellipse(0, -r * 0.92 + bob, r * 0.4, r * 0.26, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = eye;
-    for (const sgn of [-1, 1]) {
-      ctx.beginPath();
-      ctx.ellipse(sgn * r * 0.17, -r * 0.95 + bob, r * 0.1, r * 0.06, sgn * 0.4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    // jaw
-    ctx.strokeStyle = DC.rgba(eye, 0.6);
-    ctx.lineWidth = Math.max(1, r * 0.045);
-    ctx.beginPath();
-    ctx.moveTo(-r * 0.18, -r * 0.74 + bob);
-    ctx.lineTo(-r * 0.06, -r * 0.66 + bob);
-    ctx.lineTo(r * 0.06, -r * 0.74 + bob);
-    ctx.lineTo(r * 0.18, -r * 0.66 + bob);
-    ctx.stroke();
-
-    // weapon
-    ctx.save();
-    ctx.rotate(b.aim);
-    ctx.fillStyle = flash ? '#ffffff' : '#20242c';
-    ctx.fillRect(r * 0.6, -r * 0.16, r * 1.7, r * 0.32);
-    ctx.fillStyle = flash ? '#ffffff' : '#8e98a8';
-    ctx.fillRect(r * 0.6, -r * 0.16, r * 1.7, Math.max(1, r * 0.08));
-    ctx.fillStyle = flash ? '#ffffff' : base.horn;
-    ctx.fillRect(r * 0.5, -r * 0.26, r * 0.18, r * 0.52);
-    ctx.restore();
+    sovereignArt(ctx, b, r, base, flash, body, trim, bob);
     ctx.restore();
 
     // name + bar, top centre: clear of the log stack at the bottom

@@ -30,6 +30,9 @@
       id: 'gorewarden', mirrors: 'knight', name: 'Gorewarden',
       hp: 58, atk: 16, def: 3, speed: 3.0, r: 0.82,
       attackKind: 'melee', attackCd: 1.5, reach: 2.4, arc: 150, sight: 10,
+      // Brass and old iron, not a third shade of red: three demons that are
+      // all crimson at the edge of the torch are one demon.
+      color: '#c08a4a', accent: '#5d3a1f',
       knockback: 2.6, powerFactor: 0.7, xp: 2,
     },
   };
