@@ -296,7 +296,7 @@
       DC.Camera.snap(p);
       DC.Audio.setDepth(depth);
       DC.Audio.setScene(w.isBoss ? 'boss' : 'dungeon');
-      DC.Render.pickPalette(depth);
+      DC.Render.pickPalette(w);
       DC.Fog.discover(w, p);
 
       game.banner = { title: 'DEPTH ' + depth, sub: 'Picked back up where you left it.', life: 2.6, maxLife: 2.6, color: '#8ef0c0' };

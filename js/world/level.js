@@ -15,6 +15,16 @@
     return DC.DEPTH_BANDS[Math.min(Math.floor((depth - 1) / 10), DC.DEPTH_BANDS.length - 1)];
   };
 
+  /* Which look a floor wears. The band picks the region, and the variant walks
+     the region's three tones in depth order, so ten floors in one country never
+     repeat and two neighbouring floors never match. Pure function of depth: a
+     save file rebuilds the floor it was wearing when it was written. */
+  DC.themeFor = function (depth) {
+    depth = Math.max(1, Math.floor(depth) || 1);
+    const theme = DC.THEMES[Math.min(Math.floor((depth - 1) / 10), DC.THEMES.length - 1)];
+    return { theme: theme, variant: (depth - 1) % theme.variants.length };
+  };
+
   /* Every floor is a place with a name of its own, not "Depth 14". The words
      are drawn from the seed that drew the corridors, so a save file rebuilds
      the same floor under the same name, and no two runs read the same way.
@@ -36,12 +46,19 @@
 
   const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
-  function composeFloorName(rng, isBoss) {
+  /* The words come out of the region the floor sits in, so a Bone Ossuary is
+     never a violet room and a Lantern Warren always has torches on it. The
+     common pool still gets a third of the names -- a country that only ever
+     names itself starts to sound like a menu. Throne rooms draw from the heavy
+     pool no matter which region they sit in. */
+  function composeFloorName(rng, isBoss, theme) {
     const W = DC.FLOOR_WORDS;
     const roll = rng.next();
-    const noun = rng.pick(isBoss ? W.bossNoun : W.noun);
-    if (roll < 0.38) return 'The ' + rng.pick(W.adj) + ' ' + noun;
-    if (roll < 0.60) return rng.pick(W.adj) + ' ' + noun;
+    const local = !!(theme && !isBoss && rng.next() < 0.66);
+    const noun = rng.pick(isBoss ? W.bossNoun : (local ? theme.noun : W.noun));
+    const adj = rng.pick(local ? theme.adj : W.adj);
+    if (roll < 0.38) return 'The ' + adj + ' ' + noun;
+    if (roll < 0.60) return adj + ' ' + noun;
     if (roll < 0.84) return 'The ' + noun + ' of ' + rng.pick(W.of);
     return 'The ' + noun;
   }
@@ -65,7 +82,7 @@
       if (book[d]) continue;
       const sd = (runSeed ^ (d * 0x9e3779b9)) >>> 0;
       const rng = new DC.RNG((sd ^ 0x51ed2701) >>> 0);
-      let name = composeFloorName(rng, d % C.BOSS_EVERY === 0);
+      let name = composeFloorName(rng, d % C.BOSS_EVERY === 0, DC.themeFor(d).theme);
       /* Two floors with the same name stop being two places. A numeral keeps
          the answer independent of which floors happen to have been visited
          already -- a reroll would not be. */
@@ -334,6 +351,7 @@
       depth, isBoss, grid,
       name: DC.floorName(depth, levelSeed),
       band: DC.depthBand(depth),
+      theme: null, themeId: null, variant: 0,
       discovered: new Uint8Array(C.GRID * C.GRID),
       open: DC.Maze.openTiles(grid),
       dist: null,
@@ -345,6 +363,10 @@
       awakeCount: 0,
       ambient: isBoss ? 'boss' : 'dungeon',
     };
+    const tv = DC.themeFor(depth);
+    world.theme = tv.theme;
+    world.themeId = tv.theme.id;
+    world.variant = tv.variant;
     if (!isBoss) world.dist = new Int32Array(C.GRID * C.GRID).fill(0);
     else {
       const d = new Int32Array(C.GRID * C.GRID).fill(0);
@@ -358,8 +380,12 @@
      the corridors, which is what makes a big room read as a room. */
   function buildDecor(world, rng) {
     const out = [];
-    const kinds = ['rubble', 'rubble', 'debris', 'bones', 'skull', 'crack', 'lantern',
-      'mushroom', 'chain', 'stump', 'web', 'web', 'brazier'];
+    const th = world.theme || DC.THEMES[0];
+    const kinds = th.decor;
+    /* One signature per floor: the region's motif is scattered through this
+       whole level and absent from the next one, which is what makes a floor
+       feel like somewhere you were rather than something that loaded. */
+    const motif = th.motifs[(world.variant || 0) % th.motifs.length];
     // Decor density, not a fixed pile: the floor is 4/9 the area it was.
     const want = world.isBoss ? 110 : 190;
     for (let i = 0; i < want; i++) {
@@ -368,7 +394,7 @@
       const x = (tx + rng.range(0.15, 0.85)) * C.TILE;
       const y = (ty + rng.range(0.15, 0.85)) * C.TILE;
       out.push({
-        x, y, kind: rng.pick(kinds),
+        x, y, kind: rng.next() < 0.26 ? motif : rng.pick(kinds),
         rot: rng.range(0, Math.PI * 2), scale: rng.range(0.7, 1.4),
         tint: rng.next(),
       });
@@ -377,7 +403,7 @@
     // Room dressing: each chamber gets its own little pile of the dead, so a
     // wide open space reads as a room even in torchlight.
     if (world.rooms) {
-      const roomKinds = ['bones', 'skull', 'skull', 'brazier', 'chain', 'crack', 'mushroom', 'debris'];
+      const roomKinds = th.room;
       for (let i = 0; i < world.rooms.length; i++) {
         const rm = world.rooms[i];
         const n = rng.int(3, 7);

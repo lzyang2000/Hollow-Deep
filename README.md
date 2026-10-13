@@ -215,7 +215,24 @@ back-sword.
   the game says so out loud. This also means you can stand in the gate, look
   around, and go back for that chest.
 - Torchlight reveals **15 m** of the dungeon. Everything else is fogged, and
-  what you have already seen stays dimly remembered.
+  what you have already seen stays dimly remembered. The ring **breathes** — two
+  sines at unrelated rates, so it never settles into a metronome — but the
+  breathing lives only in the light. The visibility test uses the widest the
+  ring ever gets, which is why a chest parked fourteen metres out no longer
+  blinks in and out twice a second; it used to, and it read as a bug in the
+  game rather than a flicker in the flame.
+- **Nine regions, nine looks.** The band a floor sits in (`The Spill`, `Ash
+  Stair`, `Lantern Warrens`, `The Weeping Gate`, `Choir Hollow`, `Bone Tidal`,
+  `The Long Swallow`, `Sevric's Foothold`, `The Unmade Seal`) is also its face:
+  the stone, the colour of the dark itself, the colour every wall torch burns,
+  the litter on the floor and the words its name is built from all come out of
+  the same table, so Bone Tidal is never a violet room. Each region carries
+  three tonal variants and they walk in depth order, so ten floors in one
+  country never repeat and neighbouring floors never match; each floor also gets
+  one **signature prop** (chains, ash, runes, crystals, ribcages, banners)
+  scattered over the whole level and absent from the next one. The minimap and
+  the whole-floor board are painted in the same region's stone. All of it is a
+  pure function of depth, so a save file rebuilds the floor it was wearing.
 - The **minimap** (upper right) is a 50 m square centred on you and shows the
   ground you have already revealed. Once you find the portal it is marked, and
   an arrow points at it when it is off the minimap.
@@ -316,7 +333,13 @@ back-sword.
   improve as you descend — better item levels than the best chest on that floor,
   never below *Fine*, and a longer shelf the deeper you go — and its prices grow
   with the square of the depth, so a purchase stays worth saving for instead of
-  turning into free money by the third boss.
+  turning into free money by the third boss. The whole shelf then carries a
+  **five-times markup**: measured against a delver's purse, the old counter was
+  a formality rather than a decision (a weapon asked 185 coin at the first
+  throne room, where the purse already held several times that). Now the first
+  throne room asks 925 and the tenth asks 4,350 against a purse of roughly
+  2,000–6,000 — one big choice per boss floor, with potions still a rounding
+  error rather than a fortune.
 - Enemy stats grow with your power, but on a **30 % shallower slope**, so a
   well-played run outpaces the dungeon.
 - **A hot wick refills slowly.** Mana recovery ramps back over 1.6 s of not
