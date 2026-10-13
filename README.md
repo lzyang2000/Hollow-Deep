@@ -100,9 +100,8 @@ thumb attacks.
 | Tap in the bottom right half | One attack at the point you tapped |
 | Drag above the two sticks | One-handed play. This finger moves you, and the aim points at the finger itself. Dragging never attacks by itself |
 | Tap above the two sticks | Interact, or one attack at the point you tapped |
-| DODGE, right of the movement stick | Dodge. The 1.9 s cooldown shows as a ring and a countdown |
-| BLINK or SHIELD, left of the attack stick | Class ability |
-| TRADE or DOWN, above the attack stick | Only appears when a merchant or a portal is under you |
+| DODGE and BLINK or SHIELD, the two circles left of the attack stick | Dodge, and the class ability. A dash and a spell are both things you do instead of a blow, so both belong to the thumb that is already swinging. They sit one above and one below the middle of that stick, at the same distance from it. The 1.9 s dodge cooldown shows as a ring and a countdown |
+| TRADE or DOWN, above the upper of those two circles | Only appears when a merchant or a portal is under you |
 | PACK, HEAL, MANA, under the health bar | Open the pack, drink a healing draught, drink a mana draught |
 | Pause, top right corner of the screen, on the minimap | Pause menu: resume, pack, save, load, mute, abandon |
 

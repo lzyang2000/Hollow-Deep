@@ -112,9 +112,10 @@
       const sideways = L.w > L.h;
       const floor = sideways ? Math.min(18, L.h * 0.05) : M.clamp(L.h * 0.11, 40, 110);
       /* Room above the homes on top of the lift off the floor: a whole ring
-         diameter upright, one radius sideways. The DODGE and ability circles ride
-         the same baseline, so they come along, and what is left above them is
-         glass a thumb can rest on without already holding a stick. */
+         diameter upright, one radius sideways. The DODGE and ability circles hang
+         off the swing ring, one above and one below its middle, so the lower one
+         needs the same clearance the ring itself does and what is left above them
+         is glass a thumb can rest on without already holding a stick. */
       const extra = sideways ? r : 2 * r;
       const edge = sideways ? M.clamp(L.w * 0.11, 56, 150) : L.pad + 4;
       const band = Math.round(L.h * 0.52);
@@ -141,10 +142,11 @@
       return mx < L.w / 2 ? 'move' : 'attack';
     },
 
-    /* The two buttons beside the sticks: each one is the next thing the thumb
-       that owns that stick needs. DODGE is a step, so it lives with the walk
-       thumb; the career ability is an attack, so it lives with the swing
-       thumb. */
+    /* The two buttons beside the swing stick. A dash and a spell are both
+       things you do instead of a blow, so both belong to the thumb that is
+       already on the attack ring: it lets go of swinging for a moment, taps one
+       of them, and goes back. They sit to the left of that ring, mirrored above
+       and below its middle, so neither one is nearer the stick than the other. */
     actions: function (game) {
       const acts = [];
       if (!L.touch || !game || !game.player) return acts;
@@ -193,21 +195,25 @@
       if (!L.touch || !game || !game.player) return out;
       const s = L.sticks(game);
       const r = L.tiny ? 25 : 27;
+      const gap = 8;                    // a hair of glass between the circles
+      const bx = s.attack.x - s.r - r - gap;
+      const dy = r + gap;               // how far each one sits off the middle
       out.push({
         id: 'dodge', label: 'DODGE', color: '#8ef0c0',
-        x: s.move.x + s.r + 10 + r, y: s.move.y, r: r,
+        x: bx, y: s.attack.y - dy, r: r,
       });
       const ab = game.player.cls.ability;
       out.push({
         id: 'ability', big: true, label: ab.name.split(' ')[0].slice(0, 6).toUpperCase(),
-        x: s.attack.x - s.r - 10 - r, y: s.attack.y, r: r,
+        x: bx, y: s.attack.y + dy, r: r,
       });
       if (game.interactTarget) {
-        // Above the swing stick, because that is the moment you stop swinging.
+        // Above the upper of the two circles, because that is the moment you
+        // stop swinging.
         out.push({
           id: 'interact', glow: true, pill: true, w: 96, h: 34, r: 17,
           label: game.interactTarget.kind === 'merchant' ? 'TRADE' : 'DOWN',
-          x: s.attack.x, y: s.attack.y - s.r - 26,
+          x: s.attack.x, y: Math.max(37, s.attack.y - dy - r - 24),
         });
       }
 
