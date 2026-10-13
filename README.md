@@ -1,3 +1,9 @@
+[Play The Hollow Deep](https://lzyang2000.github.io/Hollow-Deep/)
+
+<p align="center">
+  <img src="assets/branding/The-Hollow-Deep-Logo.png" alt="The Hollow Deep — candle and nine-seal archway logo" width="720">
+</p>
+
 # The Hollow Deep — a roguelike dungeon crawler
 
 A 2D browser roguelike. Descend an endless procedurally generated dungeon,
