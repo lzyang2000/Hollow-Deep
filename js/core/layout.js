@@ -110,12 +110,21 @@
          cover the edges, so the pair comes inward toward the free thumbs
          instead of sitting out under the palms. */
       const sideways = L.w > L.h;
-      const lift = sideways ? Math.min(18, L.h * 0.05) : M.clamp(L.h * 0.11, 40, 110);
+      const floor = sideways ? Math.min(18, L.h * 0.05) : M.clamp(L.h * 0.11, 40, 110);
+      /* Room above the homes on top of the lift off the floor: a whole ring
+         diameter upright, one radius sideways. The DODGE and ability circles ride
+         the same baseline, so they come along, and what is left above them is
+         glass a thumb can rest on without already holding a stick. */
+      const extra = sideways ? r : 2 * r;
       const edge = sideways ? M.clamp(L.w * 0.11, 56, 150) : L.pad + 4;
-      const cy = L.h - L.pad - r - lift;
+      const band = Math.round(L.h * 0.52);
+      /* A ring that crossed the band would be sitting in the open glass, where a
+         finger walks and aims instead of owning a stick, so the lift stops there
+         on a window too short for it. */
+      const cy = Math.max(L.h - L.pad - r - floor - extra, band + r + 4);
       return {
         r: r,
-        band: Math.round(L.h * 0.52),
+        band: band,
         move: { x: edge + r, y: cy },
         attack: { x: L.w - edge - r, y: cy },
       };
