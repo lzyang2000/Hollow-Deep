@@ -295,6 +295,7 @@
       p.kx = 0; p.ky = 0;
       DC.Camera.snap(p);
       DC.Audio.setDepth(depth);
+      DC.Audio.setBoss(w.boss);
       DC.Audio.setScene(w.isBoss ? 'boss' : 'dungeon');
       DC.Render.pickPalette(w);
       DC.Fog.discover(w, p);

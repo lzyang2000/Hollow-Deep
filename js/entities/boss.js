@@ -33,6 +33,7 @@
       const hp = Math.round(base.hp * tierMul * mult);
       return {
         kind: 'boss', uid: 'boss', bossKind: kind, tier, name, line: e.line,
+        music: e.music,
         seal: DC.sealLabel(tier),
         x, y, r: base.r, hp, maxHp: hp,
         atk: base.atk * tierMul * mult, defVal: Math.round(base.def * mult * 0.7),

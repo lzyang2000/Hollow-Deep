@@ -354,6 +354,19 @@ back-sword.
   burned away — so a file is a few kilobytes and cannot hand you a floor you
   never walked. Numbers and indices from a file are clamped or dropped, and a
   boss portal cannot be skipped by editing one.
+- **Every throne plays its own song.** Twelve Sovereigns, twelve scores. Each
+  one carries its own tempo (72–126 bpm), key, mode, eight-degree motif, lead
+  instrument — a plucked string, a bell, a bowed saw, or a pair of reeds
+  breathing slightly out of tune — a drum feel (march, war, pulse, triplet,
+  slow, or no drums at all) and one instrument that belongs only to it: an
+  anvil, a choir, a roar in the bass, a bowed pair, a bell. The score rides on
+  the Sovereign rather than on the floor, so an echo of one comes back wearing
+  the music it had, and none of it leaks into the corridor outside its room.
+- **Hitting something is a weight, not a beep.** A body hit is a sawtooth
+  falling through a lowpass that is closing on it, with a band of grit sagging
+  over the top: the thud starts at 110–170 Hz and drops from there, and nothing
+  in the hit family opens above the low mids any more. An urn coming apart is a
+  heavy thing breaking an octave lower than it used to.
 - Music and every sound effect are synthesised at runtime — no audio files.
 
 

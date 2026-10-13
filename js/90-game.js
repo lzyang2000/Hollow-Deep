@@ -235,6 +235,7 @@
       DC.Render.pickPalette(world);
       DC.Camera.snap(G.player);
       DC.Audio.setDepth(depth);
+      DC.Audio.setBoss(world.boss);
       DC.Audio.setScene(world.isBoss ? 'boss' : 'dungeon');
 
       if (world.isBoss) {
