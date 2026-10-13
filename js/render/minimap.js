@@ -189,6 +189,24 @@
     ctx.textAlign = 'right';
     ctx.fillText('MAP', x0 + size - 6, y0 + 12);
     ctx.textAlign = 'left';
+
+    /* Pause sits on the map's own corner. On a phone it is the one control that
+       is never under a thumb, and the map is already the thing you look at --
+       so the corner of it is where stopping the run belongs. It is painted here
+       rather than with the rest of the HUD because the map draws over the HUD,
+       and a tab drawn first would be a tab under a map. */
+    if (L && L.touch) {
+      const tab = L.pauseButton(game);
+      if (tab) {
+        ctx.beginPath(); ctx.arc(tab.x, tab.y, tab.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(8,11,17,0.88)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = 'rgba(232,238,248,0.92)';
+        const bw = Math.max(2, tab.r * 0.22), bh = tab.r * 0.86;
+        ctx.fillRect(tab.x - bw * 1.6, tab.y - bh / 2, bw, bh);
+        ctx.fillRect(tab.x + bw * 0.6, tab.y - bh / 2, bw, bh);
+      }
+    }
   };
   /* The whole floor, one tap away. Clicking the minimap opens this: the level
      at full scale, every tile the torch has already shown drawn clear of the

@@ -35,12 +35,10 @@
     ctx.save();
 
     /* ---- vitals, top left ---- */
-    const panelX = L.pad, panelY = L.pad;
-    const panelW = Math.round(Math.min(narrow ? 250 : 300, W * (narrow ? 0.64 : 0.42)));
+    const V = L.vitals(game);
+    const panelX = V.x, panelY = V.y, panelW = V.w, panelH = V.h;
+    const barH = V.barH, showGear = V.showGear;
     const fs = L.font(11, 10);
-    const barH = narrow ? 15 : 16;
-    const showGear = !narrow;
-    const panelH = 30 + barH * 2 + 12 + (showGear ? 18 : 0);
     ctx.fillStyle = 'rgba(6,8,12,0.55)';
     ctx.fillRect(panelX - 6, panelY - 8, panelW + 12, panelH);
     ctx.font = '700 ' + L.font(13, 11) + 'px ' + FONT;
@@ -261,8 +259,45 @@
       }
     }
 
-    if (touch) DC.Render.actions(ctx, game, cam);
+    if (touch) { DC.Render.sticks(ctx, game); DC.Render.actions(ctx, game, cam); }
     ctx.restore();
+  };
+
+  /* The two sticks. The rings say where they live when the glass is empty --
+     walk on the left, swing on the right -- and the knob says where a thumb
+     actually is: each stick starts wherever its thumb lands, so the ring is a
+     hint, never a target you have to hit. */
+  DC.Render.sticks = function (ctx, game) {
+    const s = DC.Layout.sticks(game);
+    const T = DC.Touch;
+    const one = function (home, live, tint, label) {
+      ctx.setLineDash([3, 5]);
+      ctx.strokeStyle = tint;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.4;
+      ctx.beginPath(); ctx.arc(home.x, home.y, s.r, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.setLineDash([]);
+      ctx.font = '700 ' + DC.Layout.font(9, 8) + 'px ' + FONT;
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,255,255,0.34)';
+      ctx.fillText(label, home.x, home.y - s.r + 14);
+      ctx.textAlign = 'left';
+      if (!live || !live.active) return;
+      const len = Math.hypot(live.dx, live.dy);
+      const k = len > 0 ? Math.min(len, s.r) / len : 0;
+      ctx.strokeStyle = tint;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(live.ox, live.oy, s.r * 0.62, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = tint;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.arc(live.ox + live.dx * k, live.oy + live.dy * k, Math.max(9, s.r * 0.34), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    };
+    one(s.move, T.walk, 'rgba(150,180,220,0.6)', 'WALK');
+    one(s.attack, T.stick, 'rgba(255,179,71,0.65)', 'ATTACK');
   };
 
   /* The thumb cluster: circles big enough to hit without looking, each one
@@ -274,13 +309,11 @@
     for (let i = 0; i < bs.length; i++) {
       const b = bs[i];
       const r = b.r;
+      if (b.tab) continue;   // the pause tab is painted on the map itself
       let fill = 'rgba(8,11,17,0.62)';
       let edge = 'rgba(255,255,255,0.3)';
       let text = 'rgba(232,238,248,0.9)';
-      if (b.id === 'attack') {
-        edge = DC.Input.firing ? b.color : 'rgba(255,179,71,0.55)';
-        if (DC.Input.firing) fill = 'rgba(48,32,10,0.78)';
-      } else if (b.id === 'ability') {
+      if (b.id === 'ability') {
         const ready = p.abilityCd <= 0 && p.mp >= ab.mp;
         edge = ready ? p.cls.color : 'rgba(255,255,255,0.22)';
         text = ready ? '#fff' : 'rgba(255,255,255,0.45)';
@@ -294,32 +327,24 @@
       } else if (b.id === 'interact') {
         edge = '#8ef0c0'; text = '#8ef0c0'; fill = 'rgba(20,40,32,0.72)';
       }
-      if (b.pad) {
-        // The left-hand ATTACK pad: a wide bar under the second thumb, the same
-        // hold-button as the circle in the right cluster, lit the same way.
+      if (b.pill) {
+        // A row of labels rather than a row of circles: the bag and the potions
+        // sit under the health bar where you can read them, and the TRADE /
+        // DOWN pill lights up over the swing stick when there is somewhere to
+        // go. The bag pill dims when the bag is full, the potions when they are
+        // gone.
         const x = b.x - b.w / 2, y = b.y - b.h / 2;
-        ctx.fillStyle = fill; ctx.fillRect(x, y, b.w, b.h);
-        ctx.strokeStyle = edge; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, b.w - 2, b.h - 2);
+        if (b.id === 'pack' && DC.Inv.isFull(game.player)) { edge = '#ffd166'; text = '#ffd166'; }
+        ctx.fillStyle = b.glow ? 'rgba(20,40,32,0.78)' : fill;
+        ctx.fillRect(x, y, b.w, b.h);
+        ctx.strokeStyle = b.glow ? '#8ef0c0' : edge;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 1, y + 1, b.w - 2, b.h - 2);
         ctx.textAlign = 'center';
-        ctx.font = '700 ' + DC.Layout.font(11, 10) + 'px ' + FONT;
+        ctx.font = '700 ' + DC.Layout.font(10, 9) + 'px ' + FONT;
         ctx.fillStyle = text;
-        ctx.fillText(b.label, b.x, b.y - 1);
-        ctx.font = '600 ' + DC.Layout.font(8, 8) + 'px ' + FONT;
-        ctx.fillStyle = 'rgba(255,255,255,0.42)';
-        ctx.fillText(b.hint || '2nd thumb', b.x, b.y + 12);
+        ctx.fillText(b.label + (b.countLabel ? ' ' + b.countLabel : ''), b.x, b.y + 4);
         ctx.textAlign = 'left';
-        // The stick, drawn where the thumb actually is: a ring at the pivot it
-        // landed on, a knob at the direction it is pushing.
-        const st = DC.Touch.stick;
-        if (st.active) {
-          const len = Math.hypot(st.dx, st.dy);
-          const k = len > 0 ? Math.min(len, 26) / len : 0;
-          ctx.strokeStyle = 'rgba(255,179,71,0.45)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.arc(st.ox, st.oy, 20, 0, Math.PI * 2); ctx.stroke();
-          ctx.fillStyle = 'rgba(255,179,71,0.8)';
-          ctx.beginPath(); ctx.arc(st.ox + st.dx * k, st.oy + st.dy * k, 11, 0, Math.PI * 2); ctx.fill();
-        }
         continue;
       }
 

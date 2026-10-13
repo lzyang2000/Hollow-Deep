@@ -1,4 +1,8 @@
-# The Hollow Deep — a roguelike dungeon crawler
+<p align="center">
+  <img src="assets/branding/The-Hollow-Deep-Logo.png" alt="The Hollow Deep — candle and nine-seal archway logo" width="720">
+</p>
+
+[Play The Hollow Deep](https://lzyang2000.github.io/Hollow-Deep/)
 
 A 2D browser roguelike. Descend an endless procedurally generated dungeon,
 fight demons that mirror your class, and see how deep you can get before you die.
@@ -20,21 +24,22 @@ make noise before you touch it.
 ### On an iPhone (one hand, or two)
 
 The game re-lays itself out for a phone: the frame zooms to about 30 m so the
-torch still covers the screen, the minimap shrinks, and the run is driven by a
-thumb cluster in the bottom-right corner plus an **ATTACK** pad in the
-bottom-left with its own **DODGE** circle beside it, so the left thumb owns the
-trigger and the step without crossing the glass. Serve the folder from your Mac and open it on the phone's browser
+torch still covers the screen, the minimap shrinks, and the lower half of the glass becomes **two sticks** —
+walk on the left, swing on the right — while the things you read rather than
+mash (bag, potions) move up under the health bar and a pause tab sits on the
+corner of the map.
+Serve the folder from your Mac and open it on the phone's browser
 (same Wi-Fi):
 
     python3 -m http.server 8080    # then visit http://<mac-ip>:8080
 
 Add it to the home screen for a fullscreen, no-chrome run. Two thumbs is the
-comfortable way to fight, and it works like a twin-stick shooter: the right thumb
-drags the field and **only walks**, while the left thumb holds the bottom-left
-pad to swing and **slides it to aim** — so you can walk north and hit east. One
-thumb is still enough: with nothing on the pad the fingertip goes back to being
-the reticle, so drag to walk and aim, then tap **ATTACK** (or tap the glass) for
-a swing.
+comfortable way to fight, and it works like a twin-stick shooter: the left thumb
+lands anywhere in its half and **only walks**, the right thumb lands anywhere in
+its half and **keeps swinging** for as long as it is held, pointing where it is
+pushed — so you can walk north and hit east. One thumb is still enough: above
+the sticks the glass is open, and a finger there walks from where it landed while
+the fingertip stays the reticle; a tap there is one swing at what you tapped.
 
 ## Hosting it on GitHub Pages
 
@@ -87,42 +92,43 @@ you had stopped, so a dodge never turns your back on a fight by accident.
 
 ### Phone controls (one hand or two)
 
-Two thumbs, two sticks. The right thumb drags the field and that is a joystick
-and nothing else; the left thumb holds the wide **ATTACK** pad in the free
-corner, and that pad is a trigger *and* an aim stick — hold it to swing, slide it
-to point. Walking one way while hitting another is then one gesture per thumb,
+Two thumbs, two sticks, and the lower half of the glass is split down the middle. The
+left thumb lands anywhere on its half and walks from wherever it landed — a
+floating joystick, so it never has to find a ring in the dark. The right thumb
+lands anywhere on its half and swings for as long as it is held: push it and the
+blow goes that way, leave it parked and the swing finds the nearest demon the
+torch is showing. Walking north while hitting east is then one gesture per thumb,
 which a single fingertip can never manage: one point on the glass is only ever
 one direction. A swing is still always a decision — nothing attacks just because
 a thumb is resting on the glass.
 
 | Gesture | Action |
 | --- | --- |
-| Drag anywhere | Walk — the drag is a joystick measured from where the finger landed. With nothing on the pad it **also** aims at the fingertip, so one thumb still points where it walks |
-| Tap | Interact — merchant, portal, urn; one swing **at the point you tapped** if there is nothing to talk to |
-| **ATTACK** circle (right cluster) | Swing, aimed for you at the nearest demon the torch is showing. It sits under the thumb that is already walking, so it stays a plain trigger |
-| **ATTACK pad** (bottom-left bar) | Hold to swing, **slide to aim**: the aim is the thumb's travel from where it landed, so the blow can go east while the other thumb walks north. Parked without a push, the swing aims itself |
-| **DODGE** circle (beside ATTACK, and again beside the pad) | The dash. Both circles share one 1.9 s cooldown and each shows a ring and a countdown while it runs, so you always know whether the step is there. The left-hand one is a tap only — it never becomes a stick and never swings |
+| Press anywhere in the **bottom-left half** | The **walk stick**: it starts where the finger landed. A thumb resting down is not a step — 14 px of travel before it counts |
+| Tap the walk stick | Interact — merchant, portal, urn |
+| Press anywhere in the **bottom-right half** | The **swing stick**: it swings continuously while it is held. **Push to point**; parked, the blow aims itself at the nearest demon in the light |
+| Tap the swing stick | One swing at the point you tapped |
+| Drag in the **open glass above the sticks** | One-handed play: that finger walks from where it landed **and** is the reticle, so it points where it walks. A drag never swings on its own |
+| Tap the open glass | Interact, or one swing at the point you tapped |
+| **DODGE** (right of the walk stick) | The dash. One 1.9 s cooldown, ring and countdown while it runs, so you always know whether the step is there |
+| **WHIRL / BLINK / SHIELD** (left of the swing stick) | Class ability |
+| **TRADE / DOWN** pill (above the swing stick) | Only appears when there is a counter or a gate under you |
+| **PACK / HEAL / MANA** (under the health bar) | The bag and the potions, kept out of the sticks' half where a thumb would brush them |
+| Pause tab (top-left corner of the minimap) | Pause menu — resume, pack, save, load, mute, abandon |
 
-Two-handed is the way to fight a room full of demons: the right thumb runs the
-walk stick, the left thumb runs the trigger and the aim. Lifting either finger
-affects only its own job. While the pad is held a finger on the field cannot
-change the aim at all, and a second field finger is ignored, so a stray thumb
+Two-handed is the way to fight a room full of demons: each thumb stays in its own
+corner and never crosses the glass. Lifting either one affects only its own job,
+and the walk stick can be re-planted anywhere in its half while the swing stick
+keeps swinging. While the swing stick is pushed a finger elsewhere cannot change
+the aim at all, and a second finger in the same half is ignored, so a stray thumb
 cannot steal it mid-stride.
-| **WHIRL / BLINK / SHIELD** | Class ability |
-| **HEAL / MANA** | Drink a draught or wick oil |
-| **PACK** | Open the pack (bottom row: HEAL, MANA, SELL, CLOSE) |
-| **PAUSE** | Pause menu — resume, pack, save, load, mute, abandon |
 
 A touch that barely moves is a rest, not a walk, so a thumb resting on the glass
-will not wander you into a demon. Buttons sit in the bottom-right corner, biggest
-and nearest the thumb first: ATTACK, DODGE, ability, (TRADE / DOWN when something
-is in reach), HEAL, MANA, PACK, PAUSE — and the ATTACK pad sits in the opposite
-corner with a second DODGE one gap to its right, which is where the left thumb
-puts the step when two hands are on the phone.
-Sliding a thumb across the ATTACK **circle** neither walks nor re-aims; sliding
-across the **pad** is how you aim. The aim ray leaves the body along the aim, and
+will not wander you into a demon. The aim ray leaves the body along the aim, and
 a crosshair sits at its tip while the stick is pushed, so you can see where a
-swing will land before it lands.
+swing will land before it lands. The two dashed rings drawn in the bottom corners
+are only where the sticks live when nobody is touching them — a thumb never has
+to find them.
 
 
 In the pack: `1–9`/`0` or the arrows pick a row, `E` wears it, `X` (or right
@@ -280,8 +286,8 @@ back-sword.
   one swing sweep three different edges, every swept edge stays inside the arc
   that hurts, a landed demon blow leaves one arc particle and no ring, and a
   Sovereign winding a cut rotates its telegraph to its own aim.
-- **Dodge** (`Shift`, and a **DODGE** circle beside ATTACK on a phone — plus a
-  second beside the ATTACK pad for the other thumb) is 0.2 s at
+- **Dodge** (`Shift`, and a **DODGE** ring beside the walk stick on a phone) is
+  0.2 s at
   21 m/s — about **4.2 m**, once per 1.9 s. No invulnerability, no steering once
   it has started, a dropped swing and a late next one as the price. The dash is
   drawn as a smear in your career colour, which is also the tell that it is spent.

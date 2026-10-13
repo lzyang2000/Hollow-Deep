@@ -3,7 +3,13 @@
    the numbers are not: a 300 px minimap is a quarter of a desktop and the whole
    width of a phone, and 20 px/m shows a comfortable 64 m of a 300 m floor on a
    desktop and only 19 m on a phone -- less than the torch reaches. So the
-   viewport is measured once per resize and every panel reads from here. */
+   viewport is measured once per resize and every panel reads from here.
+
+   It is also the one place that decides where a thumb can reach. On a phone the
+   lower half of the glass belongs to two sticks -- walk on the left, swing on
+   the right -- and everything you look at rather than mash (the bag, the
+   potions) moved up under the health bar, with the pause tab sitting on the
+   corner of the map. */
 (function (global) {
   'use strict';
   const DC = global.DC;
@@ -70,70 +76,132 @@
       return Math.max(lo, Math.round(px * L.s));
     },
 
-    /* ---------------- one-hand action cluster ----------------
-       Everything the thumb has to reach lives in the bottom-right corner, in
-       reading order from the corner outward: ability first (the one you use
-       constantly), then trade, potions, pack, pause. On a phone turned
-       sideways the cluster goes in one row so it never hides under the
-       minimap. */
+    /* ---------------- the vitals panel ----------------
+       The HUD draws it, the bag and the potions line up under it, and the log
+       keeps out of its way -- so the geometry lives here once. */
+    vitals: function (game) {
+      const narrow = L.narrow;
+      const barH = narrow ? 15 : 16;
+      const showGear = !narrow;
+      const w = Math.round(Math.min(narrow ? 250 : 300, L.w * (narrow ? 0.64 : 0.42)));
+      const h = 30 + barH * 2 + 12 + (showGear ? 18 : 0);
+      return { x: L.pad, y: L.pad, w: w, h: h, barH: barH, showGear: showGear };
+    },
+
+    /* ---------------- the two sticks ----------------
+       The lower half of the glass is split down the middle: the left thumb
+       lands anywhere on its half and walks from wherever it landed, the right
+       thumb lands anywhere on its half and swings for as long as it is held,
+       pointing where it is pushed. A thumb never has to find a small circle in
+       the dark, and the walk and the blow can point opposite ways because they
+       come from different hands. The rings below are only where the sticks
+       live when nobody is touching them. */
+    sticks: function (game) {
+      const r = L.tiny ? 34 : (L.narrow ? 42 : 48);
+      const cy = L.h - L.pad - r - 2;
+      return {
+        r: r,
+        band: Math.round(L.h * 0.52),
+        move: { x: L.pad + r + 4, y: cy },
+        attack: { x: L.w - L.pad - r - 4, y: cy },
+      };
+    },
+
+    /* Which stick a point on the glass belongs to, or null for the open glass
+       above them (that finger still walks AND aims, which is how one hand
+       plays). Buttons are tested before this, so a thumb on a button is a
+       thumb on a button. */
+    zoneAt: function (game, mx, my) {
+      if (!L.touch || !game || !game.player) return null;
+      const s = L.sticks(game);
+      if (my < s.band) return null;
+      return mx < L.w / 2 ? 'move' : 'attack';
+    },
+
+    /* The two buttons beside the sticks: each one is the next thing the thumb
+       that owns that stick needs. DODGE is a step, so it lives with the walk
+       thumb; the career ability is an attack, so it lives with the swing
+       thumb. */
     actions: function (game) {
       const acts = [];
       if (!L.touch || !game || !game.player) return acts;
       const p = game.player;
-      // Corner-most, because it is the one control a drag cannot replace: a
-      // drag always walks, so this is how you swing without moving.
-      acts.push({ id: 'attack', label: 'ATTACK', color: '#ffb347' });
-      // Beside ATTACK, because it is the other half of the same thought: one
-      // thumb, two circles, a swing and a step. Second from the corner, so the
-      // ability keeps the ring it has always had.
       acts.push({ id: 'dodge', label: 'DODGE', color: '#8ef0c0' });
       acts.push({ id: 'ability', label: p.cls.ability.name.split(' ')[0].slice(0, 6).toUpperCase(), big: true });
       if (game.interactTarget) {
-        acts.push({ id: 'interact', label: game.interactTarget.kind === 'merchant' ? 'TRADE' : 'DOWN', glow: true });
+        acts.push({
+          id: 'interact',
+          label: game.interactTarget.kind === 'merchant' ? 'TRADE' : 'DOWN',
+          glow: true, pill: true,
+        });
       }
-      acts.push({ id: 'heal', label: 'HEAL', count: p.potions.heal | 0, color: '#ff6b6b' });
-      acts.push({ id: 'mana', label: 'MANA', count: p.potions.mana | 0, color: '#6bb6ff' });
-      acts.push({ id: 'pack', label: 'PACK', count: p.inv.length });
-      acts.push({ id: 'pause', label: 'PAUSE' });
       return acts;
     },
 
-    /* The cluster plus the left-hand aim stick, drawn as a wide ATTACK pad.
-       Two thumbs, two sticks: the right one drags the field and walks, the left
-       one rests on this pad, holds it to swing and slides it to point. One thumb
-       still works -- the pad is only a second way to reach the same hold-button,
-       and with nothing on it the field finger keeps aiming as it always did. */
+    /* The bag and the potions are things you look at, not things you mash in
+       the middle of a fight, and the bottom of the screen now belongs to the
+       sticks. They line up under the health bar instead. */
+    utility: function (game) {
+      const u = [];
+      if (!L.touch || !game || !game.player) return u;
+      const p = game.player;
+      u.push({ id: 'pack', label: 'PACK', count: p.inv.length, countLabel: p.inv.length + '/' + p.invSize });
+      u.push({ id: 'heal', label: 'HEAL', count: p.potions.heal | 0, countLabel: 'x' + (p.potions.heal | 0), color: '#ff6b6b' });
+      u.push({ id: 'mana', label: 'MANA', count: p.potions.mana | 0, countLabel: 'x' + (p.potions.mana | 0), color: '#6bb6ff' });
+      return u;
+    },
+
+    /* Pause on the corner of the map: the map is already the thing you tap to
+       look at where you are, and its far corner is the one place on a phone
+       that is never a stick or a thumb. */
+    pauseButton: function (game) {
+      if (!L.touch || !game || !game.player) return null;
+      const r = L.tiny ? 15 : 17;
+      const x0 = L.w - L.minimapPx - L.pad;
+      const y0 = L.pad;
+      return { id: 'pause', label: '', tab: true, x: x0 + r + 3, y: y0 + r + 3, r: r };
+    },
+
+    /* Everything a thumb can press, with its place. */
     buttons: function (game) {
-      const acts = L.actions(game);
       const out = [];
-      if (!acts.length) return out;
+      if (!L.touch || !game || !game.player) return out;
+      const s = L.sticks(game);
       const r = L.tiny ? 25 : 27;
-      const cell = (r + 9) * 2;
-      const cols = L.h < 520 ? acts.length : 2;
-      for (let i = 0; i < acts.length; i++) {
-        const col = i % cols, row = Math.floor(i / cols);
-        const a = acts[i];
-        a.x = L.w - L.pad - r - col * cell;
-        a.y = L.h - L.pad - r - row * cell;
-        a.r = r;
-        out.push(a);
-      }
-      const pw = L.tiny ? 96 : 124, ph = 46;
-      const pad = {
-        id: 'attack', label: 'ATTACK', color: '#ffb347', pad: true, hint: 'drag to aim',
-        x: L.pad + pw / 2, y: L.h - L.pad - ph / 2, w: pw, h: ph, r: ph / 2,
-      };
-      out.push(pad);
-      /* The thumb that owns the pad should own the step as well. Two-handed,
-         or sideways, the left thumb never leaves this corner: making it cross
-         the glass for the right-hand DODGE is a reason not to dodge at all. So
-         the step lives one gap to the right of the pad, on the pad's own
-         baseline. It stays a tap -- it never becomes an aim stick and it never
-         fires -- and it shows the same cooldown ring as its twin. */
       out.push({
-        id: 'dodge', label: 'DODGE', color: '#8ef0c0', left: true,
-        x: L.pad + pw + 8 + r, y: pad.y, r: r,
+        id: 'dodge', label: 'DODGE', color: '#8ef0c0',
+        x: s.move.x + s.r + 10 + r, y: s.move.y, r: r,
       });
+      const ab = game.player.cls.ability;
+      out.push({
+        id: 'ability', big: true, label: ab.name.split(' ')[0].slice(0, 6).toUpperCase(),
+        x: s.attack.x - s.r - 10 - r, y: s.attack.y, r: r,
+      });
+      if (game.interactTarget) {
+        // Above the swing stick, because that is the moment you stop swinging.
+        out.push({
+          id: 'interact', glow: true, pill: true, w: 96, h: 34, r: 17,
+          label: game.interactTarget.kind === 'merchant' ? 'TRADE' : 'DOWN',
+          x: s.attack.x, y: s.attack.y - s.r - 26,
+        });
+      }
+
+      // The utility row under the health bar, wrapping before it reaches the
+      // map so it can never slide under it.
+      const V = L.vitals(game);
+      const limit = Math.max(V.x + 120, L.w - L.minimapPx - L.pad - 10);
+      const ph = 30;
+      let px = V.x - 2, py = V.y + V.h + 4 + ph / 2;
+      L.utility(game).forEach(function (b) {
+        const w = 22 + b.label.length * 8 + (b.countLabel ? b.countLabel.length * 7 : 0);
+        if (px + w > limit) { px = V.x - 2; py += ph + 6; }
+        b.pill = true; b.w = w; b.h = ph; b.r = ph / 2; b.x = px + w / 2; b.y = py;
+        px += w + 6;
+        out.push(b);
+      });
+
+      const pb = L.pauseButton(game);
+      if (pb) out.push(pb);
       return out;
     },
 
@@ -147,13 +215,17 @@
       return null;
     },
 
-    /* Where the action cluster sits, so the log can get out of its way. */
+    /* Where the bottom of the text can stop: the log gets out of the way of the
+       sticks and the buttons around them, but not of the bag row up top. */
     actionTop: function (game) {
+      if (!L.touch || !game || !game.player) return L.h;
+      const s = L.sticks(game);
+      let top = s.attack.y - s.r;
       const bs = L.buttons(game);
-      if (!bs.length) return L.h;
-      let top = L.h;
       for (let i = 0; i < bs.length; i++) {
-        top = Math.min(top, bs[i].y - (bs[i].h ? bs[i].h / 2 : bs[i].r));
+        const b = bs[i];
+        if (b.y < L.h * 0.5) continue;
+        top = Math.min(top, b.y - (b.h ? b.h / 2 : b.r));
       }
       return top;
     },
