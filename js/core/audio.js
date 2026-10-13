@@ -27,7 +27,19 @@
   const PROGRESSIONS = [
     [0, 5, 3, 4], [0, 3, 4, 5], [0, 5, 4, 3], [0, 4, 5, 3],
     [0, 3, 5, 4], [0, 6, 4, 1],
+    // The seventh one is the only progression in the game that comes back to
+    // where it started. It is used once, by the ending.
+    [0, 3, 4, 0],
   ];
+
+  /* The ending is not a fight, so it does not get fight music. Same engine,
+     but: no drums at all, a Dorian sixth so the chords have somewhere to
+     land, the coming-home progression above, a melody that walks down rather
+     than paces, and a bell instead of a lead that wants to argue. */
+  const ENDING_MUSIC = {
+    bpm: 52, key: 0, prog: 6, mode: 'dorian',
+    motif: [0, 4, 2, 0, 4, 7, 4, 0], lead: 'bell',
+  };
 
   /* Which sixteenths the drums take. A march is a thing that walks at you, a
      pulse is a thing that never stops, a triplet is a thing that sways, and
@@ -133,12 +145,12 @@
       if (!A.ctx) return;
       const g = A.musicGain.gain;
       const t = A.ctx.currentTime;
-      const target = name === 'none' ? 0 : (name === 'menu' ? 0.22 : name === 'dead' ? 0.18 : 0.3);
+      const target = name === 'none' ? 0 : (name === 'menu' ? 0.22 : name === 'dead' ? 0.18 : name === 'ending' ? 0.26 : 0.3);
       g.cancelScheduledValues && g.cancelScheduledValues(t);
       g.setValueAtTime && g.setValueAtTime(g.value, t);
       g.linearRampToValueAtTime && g.linearRampToValueAtTime(target, t + 1.1);
       A.bpm = name === 'boss' ? (A.bossMusic ? A.bossMusic.bpm : 104)
-        : name === 'menu' ? 68 : name === 'dead' ? 56 : 84;
+        : name === 'menu' ? 68 : name === 'dead' ? 56 : name === 'ending' ? ENDING_MUSIC.bpm : 84;
       A.step = 0;
       A.nextTime = Math.max(A.nextTime, A.ctx.currentTime + 0.05);
     },
@@ -163,34 +175,40 @@
       const bar = Math.floor(step / 16) % 4;
       const beat = step % 16;
       const B = scene === 'boss' ? A.bossMusic : null;
-      const prog = PROGRESSIONS[B ? B.prog % PROGRESSIONS.length : A.progression % PROGRESSIONS.length];
+      const E = scene === 'ending' ? ENDING_MUSIC : null;
+      const S = B || E;
+      const prog = PROGRESSIONS[(S ? S.prog : A.progression) % PROGRESSIONS.length];
       const chordDeg = prog[bar];
-      const mode = B ? B.mode : 'minor';
-      const root = A.root + (B ? B.key : 0);
+      const mode = S ? S.mode : 'minor';
+      const root = A.root + (S ? S.key : 0);
 
       // Drone on bar starts.
       if (step === 0) {
-        A.drone(mtof(root - 12), t, dur * 16 * (scene === 'boss' ? 0.75 : 1));
+        A.drone(mtof(root - 12), t, dur * 16 * (scene === 'boss' ? 0.75 : E ? 2.5 : 1));
       }
 
       // Pad chord every half bar.
       if (beat === 0 || beat === 8) {
         const r = root + degToSemi(chordDeg, mode);
-        A.pad(mtof(r), mtof(r + degToSemi(2, mode)), mtof(r + degToSemi(4, mode)), t, dur * 8,
-          scene === 'boss' ? 0.09 : 0.06);
+        A.pad(mtof(r), mtof(r + degToSemi(2, mode)), mtof(r + degToSemi(4, mode)), t, dur * (E ? 16 : 8),
+          scene === 'boss' ? 0.09 : E ? 0.075 : 0.06);
         if (scene === 'boss' && beat === 8) A.pad(mtof(r + 1), mtof(r + degToSemi(2, mode) + 1), mtof(r + 13), t, dur * 6, 0.035);
+        // A hymn is a chord with somebody singing over it, not a chord alone.
+        if (E && beat === 8) A.pad(mtof(r + 12), mtof(r + degToSemi(4, mode) + 12), mtof(r + degToSemi(2, mode) + 12), t, dur * 8, 0.03);
       }
 
       // Arp / melody.
-      const arpOn = scene === 'menu' ? (beat % 4 === 0) : (beat % 2 === 0 || (A.intensity > 0.5 && beat % 2 === 1));
+      const arpOn = scene === 'menu' ? (beat % 4 === 0)
+        : E ? (beat % 8 === 0)
+        : (beat % 2 === 0 || (A.intensity > 0.5 && beat % 2 === 1));
       if (arpOn) {
-        const pattern = B ? B.motif : [0, 2, 4, 2, 6, 4, 2, 0];
+        const pattern = S ? S.motif : [0, 2, 4, 2, 6, 4, 2, 0];
         const idx = (step * 3 + bar) % pattern.length;
         const deg = chordDeg + pattern[idx];
         const oct = 12;
         const vel = beat % 4 === 0 ? 1 : 0.62;
-        A.voice(B ? B.lead : 'pluck', mtof(root + degToSemi(deg, mode) + oct), t,
-          vel * (scene === 'boss' ? 0.075 : 0.055));
+        A.voice(S ? S.lead : 'pluck', mtof(root + degToSemi(deg, mode) + oct), t,
+          vel * (scene === 'boss' ? 0.075 : E ? 0.06 : 0.055));
       }
 
       // Percussion.
@@ -206,6 +224,10 @@
         }
         if (A.intensity > 0.35 && beat % 2 === 0) A.hat(t, 0.035);
       }
+
+      // The last beat of every bar of the hymn lands on the chord it is
+      // standing on, which is the sound of a thing finally being over.
+      if (E && beat === 12) A.bell(mtof(root + degToSemi(chordDeg, mode) + 12), t, 0.055);
 
       // Sparse high bell in dungeon for unease.
       if (scene === 'dungeon' && step === 47 && Math.random() < 0.5) {

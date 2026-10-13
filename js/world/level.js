@@ -57,10 +57,21 @@
     const local = !!(theme && !isBoss && rng.next() < 0.66);
     const noun = rng.pick(isBoss ? W.bossNoun : (local ? theme.noun : W.noun));
     const adj = rng.pick(local ? theme.adj : W.adj);
-    if (roll < 0.38) return 'The ' + adj + ' ' + noun;
-    if (roll < 0.60) return adj + ' ' + noun;
-    if (roll < 0.84) return 'The ' + noun + ' of ' + rng.pick(W.of);
-    return 'The ' + noun;
+    let name;
+    if (roll < 0.38) name = 'The ' + adj + ' ' + noun;
+    else if (roll < 0.60) name = adj + ' ' + noun;
+    else if (roll < 0.84) name = 'The ' + noun + ' of ' + rng.pick(W.of);
+    else name = 'The ' + noun;
+    /* A name has to survive the smallest place it is ever written: the pause
+       line and the map title on a phone held upright. The draw shrinks the
+       type rather than cut it off, but a name that has been shrunk to nothing
+       stops being a name. So the longest pattern gives way to a shorter one
+       when it would not fit, and the words it already chose stay the words. */
+    if (name.length > 34) {
+      const shorter = 'The ' + adj + ' ' + noun;
+      name = shorter.length <= 34 ? shorter : adj + ' ' + noun;
+    }
+    return name;
   }
 
   // run seed -> { depth: name, used: { name: true } }
@@ -88,7 +99,7 @@
          already -- a reroll would not be. */
       if (book.used[name]) {
         let k = 2;
-        while (book.used[name + ' ' + (ROMAN[k] || k)]) k++;
+        while (book.used[name + ' ' + (ROMAN[k] || k)] && (name + ' ' + (ROMAN[k] || k)).length <= 38) k++;
         name = name + ' ' + (ROMAN[k] || k);
       }
       book.used[name] = true;
@@ -104,6 +115,31 @@
 
   // Which boss in the roster this depth gets.
   DC.bossTier = function (depth) { return Math.max(1, Math.round(depth / C.BOSS_EVERY)); };
+
+  /* Below the ninth seal the deep stops inventing and starts reusing, so the
+     whole Sovereign deck gets shuffled. The shuffle belongs to the run rather
+     than to the floor: it comes out of the run seed, which means depth 63 has
+     the same throne in it every time you come back, and a save file can prove
+     it kept the right one. */
+  DC.echoOrder = function (seed) {
+    const n = DC.LORE.bosses.length;
+    const order = [];
+    for (let i = 0; i < n; i++) order.push(i);
+    new DC.RNG((seed ^ 0x239bd1e7) >>> 0).shuffle(order);
+    return order;
+  };
+
+  /* Which roster entry sits on a throne, and how many times the deck has been
+     dealt to get there. The nine seals are the plot, so tiers 1..9 are never
+     shuffled; past them the deck is dealt in echo order and every full pass
+     through it deepens the marker on the name. */
+  DC.bossEntry = function (tier, order) {
+    const roster = DC.LORE.bosses.length;
+    if (tier <= DC.LORE.sealCount) return { entry: DC.LORE.bosses[tier - 1], echoCycle: 0 };
+    const o = Array.isArray(order) && order.length === roster ? order : DC.echoOrder(0);
+    const k = tier - DC.LORE.sealCount - 1;
+    return { entry: DC.LORE.bosses[o[k % roster]], echoCycle: Math.floor(k / roster) + 1 };
+  };
 
   /* Nine seals, nine thrones, one every fifth floor: the first eight are
      numbered, the ninth says so out loud, and past the ninth there is nothing
@@ -186,7 +222,7 @@
 
   DC.levels = {};
 
-  DC.levels.build = function (depth, rng, player) {
+  DC.levels.build = function (depth, rng, player, echoOrder) {
     const levelSeed = rng.s >>> 0;   // before any geometry has eaten the stream
     const isBoss = depth % C.BOSS_EVERY === 0;
     const G = C.GRID;
@@ -217,8 +253,8 @@
       world.merchant = DC.Props.merchant(tileCenter(m[0]), tileCenter(m[1]), rng, depth);
       const b = openTileNear(grid, mcx, mcy, 4);
       const tier = DC.bossTier(depth);
-      const entry = DC.LORE.bosses[(tier - 1) % DC.LORE.bosses.length];
-      world.boss = DC.Boss.create(entry.kind, tileCenter(b[0]), tileCenter(b[1]), depth, rng, player, entry);
+      const pick = DC.bossEntry(tier, echoOrder);
+      world.boss = DC.Boss.create(pick.entry.kind, tileCenter(b[0]), tileCenter(b[1]), depth, rng, player, pick.entry, pick.echoCycle);
       world.portal = {
         x: tileCenter(b[0]), y: tileCenter(b[1]), tx: b[0], ty: b[1],
         active: false, discovered: false, anim: 0,

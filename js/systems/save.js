@@ -22,7 +22,11 @@
   // chamber instead of the whole level. A version-4 file would put a delver
   // outside its own map and hand the Sovereign back a stadium it never fought
   // in.
-  const VERSION = 5;
+  // 6: below the ninth seal the Sovereign deck is shuffled per run, and the
+  // run now remembers whether it has seen its ending. A version-5 file has no
+  // deck in it, so the delver who stopped on depth 47 would be handed back a
+  // different throne than the one they were bleeding in front of.
+  const VERSION = 6;
 
   function num(v, min, max, dflt) {
     const n = typeof v === 'number' ? v : Number(v);
@@ -66,6 +70,22 @@
     const r = Math.round(n);
     if (r < 0 || r >= len) return -1;
     return r;
+  }
+  /* A shuffled throne deck is only worth keeping if it is still a deck: the
+     same card twice, or a card that does not exist, means the file was edited
+     or truncated, so the whole order is thrown away and re-rolled from the
+     seed instead of half-believed. */
+  function permutation(v, n) {
+    if (!Array.isArray(v) || v.length !== n) return null;
+    const seen = [];
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const k = int(v[i], 0, n - 1, -1);
+      if (k < 0 || seen.indexOf(k) >= 0) return null;
+      seen.push(k);
+      out.push(k);
+    }
+    return out;
   }
   function indexList(list, len) {
     const out = [];
@@ -117,6 +137,15 @@
         seed: game.seed >>> 0,
         depth: game.depth,
         rngState: game.rng ? game.rng.s >>> 0 : 0,
+        /* Which Sovereign stands on which throne below depth 45 is part of the
+           run, not part of the floor, so it has to come back out of the file.
+           The story flags say whether the ending has already been spent. */
+        echoOrder: Array.isArray(game.echoOrder) ? game.echoOrder.slice() : null,
+        flags: {
+          sealBroken: !!game.sealBroken,
+          endingSeen: !!game.endingSeen,
+          retired: !!game.retired,
+        },
         player: {
           classId: p.classId,
           x: r2(p.x), y: r2(p.y), aim: r2(p.aim),
@@ -178,6 +207,13 @@
       game.seed = obj.seed >>> 0;
       game.rng = new DC.RNG(game.seed);
       if (typeof obj.rngState === 'number' && isFinite(obj.rngState)) game.rng.s = obj.rngState >>> 0;
+
+      game.echoOrder = permutation(obj.echoOrder, DC.LORE.bosses.length) || DC.echoOrder(game.seed);
+      const fl = obj.flags && typeof obj.flags === 'object' ? obj.flags : {};
+      game.sealBroken = !!fl.sealBroken;
+      game.endingSeen = !!fl.endingSeen;
+      game.retired = !!fl.retired;
+      game.ending = null;
 
       const p = DC.Player.create(wantCls);
       p.bonusAtk = num(obj.player.bonusAtk, 0, 100000, 0);
